@@ -7,11 +7,21 @@
 
 1. 安裝 [Node.js LTS](https://nodejs.org/)
 2. 把整個 `KTV` 專案放到電腦（例如 `C:\Users\你\KTV`）
-3. 雙擊專案根目錄的 **`啟動開唱.bat`**
-4. 第一次按「第一次準備（install + build）」
-5. 派對開始：按「啟動派對」
-6. 平板用畫面上的 `http://192.168.x.x:8787/player.html`（可按「複製平板網址」）
-7. 派對結束：按「關閉派對」
+3. 雙擊專案根目錄的 **`啟動開唱.bat`**（或 `start-kaichang.bat`）
+4. 第一次按「First-time setup (install + build)」
+5. 派對開始：按「Start Party」
+6. 平板用畫面上的 `http://192.168.x.x:8787/player.html`（可按「Copy tablet URL」）
+7. 派對結束：按「Stop Party」
+
+### 用 PowerShell 更新後再開（不要用 `cd /d`）
+
+```powershell
+cd C:\Users\tr197\KTV
+git pull
+.\start-kaichang.bat
+```
+
+視窗右上角應顯示 `launcher build 2026-10-04c`。
 
 ## 開機啟動（選用）
 
