@@ -267,39 +267,58 @@ function Stop-Server {
   Refresh-Ui
 }
 
+function Invoke-NpmStep([string]$StepName, [string]$NpmArgs, [string]$LogFile) {
+  # Run via a tiny .cmd so npm.cmd works and stdout/stderr can share one log.
+  # Do NOT use Start-Process -NoNewWindow (can kill this PowerShell host).
+  # Do NOT point RedirectStandardOutput/Error at the same file (Windows throws).
+  Ensure-PartyDir
+  if (Test-Path -LiteralPath $LogFile) {
+    Remove-Item -LiteralPath $LogFile -Force -ErrorAction SilentlyContinue
+  }
+  $stepBat = Join-Path $PartyDir ("npm-" + $StepName + ".cmd")
+  $lines = @(
+    '@echo off',
+    "cd /d `"$Root`"",
+    "call npm $NpmArgs > `"$LogFile`" 2>&1",
+    'exit /b %ERRORLEVEL%'
+  )
+  Set-Content -LiteralPath $stepBat -Value $lines -Encoding ASCII
+  Write-Status "Running npm $StepName (see .party)..." 'DarkOrange'
+  $proc = Start-Process -FilePath $stepBat `
+    -WorkingDirectory $Root `
+    -Wait -PassThru -WindowStyle Hidden
+  $code = 0
+  if ($null -ne $proc.ExitCode) { $code = [int]$proc.ExitCode }
+  Remove-Item -LiteralPath $stepBat -Force -ErrorAction SilentlyContinue
+  return $code
+}
+
 function Invoke-Prepare {
   Write-Status 'Installing/building (first time may take minutes)...' 'DarkOrange'
-  $npm = Get-NpmCmd
+  $null = Get-NpmCmd
   Ensure-PartyDir
   $installLog = Join-Path $PartyDir 'npm-install.log'
   $buildLog = Join-Path $PartyDir 'npm-build.log'
   $form.Enabled = $false
   try {
-    # Hidden window: -NoNewWindow can kill this PowerShell host when npm exits.
-    if (Test-Path $installLog) { Remove-Item -LiteralPath $installLog -Force -ErrorAction SilentlyContinue }
-    if (Test-Path $buildLog) { Remove-Item -LiteralPath $buildLog -Force -ErrorAction SilentlyContinue }
-
-    $install = Start-Process -FilePath $npm `
-      -ArgumentList @('install','--no-fund','--no-audit') `
-      -WorkingDirectory $Root `
-      -Wait -PassThru -WindowStyle Hidden `
-      -RedirectStandardOutput $installLog `
-      -RedirectStandardError $installLog
-    if ($install.ExitCode -ne 0) {
-      throw "npm install failed (exit $($install.ExitCode)). See .party/npm-install.log"
+    $installCode = Invoke-NpmStep 'install' 'install --no-fund --no-audit' $installLog
+    if ($installCode -ne 0) {
+      throw "npm install failed (exit $installCode). See .party/npm-install.log"
     }
 
-    $build = Start-Process -FilePath $npm `
-      -ArgumentList @('run','build') `
-      -WorkingDirectory $Root `
-      -Wait -PassThru -WindowStyle Hidden `
-      -RedirectStandardOutput $buildLog `
-      -RedirectStandardError $buildLog
-    if ($build.ExitCode -ne 0) {
-      throw "npm run build failed (exit $($build.ExitCode)). See .party/npm-build.log"
+    $buildCode = Invoke-NpmStep 'build' 'run build' $buildLog
+    if ($buildCode -ne 0) {
+      throw "npm run build failed (exit $buildCode). See .party/npm-build.log"
     }
 
-    [System.Windows.Forms.MessageBox]::Show('Build complete. You can press Start Party.', 'KaiChang') | Out-Null
+    if (-not (Test-Path (Join-Path $Root 'dist\player.html'))) {
+      throw "Build finished but dist\player.html is missing. See .party/npm-build.log"
+    }
+
+    [System.Windows.Forms.MessageBox]::Show(
+      'Build complete. Press Start Party next.',
+      'KaiChang'
+    ) | Out-Null
   } finally {
     $form.Enabled = $true
     Refresh-Ui
@@ -369,9 +388,18 @@ $form.Font = New-Object System.Drawing.Font('Segoe UI', 10)
 $lblTitle = New-Object System.Windows.Forms.Label
 $lblTitle.Text = 'PC server control (tablet/phone use browser only)'
 $lblTitle.Location = New-Object System.Drawing.Point(20, 16)
-$lblTitle.Size = New-Object System.Drawing.Size(520, 28)
+$lblTitle.Size = New-Object System.Drawing.Size(360, 28)
 $lblTitle.Font = New-Object System.Drawing.Font('Segoe UI', 12, [System.Drawing.FontStyle]::Bold)
 $form.Controls.Add($lblTitle)
+
+# Visible build stamp so we can confirm the Windows copy was updated.
+$lblVer = New-Object System.Windows.Forms.Label
+$lblVer.Text = 'launcher build 2026-10-04c'
+$lblVer.Location = New-Object System.Drawing.Point(390, 20)
+$lblVer.Size = New-Object System.Drawing.Size(150, 22)
+$lblVer.ForeColor = [System.Drawing.Color]::Gray
+$lblVer.TextAlign = [System.Drawing.ContentAlignment]::TopRight
+$form.Controls.Add($lblVer)
 
 $lblStatus = New-Object System.Windows.Forms.Label
 $lblStatus.Location = New-Object System.Drawing.Point(20, 48)
@@ -486,11 +514,16 @@ $form.Add_FormClosed({ $timer.Stop() })
 
 try {
   [void]$form.ShowDialog()
-  exit 0
+  [Environment]::Exit(0)
 } catch {
-  Ensure-PartyDir
-  $crashLog = Join-Path $PartyDir 'launcher-crash.log'
-  $_ | Out-String | Set-Content -LiteralPath $crashLog -Encoding UTF8
-  [System.Windows.Forms.MessageBox]::Show("Launcher error:`n$_`n`nSee .party/launcher-crash.log", 'KaiChang') | Out-Null
-  exit 1
+  try {
+    Ensure-PartyDir
+    $crashLog = Join-Path $PartyDir 'launcher-crash.log'
+    $_ | Out-String | Set-Content -LiteralPath $crashLog -Encoding UTF8
+    [System.Windows.Forms.MessageBox]::Show(
+      "Launcher error:`n$_`n`nSee .party/launcher-crash.log",
+      'KaiChang'
+    ) | Out-Null
+  } catch {}
+  [Environment]::Exit(1)
 }

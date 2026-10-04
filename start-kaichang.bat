@@ -18,7 +18,7 @@ if not exist "%~dp0launcher\PartyControl.ps1" (
 
 if not exist "%~dp0.party" mkdir "%~dp0.party"
 
-REM Script is UTF-8 with BOM so Windows PowerShell 5.1 can parse it.
+REM Keep this console open only if the GUI process fails to start.
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0launcher\PartyControl.ps1"
 set ERR=%ERRORLEVEL%
 if not "%ERR%"=="0" (
@@ -28,6 +28,18 @@ if not "%ERR%"=="0" (
     echo --- launcher-crash.log ---
     type "%~dp0.party\launcher-crash.log"
   )
+  if exist "%~dp0.party\npm-install.log" (
+    echo --- last lines npm-install.log ---
+    powershell -NoProfile -Command "Get-Content -LiteralPath '%~dp0.party\npm-install.log' -Tail 20 -ErrorAction SilentlyContinue"
+  )
+  if exist "%~dp0.party\npm-build.log" (
+    echo --- last lines npm-build.log ---
+    powershell -NoProfile -Command "Get-Content -LiteralPath '%~dp0.party\npm-build.log' -Tail 20 -ErrorAction SilentlyContinue"
+  )
+  echo.
+  echo If this keeps happening, run:  git pull
+  echo Then open start-kaichang.bat again and confirm the window shows:
+  echo   launcher build 2026-10-04c
   pause
   exit /b %ERR%
 )
