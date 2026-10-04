@@ -107,7 +107,12 @@ app.get('/api/qr', async (req, res) => {
 function sendMediaFile(req, res, file, mime) {
   const stat = statSync(file);
   const size = stat.size;
-  res.setHeader('Content-Type', mime || 'application/octet-stream');
+  // Force a tablet-friendly type when possible (some probes return octet-stream).
+  let type = mime || 'application/octet-stream';
+  if (file.endsWith('.mp4')) type = 'video/mp4';
+  else if (file.endsWith('.m4a')) type = 'audio/mp4';
+  else if (file.endsWith('.webm')) type = type.startsWith('audio') ? 'audio/webm' : 'video/webm';
+  res.setHeader('Content-Type', type);
   res.setHeader('Cache-Control', 'no-store');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Accept-Ranges', 'bytes');

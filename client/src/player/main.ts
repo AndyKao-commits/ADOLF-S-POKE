@@ -63,33 +63,54 @@ function waitForMediaUnlock(): Promise<void> {
   });
 }
 
-function unlockMedia() {
-  if (mediaUnlocked) return;
-  mediaUnlocked = true;
+async function forcePlayFromUserGesture() {
+  // Always runnable from the overlay click — do NOT bail on mediaUnlocked.
   showTapUnlock(false);
+  mediaUnlocked = true;
   const waiters = unlockWaiters.splice(0);
-  const resumedQueuedPlay = waiters.length > 0;
   waiters.forEach((fn) => fn());
-  // Only nudge if nothing was waiting on unlock (already-loaded, autoplay-blocked).
-  if (!resumedQueuedPlay && currentVideoId) {
-    if (useLocalVideo && els.localVideo) {
-      void els.localVideo.play().catch(() => undefined);
-    } else if (player) {
-      try {
-        hardenYoutubeIframe(player);
-        player.unMute();
-        player.setVolume(state?.playback.volume ?? 80);
-        player.playVideo();
-      } catch {
-        /* ignore */
-      }
+
+  if (useLocalVideo && els.localVideo?.src) {
+    try {
+      els.localVideo.muted = false;
+      els.localVideo.volume = (state?.playback.volume ?? 80) / 100;
+      await els.localVideo.play();
+      hasReachedPlaying = true;
+      els.nowMeta.textContent = '本機串流播放中';
+      emitPlayback(true);
+      return;
+    } catch (err) {
+      console.warn('force play local failed', err);
+      showTapUnlock(true);
+      els.nowMeta.textContent = '請再點「繼續播放」允許聲音';
+      mediaUnlocked = false;
+      return;
+    }
+  }
+
+  if (player && currentVideoId) {
+    try {
+      hardenYoutubeIframe(player);
+      player.unMute();
+      player.setVolume(state?.playback.volume ?? 80);
+      player.playVideo();
+      hasReachedPlaying = true;
+    } catch {
+      showTapUnlock(true);
+      mediaUnlocked = false;
     }
   }
 }
 
+function unlockMedia() {
+  void forcePlayFromUserGesture();
+}
+
 function setLocalVideoVisible(on: boolean) {
   useLocalVideo = on;
-  els.localVideo?.classList.toggle('hidden', !on);
+  // Use is-off (visibility) not .hidden (display:none) — iPad Safari needs this.
+  els.localVideo?.classList.toggle('is-off', !on);
+  els.localVideo?.classList.remove('hidden');
   els.ytHost?.classList.toggle('hidden-host', on);
 }
 
@@ -111,15 +132,50 @@ function prefetchLocalVideo(videoId: string) {
   void fetch(`/api/video/${encodeURIComponent(videoId)}`).catch(() => undefined);
 }
 
+function waitForMediaEvent(media: HTMLMediaElement, timeoutMs = 90000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const timer = window.setTimeout(() => {
+      if (done) return;
+      done = true;
+      cleanup();
+      reject(new Error('影片載入逾時（電腦下載太久或失敗）'));
+    }, timeoutMs);
+    const onReady = () => {
+      if (done) return;
+      done = true;
+      cleanup();
+      resolve();
+    };
+    const onErr = () => {
+      if (done) return;
+      done = true;
+      cleanup();
+      const code = media.error?.code;
+      reject(new Error(code ? `影片載入錯誤 (${code})` : '影片載入失敗'));
+    };
+    const cleanup = () => {
+      window.clearTimeout(timer);
+      media.removeEventListener('canplay', onReady);
+      media.removeEventListener('loadeddata', onReady);
+      media.removeEventListener('error', onErr);
+    };
+    media.addEventListener('canplay', onReady, { once: true });
+    media.addEventListener('loadeddata', onReady, { once: true });
+    media.addEventListener('error', onErr, { once: true });
+  });
+}
+
 async function playLocalFallback(videoId: string, reason: string) {
   if (!els.localVideo) return false;
   if (localFallbackInFlight === videoId && useLocalVideo && els.localVideo.src) {
-    void els.localVideo.play().catch(() => showTapUnlock(true));
-    return true;
+    await forcePlayFromUserGesture();
+    return !els.localVideo.paused || mediaUnlocked;
   }
   localFallbackInFlight = videoId;
   window.clearTimeout(errorSkipTimer);
   window.clearTimeout(playWatchTimer);
+  els.idle.classList.add('hidden');
   els.nowMeta.textContent =
     reason === '本機自動播放' ? '電腦下載影片中，稍後自動播放…' : `改由電腦下載播放（${reason}）…`;
 
@@ -131,47 +187,60 @@ async function playLocalFallback(videoId: string, reason: string) {
     }
 
     const meta = await fetch(`/api/video/${encodeURIComponent(videoId)}`);
-    const data = await meta.json();
-    if (!meta.ok || !data.ok) throw new Error(data.error || data.detail || '本機影片不可用');
+    const data = await meta.json().catch(() => ({}));
+    if (!meta.ok || !data.ok) {
+      throw new Error(data.detail || data.error || `本機影片不可用 (${meta.status})`);
+    }
 
-    await new Promise<void>((resolve, reject) => {
-      const onReady = () => {
-        cleanup();
-        resolve();
-      };
-      const onErr = () => {
-        cleanup();
-        reject(new Error('本機影片載入失敗'));
-      };
-      const cleanup = () => {
-        els.localVideo.removeEventListener('canplay', onReady);
-        els.localVideo.removeEventListener('error', onErr);
-      };
-      els.localVideo.addEventListener('canplay', onReady, { once: true });
-      els.localVideo.addEventListener('error', onErr, { once: true });
-      els.localVideo.src = data.url;
-      els.localVideo.load();
-    });
-
+    // Show element BEFORE assigning src — critical for iPad/Safari.
     setLocalVideoVisible(true);
-    els.localVideo.volume = (state?.playback.volume ?? 80) / 100;
-    els.localVideo.muted = false;
-    mediaUnlocked = true;
+    const streamUrl = new URL(String(data.url), window.location.origin).href;
+    els.localVideo.setAttribute('playsinline', 'true');
+    els.localVideo.setAttribute('webkit-playsinline', 'true');
+    els.localVideo.playsInline = true;
+    els.localVideo.preload = 'auto';
+    els.localVideo.src = streamUrl;
+    els.localVideo.load();
+    await waitForMediaEvent(els.localVideo, 120000);
+
+    const vol = (state?.playback.volume ?? 80) / 100;
+    els.localVideo.volume = vol;
+
+    // 1) muted autoplay (usually allowed) → 2) unmute → 3) tap overlay if needed
+    let playing = false;
     try {
+      els.localVideo.muted = true;
       await els.localVideo.play();
+      playing = true;
+      els.localVideo.muted = false;
+      els.localVideo.volume = vol;
+      mediaUnlocked = true;
       showTapUnlock(false);
     } catch {
-      // Rare: only show tap overlay if the browser truly blocks autoplay.
-      showTapUnlock(true);
+      try {
+        els.localVideo.muted = false;
+        await els.localVideo.play();
+        playing = true;
+        mediaUnlocked = true;
+        showTapUnlock(false);
+      } catch {
+        mediaUnlocked = false;
+        showTapUnlock(true);
+        els.nowMeta.textContent = '影片已就緒 — 點一下繼續播放';
+      }
     }
-    hasReachedPlaying = true;
-    els.nowMeta.textContent = '本機串流自動播放中';
-    emitPlayback(true);
+
+    if (playing) {
+      hasReachedPlaying = true;
+      els.nowMeta.textContent = '本機串流播放中';
+      emitPlayback(true);
+    }
     return true;
   } catch (err) {
     console.warn('local video fallback failed', err);
-    els.nowMeta.textContent = `本機播放失敗：${String((err as Error)?.message || err)}（可在電腦控制台按 Open YouTube login）`;
+    els.nowMeta.textContent = `本機播放失敗：${String((err as Error)?.message || err)}。請在電腦按 Open YouTube login 後重試`;
     localFallbackInFlight = null;
+    setLocalVideoVisible(false);
     return false;
   }
 }
@@ -854,12 +923,19 @@ function boot() {
       emitPlayback(true);
     }
   });
-  els.tapUnlock?.addEventListener('click', () => unlockMedia());
-  // Also accept a tap anywhere on the stage the first time.
+  els.tapUnlock?.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    void forcePlayFromUserGesture();
+  });
+  // Tap the stage whenever the unlock overlay is visible (or autoplay was blocked).
   document.querySelector('#stage')?.addEventListener(
     'pointerdown',
     () => {
-      if (!mediaUnlocked) unlockMedia();
+      const overlayUp = els.tapUnlock && !els.tapUnlock.classList.contains('hidden');
+      if (overlayUp || (useLocalVideo && els.localVideo?.paused)) {
+        void forcePlayFromUserGesture();
+      }
     },
     { capture: true },
   );

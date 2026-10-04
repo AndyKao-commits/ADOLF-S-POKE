@@ -38,6 +38,13 @@ body.player-page {
   z-index: 1;
 }
 
+/* Avoid display:none — Safari/iPad often refuse to decode video that is display:none. */
+.local-video.is-off {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 #yt-host.hidden-host {
   visibility: hidden;
   pointer-events: none;
@@ -90,7 +97,7 @@ body.player-page {
 .tap-unlock {
   position: absolute;
   inset: 0;
-  z-index: 5;
+  z-index: 6;
   display: grid;
   place-content: center;
   gap: 0.55rem;

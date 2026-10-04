@@ -169,8 +169,9 @@ export async function ensureVideoFile(videoId) {
     videoCache,
     inflightVideo,
     videoId,
-    // Progressive muxed formats first so ffmpeg is not required.
-    'best[ext=mp4][height<=720]/best[ext=mp4]/best[height<=720]/best',
+    // Progressive H.264/AAC MP4 first — best compatibility for iPad/Android tablets.
+    // Avoids ffmpeg merge and exotic codecs tablets reject.
+    'best[ext=mp4][vcodec^=avc1][height<=720]/best[ext=mp4][vcodec*=avc1][height<=720]/best[ext=mp4][height<=720]/best[ext=mp4]/best',
     'video',
   );
 }

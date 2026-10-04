@@ -13,10 +13,17 @@
     <div class="player-shell">
       <section class="stage" id="stage">
         <div id="yt-host"></div>
-        <video id="local-video" class="local-video hidden" playsinline controls></video>
+        <video
+          id="local-video"
+          class="local-video is-off"
+          playsinline
+          webkit-playsinline
+          preload="auto"
+          controls
+        ></video>
         <button type="button" class="tap-unlock hidden" id="tap-unlock" aria-label="點一下繼續播放">
           <span>點一下繼續播放</span>
-          <small>僅在瀏覽器封鎖自動播放時才會出現</small>
+          <small>平板需要這一下才能出聲音</small>
         </button>
         <div class="idle-hero" id="idle-hero">
           <div class="anim-rise">
