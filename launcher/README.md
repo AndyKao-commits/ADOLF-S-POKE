@@ -21,7 +21,7 @@ git pull
 .\start-kaichang.bat
 ```
 
-視窗右上角應顯示 `launcher build 2026-10-04g`。
+視窗右上角應顯示 `launcher build 2026-10-04h`。
 
 控制台有 **Open YouTube login**：用 Chrome/Edge 登入 YouTube 即可（不必做在控制台裡內嵌登入）。下載影片時會讀瀏覽器 cookies。
 

@@ -41,7 +41,7 @@ if exist "%~dp0.party\launcher-crash.log" (
   echo   cd C:\Users\tr197\KTV
   echo   git pull
   echo   .\start-kaichang.bat
-  echo Confirm the window shows: launcher build 2026-10-04g
+  echo Confirm the window shows: launcher build 2026-10-04h
   pause
   exit /b 1
 )
@@ -59,7 +59,7 @@ if not exist "%~dp0.party\launcher-alive.flag" (
   echo   cd C:\Users\tr197\KTV
   echo   git pull
   echo   .\start-kaichang.bat
-  echo Confirm the window shows: launcher build 2026-10-04g
+  echo Confirm the window shows: launcher build 2026-10-04h
   pause
   exit /b 1
 )

@@ -16,7 +16,7 @@ $CrashLog = Join-Path $PartyDir 'launcher-crash.log'
 $AliveFlag = Join-Path $PartyDir 'launcher-alive.flag'
 $DefaultPort = 8787
 $NoLanMarker = '__NO_LAN__'
-$LauncherStamp = 'launcher build 2026-10-04g'
+$LauncherStamp = 'launcher build 2026-10-04h'
 
 function Ensure-PartyDir {
   if (-not (Test-Path -LiteralPath $PartyDir)) {
@@ -233,44 +233,62 @@ function Start-Server {
   if (Test-Path -LiteralPath $LogFile) { Remove-Item -LiteralPath $LogFile -Force -ErrorAction SilentlyContinue }
   if (Test-Path -LiteralPath $errLog) { Remove-Item -LiteralPath $errLog -Force -ErrorAction SilentlyContinue }
 
-  $psi = New-Object System.Diagnostics.ProcessStartInfo
-  $psi.FileName = $node
-  $psi.Arguments = 'server/index.js'
-  $psi.WorkingDirectory = $Root
-  $psi.UseShellExecute = $false
-  $psi.CreateNoWindow = $true
-  $psi.RedirectStandardOutput = $true
-  $psi.RedirectStandardError = $true
-  $psi.EnvironmentVariables['NODE_ENV'] = 'production'
-  $psi.EnvironmentVariables['PORT'] = "$port"
-
-  $proc = New-Object System.Diagnostics.Process
-  $proc.StartInfo = $psi
-  $outHandler = [System.Diagnostics.DataReceivedEventHandler]{
-    param($sender, $e)
-    if ($e.Data) { Add-Content -LiteralPath $LogFile -Value $e.Data -Encoding UTF8 }
+  # IMPORTANT: never attach Process OutputDataReceived handlers in PowerShell
+  # WinForms — those callbacks run on thread-pool threads and can kill the host
+  # right after the server starts writing logs ("UI flash close").
+  $startCmd = Join-Path $PartyDir 'start-server.cmd'
+  $pidOut = Join-Path $PartyDir 'server.pid.txt'
+  if (Test-Path -LiteralPath $pidOut) {
+    Remove-Item -LiteralPath $pidOut -Force -ErrorAction SilentlyContinue
   }
-  $errHandler = [System.Diagnostics.DataReceivedEventHandler]{
-    param($sender, $e)
-    if ($e.Data) { Add-Content -LiteralPath $errLog -Value $e.Data -Encoding UTF8 }
-  }
-  $proc.add_OutputDataReceived($outHandler)
-  $proc.add_ErrorDataReceived($errHandler)
-  $null = $proc.Start()
-  $proc.BeginOutputReadLine()
-  $proc.BeginErrorReadLine()
-  Set-Content -LiteralPath $PidFile -Value $proc.Id -Encoding UTF8
+  $startLines = @(
+    '@echo off',
+    "cd /d `"$Root`"",
+    "set NODE_ENV=production",
+    "set PORT=$port",
+    "start /b `"`" `"$node`" server/index.js > `"$LogFile`" 2> `"$errLog`"",
+    'exit /b 0'
+  )
+  Set-Content -LiteralPath $startCmd -Value $startLines -Encoding ASCII
 
+  # Launch via cmd so stdout/stderr go to files; no event handlers in this process.
+  $null = Start-Process -FilePath $env:ComSpec `
+    -ArgumentList @('/d', '/c', "`"$startCmd`"") `
+    -WorkingDirectory $Root `
+    -WindowStyle Hidden `
+    -Wait -PassThru
+
+  # Discover the node PID listening on the port (or matching command line).
+  $startedPid = $null
   $ok = $false
-  for ($i = 0; $i -lt 30; $i++) {
-    Start-Sleep -Milliseconds 500
-    if (Test-PortOpen $port) { $ok = $true; break }
-    if ($proc.HasExited) { break }
+  for ($i = 0; $i -lt 40; $i++) {
+    Start-Sleep -Milliseconds 250
+    if (Test-PortOpen $port) {
+      $ok = $true
+      try {
+        $hit = Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" -ErrorAction SilentlyContinue |
+          Where-Object { $_.CommandLine -and $_.CommandLine -like '*server/index.js*' } |
+          Select-Object -First 1
+        if ($hit) { $startedPid = [int]$hit.ProcessId }
+      } catch {}
+      break
+    }
+  }
+
+  if ($startedPid) {
+    Set-Content -LiteralPath $PidFile -Value $startedPid -Encoding UTF8
+  } elseif ($ok) {
+    Set-Content -LiteralPath $PidFile -Value '0' -Encoding UTF8
   }
 
   if (-not $ok) {
     Write-Status 'Start failed - see .party/server.log' 'Firebrick'
     $msg = "Start failed or timed out." + [Environment]::NewLine + "Check Node.js and log:" + [Environment]::NewLine + $LogFile
+    if (Test-Path -LiteralPath $errLog) {
+      $tail = ''
+      try { $tail = (Get-Content -LiteralPath $errLog -Tail 8 -ErrorAction SilentlyContinue) -join [Environment]::NewLine } catch {}
+      if ($tail) { $msg = $msg + [Environment]::NewLine + [Environment]::NewLine + $tail }
+    }
     [System.Windows.Forms.MessageBox]::Show($msg, 'KaiChang') | Out-Null
   }
   Clear-NativeExitCode
