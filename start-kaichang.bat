@@ -45,7 +45,7 @@ if not "%ERR%"=="0" (
   echo   cd C:\Users\tr197\KTV
   echo   git pull
   echo   .\start-kaichang.bat
-  echo Confirm the window shows: launcher build 2026-10-04d
+  echo Confirm the window shows: launcher build 2026-10-04e
   pause
   exit /b %ERR%
 )

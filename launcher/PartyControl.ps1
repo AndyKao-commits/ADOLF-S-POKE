@@ -4,6 +4,24 @@
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
+# Must run BEFORE any Controls are created on this thread.
+[System.Windows.Forms.Application]::SetUnhandledExceptionMode(
+  [System.Windows.Forms.UnhandledExceptionMode]::CatchException
+)
+[System.Windows.Forms.Application]::add_ThreadException({
+  param($sender, $e)
+  try {
+    $dir = Join-Path ((Resolve-Path (Join-Path $PSScriptRoot '..')).Path) '.party'
+    if (-not (Test-Path -LiteralPath $dir)) {
+      New-Item -ItemType Directory -Path $dir | Out-Null
+    }
+    $e.Exception | Out-String | Set-Content -LiteralPath (Join-Path $dir 'launcher-crash.log') -Encoding UTF8
+    [System.Windows.Forms.MessageBox]::Show(
+      ("Launcher error:`n" + $e.Exception.Message + "`n`nSee .party/launcher-crash.log"),
+      'KaiChang'
+    ) | Out-Null
+  } catch {}
+})
 
 $ErrorActionPreference = 'Continue'
 $Root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
@@ -446,7 +464,7 @@ $form.Controls.Add($lblTitle)
 
 # Visible build stamp so we can confirm the Windows copy was updated.
 $lblVer = New-Object System.Windows.Forms.Label
-$lblVer.Text = 'launcher build 2026-10-04d'
+$lblVer.Text = 'launcher build 2026-10-04e'
 $lblVer.Location = New-Object System.Drawing.Point(390, 20)
 $lblVer.Size = New-Object System.Drawing.Size(150, 22)
 $lblVer.ForeColor = [System.Drawing.Color]::Gray
@@ -571,22 +589,6 @@ $timer.Start()
 
 $form.Add_Shown({ Refresh-Ui })
 $form.Add_FormClosed({ $timer.Stop() })
-
-# Keep WinForms exceptions from tearing down the process with a native exit code.
-[System.Windows.Forms.Application]::SetUnhandledExceptionMode(
-  [System.Windows.Forms.UnhandledExceptionMode]::CatchException
-)
-[System.Windows.Forms.Application]::add_ThreadException({
-  param($sender, $e)
-  try {
-    Ensure-PartyDir
-    $e.Exception | Out-String | Set-Content -LiteralPath (Join-Path $PartyDir 'launcher-crash.log') -Encoding UTF8
-    [System.Windows.Forms.MessageBox]::Show(
-      ("Launcher error:`n" + $e.Exception.Message + "`n`nSee .party/launcher-crash.log"),
-      'KaiChang'
-    ) | Out-Null
-  } catch {}
-})
 
 try {
   Clear-NativeExitCode
