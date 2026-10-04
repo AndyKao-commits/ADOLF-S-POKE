@@ -340,7 +340,8 @@ if (isProd) {
   app.get(['/remote', '/remote.html'], (_req, res) => {
     res.sendFile(join(dist, 'remote.html'));
   });
-  app.get('*', (req, res, next) => {
+  // Express 5 / path-to-regexp needs a named splat (bare '*' throws).
+  app.get('/{*path}', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) return next();
     res.sendFile(join(dist, 'index.html'));
   });
