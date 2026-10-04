@@ -96,7 +96,11 @@ async function lrclibFetch(path) {
     headers: { 'User-Agent': UA },
   });
   if (res.status === 404) return null;
-  if (!res.ok) throw new Error(`LRCLIB ${res.status}`);
+  if (!res.ok) {
+    // Treat upstream blips as miss instead of failing the whole request hard.
+    if (res.status >= 500) return null;
+    throw new Error(`LRCLIB ${res.status}`);
+  }
   return res.json();
 }
 

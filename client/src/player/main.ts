@@ -32,6 +32,8 @@ let speedMs = 180;
 let lyricsLines: LyricLine[] = [];
 let tickTimer = 0;
 let lastLyricIndex = -1;
+let hasReachedPlaying = false;
+let errorSkipTimer = 0;
 
 function savedRoom(): string | null {
   return localStorage.getItem('homektv.playerRoom');
@@ -62,21 +64,46 @@ function pendingSongs(s: RoomState): QueueSong[] {
 
 function renderQueue(s: RoomState) {
   const songs = pendingSongs(s);
-  if (!songs.length) {
+  const recentPlayed = s.queue
+    .filter((q) => q.status === 'played')
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, 4);
+
+  if (!songs.length && !recentPlayed.length) {
     els.queueList.innerHTML = `<div class="empty-queue">還沒有歌 — 請用手機掃碼點歌</div>`;
     return;
   }
-  els.queueList.innerHTML = `<ul class="queue-list">${songs
-    .map(
-      (song, i) => `<li class="${song.status === 'playing' ? 'playing' : ''}">
+
+  const pendingHtml = songs.length
+    ? `<ul class="queue-list">${songs
+        .map(
+          (song, i) => `<li class="${song.status === 'playing' ? 'playing' : ''}">
         <img src="${song.thumbnail}" alt="" />
         <div>
           <div class="t">${i + 1}. ${escapeHtml(shortTitle(song.title, 40))}</div>
           <div class="s">${song.status === 'playing' ? '播放中 · ' : ''}${escapeHtml(song.requestedBy)}</div>
         </div>
       </li>`,
-    )
-    .join('')}</ul>`;
+        )
+        .join('')}</ul>`
+    : `<div class="empty-queue">待播已空</div>`;
+
+  const playedHtml = recentPlayed.length
+    ? `<div class="label" style="margin:0.75rem 0 0.35rem">剛才唱過</div>
+      <ul class="queue-list">${recentPlayed
+        .map(
+          (song) => `<li>
+        <img src="${song.thumbnail}" alt="" />
+        <div>
+          <div class="t">${escapeHtml(shortTitle(song.title, 40))}</div>
+          <div class="s">${escapeHtml(song.requestedBy)}</div>
+        </div>
+      </li>`,
+        )
+        .join('')}</ul>`
+    : '';
+
+  els.queueList.innerHTML = `${pendingHtml}${playedHtml}`;
 }
 
 function escapeHtml(s: string) {
@@ -95,6 +122,12 @@ function nextQueued(s: RoomState): QueueSong | null {
   );
 }
 
+function skipCurrent(reason: string) {
+  const cur = state && currentSong(state);
+  if (cur) socket.emit('queue:ended', { songId: cur.id, reason });
+  playNext();
+}
+
 async function ensurePlayer() {
   if (player) return player;
   player = await createPlayer('yt-host', {
@@ -102,6 +135,10 @@ async function ensurePlayer() {
       if (!state || !player) return;
       const playing = st === window.YT!.PlayerState.PLAYING;
       const ended = st === window.YT!.PlayerState.ENDED;
+      if (playing) {
+        hasReachedPlaying = true;
+        window.clearTimeout(errorSkipTimer);
+      }
       socket.emit('playback:update', {
         playing,
         position: safeTime(),
@@ -110,16 +147,18 @@ async function ensurePlayer() {
         muted: player.isMuted(),
         currentId: state.playback.currentId,
       });
-      if (ended) {
-        const cur = currentSong(state);
-        if (cur) socket.emit('queue:ended', { songId: cur.id, reason: 'ended' });
-        playNext();
-      }
+      if (ended) skipCurrent('ended');
     },
     onError: () => {
-      const cur = state && currentSong(state);
-      if (cur) socket.emit('queue:ended', { songId: cur.id, reason: 'error' });
-      playNext();
+      // Ignore early embed errors (common in restricted / headless environments)
+      // until the video has actually started, then skip after a short grace period.
+      window.clearTimeout(errorSkipTimer);
+      errorSkipTimer = window.setTimeout(() => {
+        if (!hasReachedPlaying) {
+          els.nowMeta.textContent = '此影片目前無法嵌入播放，已跳過';
+        }
+        skipCurrent('error');
+      }, hasReachedPlaying ? 800 : 4500);
     },
   });
   return player;
@@ -170,6 +209,8 @@ async function loadLyricsFor(song: QueueSong) {
 
 async function playSong(song: QueueSong) {
   els.idle.classList.add('hidden');
+  hasReachedPlaying = false;
+  window.clearTimeout(errorSkipTimer);
   const yt = await ensurePlayer();
   socket.emit('queue:playing', { songId: song.id });
   if (currentVideoId !== song.videoId) {
