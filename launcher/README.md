@@ -21,7 +21,7 @@ git pull
 .\start-kaichang.bat
 ```
 
-視窗右上角應顯示 `launcher build 2026-10-04c`。
+視窗右上角應顯示 `launcher build 2026-10-04d`。
 
 ## 開機啟動（選用）
 
