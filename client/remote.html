@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <meta name="theme-color" content="#d9e6ef" />
+    <title>開唱｜點歌遙控</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f8f7a'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-size='30' fill='white' font-family='sans-serif'%3EK%3C/text%3E%3C/svg%3E" />
+  </head>
+  <body class="remote-page">
+    <div class="remote-shell">
+      <header class="topbar">
+        <div class="brand">開唱</div>
+        <div class="room-chip" id="room-chip">未連線</div>
+      </header>
+
+      <section id="join-view" class="panel join-card anim-rise">
+        <h1>加入包廂</h1>
+        <p>掃電視上的 QR Code，或輸入 4 位包廂號碼。</p>
+        <input class="name-input" id="name-input" maxlength="20" placeholder="你的暱稱（選填）" />
+        <div class="pin-input">
+          <input id="room-input" inputmode="numeric" maxlength="4" placeholder="4 位包廂號" />
+          <button id="join-btn" class="accent">加入</button>
+        </div>
+        <button id="scan-btn" class="ghost">掃描 QR Code</button>
+      </section>
+
+      <section id="app-view" class="hidden">
+        <nav class="tabs">
+          <button type="button" data-tab="search" class="active">搜尋</button>
+          <button type="button" data-tab="queue">待播</button>
+          <button type="button" data-tab="played">已唱</button>
+          <button type="button" data-tab="controls">遙控</button>
+        </nav>
+
+        <div id="panel-search">
+          <div class="search-bar">
+            <input id="search-input" placeholder="歌名 / 歌手" />
+            <button id="search-btn" class="accent">搜尋</button>
+          </div>
+          <div class="keyword-row" id="keyword-row"></div>
+          <button id="karaoke-toggle" type="button">卡拉OK 關鍵字：開</button>
+          <div id="results" style="margin-top: 0.85rem">
+            <p class="muted">搜尋歌曲後可點歌或插播</p>
+          </div>
+        </div>
+
+        <div id="panel-queue" class="hidden">
+          <div id="queue"></div>
+        </div>
+
+        <div id="panel-played" class="hidden">
+          <div id="played"></div>
+        </div>
+
+        <div id="panel-controls" class="hidden">
+          <div class="controls">
+            <div class="control-grid">
+              <button type="button" data-action="toggle">播放/暫停</button>
+              <button type="button" data-action="skip" class="warn">切歌</button>
+              <button type="button" data-action="replay">重唱</button>
+              <button type="button" data-action="seek" data-value="-10">-10 秒</button>
+              <button type="button" data-action="seek" data-value="10">+10 秒</button>
+              <button type="button" data-action="mute">靜音</button>
+            </div>
+            <div class="volume-row panel" style="padding: 0.75rem">
+              <span>音量</span>
+              <input id="volume" type="range" min="0" max="100" value="80" />
+              <span></span>
+            </div>
+
+            <div class="panel lyrics-panel">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem">
+                <strong>同步歌詞</strong>
+                <button id="lyrics-enabled" type="button" class="ghost">字幕：開</button>
+              </div>
+              <div class="current" id="lyrics-current"></div>
+              <div class="next" id="lyrics-next"></div>
+              <div class="offset-row">
+                <button type="button" data-offset="-5000">-5s</button>
+                <button type="button" data-offset="-500">-0.5s</button>
+                <span id="offset-label" class="muted">0.0s</span>
+                <button type="button" data-offset="500">+0.5s</button>
+                <button type="button" data-offset="5000">+5s</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div id="dock-lyrics" class="dock-lyrics hidden">
+      <div class="line" id="dock-line">♪ 等待歌詞</div>
+    </div>
+    <div id="toast" class="toast"></div>
+
+    <script type="module" src="/src/remote/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#d9e6ef" />
+    <title>開唱｜播放器</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f8f7a'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-size='30' fill='white' font-family='sans-serif'%3EK%3C/text%3E%3C/svg%3E" />
+  </head>
+  <body class="player-page">
+    <div class="player-shell">
+      <section class="stage" id="stage">
+        <div id="yt-host"></div>
+        <div class="idle-hero" id="idle-hero">
+          <div class="anim-rise">
+            <div class="brand" style="opacity: 0.8; font-size: 1.1rem; margin-bottom: 0.4rem">開唱</div>
+            <h1>客廳，開唱</h1>
+            <p>用手機掃右側 QR Code，立刻變成點歌遙控器</p>
+          </div>
+        </div>
+        <div class="stage-overlay" id="lyrics-overlay">
+          <div class="lyrics-stack">
+            <div class="lyrics-current" id="lyrics-current"></div>
+            <div class="lyrics-next" id="lyrics-next"></div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="side">
+        <div class="panel room-card anim-pulse">
+          <div class="label">包廂號碼</div>
+          <div class="room-code" id="room-code">----</div>
+          <div class="room-row">
+            <div class="qr-wrap">
+              <img id="qr-img" alt="QR Code" />
+            </div>
+            <div class="room-meta">
+              <strong>手機掃碼點歌</strong>
+              <div id="join-hint">連線中…</div>
+              <div class="status-pill" id="remote-count">0 支手機已連線</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel now-playing">
+          <div class="label">現正播放</div>
+          <h2 id="now-title">等待點歌中</h2>
+          <div class="s" id="now-meta" style="color: var(--ink-soft); margin-top: 0.25rem; font-size: 0.85rem">
+            手機掃右側 QR Code 即可加入
+          </div>
+        </div>
+
+        <div class="panel queue-panel">
+          <h3>待播歌單</h3>
+          <div id="queue-list"><div class="empty-queue">還沒有歌 — 請用手機掃碼點歌</div></div>
+        </div>
+      </aside>
+    </div>
+    <script type="module" src="/src/player/main.ts"></script>
+  </body>
+</html>
