@@ -48,11 +48,20 @@ export interface LyricsState {
   } | null;
 }
 
+export type VocalMode = 'classic' | 'adaptive' | 'hq';
+
+export interface VocalRemoveState {
+  enabled: boolean;
+  mode: VocalMode;
+  strength: number;
+}
+
 export interface RoomState {
   code: string;
   queue: QueueSong[];
   playback: PlaybackState;
   lyrics: LyricsState;
+  vocalRemove: VocalRemoveState;
   remoteCount: number;
   hasPlayer: boolean;
 }

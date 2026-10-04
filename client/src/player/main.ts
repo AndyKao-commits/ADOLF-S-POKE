@@ -6,8 +6,9 @@ import {
   getActiveLyrics,
   renderHighlightedLine,
 } from '../shared/lyricsEngine';
-import type { LyricLine, QueueSong, RoomState } from '../shared/types';
+import type { LyricLine, QueueSong, RoomState, VocalMode } from '../shared/types';
 import { createPlayer, type YtPlayer } from './youtubePlayer';
+import { VocalRemover } from './vocalRemover';
 
 const socket = getSocket();
 const els = {
@@ -19,10 +20,11 @@ const els = {
   nowMeta: document.querySelector('#now-meta') as HTMLElement,
   queueList: document.querySelector('#queue-list') as HTMLElement,
   idle: document.querySelector('#idle-hero') as HTMLElement,
-  stage: document.querySelector('#stage') as HTMLElement,
   lyricsCurrent: document.querySelector('#lyrics-current') as HTMLElement,
   lyricsNext: document.querySelector('#lyrics-next') as HTMLElement,
   lyricsOverlay: document.querySelector('#lyrics-overlay') as HTMLElement,
+  vocalStatus: document.querySelector('#vocal-status') as HTMLElement,
+  audioEl: document.querySelector('#vocal-audio') as HTMLAudioElement,
 };
 
 let state: RoomState | null = null;
@@ -34,6 +36,9 @@ let tickTimer = 0;
 let lastLyricIndex = -1;
 let hasReachedPlaying = false;
 let errorSkipTimer = 0;
+let vocalActive = false;
+let vocalLoading = false;
+const vocalRemover = new VocalRemover();
 
 function savedRoom(): string | null {
   return localStorage.getItem('homektv.playerRoom');
@@ -43,6 +48,10 @@ function saveRoom(code: string) {
   localStorage.setItem('homektv.playerRoom', code);
 }
 
+function vocalWanted(s: RoomState | null = state) {
+  return Boolean(s?.vocalRemove?.enabled);
+}
+
 function renderRoomChrome(s: RoomState) {
   els.roomCode.textContent = s.code;
   const url = remoteJoinUrl(s.code);
@@ -50,6 +59,28 @@ function renderRoomChrome(s: RoomState) {
   els.qr.alt = `包廂 ${s.code} QR Code`;
   els.joinHint.textContent = url.replace(/^https?:\/\//, '');
   els.remoteCount.textContent = `${s.remoteCount} 支手機已連線`;
+  renderVocalStatus(s);
+}
+
+function renderVocalStatus(s: RoomState) {
+  if (!els.vocalStatus) return;
+  if (!s.vocalRemove?.enabled) {
+    els.vocalStatus.textContent = '人聲消除：關';
+    els.vocalStatus.classList.remove('on');
+    return;
+  }
+  const modeLabel =
+    s.vocalRemove.mode === 'classic'
+      ? '一般中置消除'
+      : s.vocalRemove.mode === 'hq'
+        ? '高品質'
+        : '自適應';
+  els.vocalStatus.textContent = vocalActive
+    ? `人聲消除：${modeLabel} · ${Math.round((s.vocalRemove.strength || 0) * 100)}%`
+    : vocalLoading
+      ? '人聲消除：準備音軌中…'
+      : `人聲消除：${modeLabel}（待套用）`;
+  els.vocalStatus.classList.add('on');
 }
 
 function pendingSongs(s: RoomState): QueueSong[] {
@@ -133,25 +164,18 @@ async function ensurePlayer() {
   player = await createPlayer('yt-host', {
     onStateChange: (st) => {
       if (!state || !player) return;
+      if (vocalActive) return; // clock driven by processed audio
       const playing = st === window.YT!.PlayerState.PLAYING;
       const ended = st === window.YT!.PlayerState.ENDED;
       if (playing) {
         hasReachedPlaying = true;
         window.clearTimeout(errorSkipTimer);
       }
-      socket.emit('playback:update', {
-        playing,
-        position: safeTime(),
-        duration: safeDuration(),
-        volume: player.getVolume(),
-        muted: player.isMuted(),
-        currentId: state.playback.currentId,
-      });
+      emitPlayback(playing);
       if (ended) skipCurrent('ended');
     },
     onError: () => {
-      // Ignore early embed errors (common in restricted / headless environments)
-      // until the video has actually started, then skip after a short grace period.
+      if (vocalActive) return;
       window.clearTimeout(errorSkipTimer);
       errorSkipTimer = window.setTimeout(() => {
         if (!hasReachedPlaying) {
@@ -164,7 +188,22 @@ async function ensurePlayer() {
   return player;
 }
 
+function emitPlayback(playing: boolean) {
+  if (!state) return;
+  socket.emit('playback:update', {
+    playing,
+    position: safeTime(),
+    duration: safeDuration(),
+    volume: vocalActive ? Math.round((state.playback.volume ?? 80)) : player?.getVolume?.() ?? 80,
+    muted: vocalActive ? false : Boolean(player?.isMuted?.()),
+    currentId: state.playback.currentId,
+  });
+}
+
 function safeTime() {
+  if (vocalActive && els.audioEl && !Number.isNaN(els.audioEl.currentTime)) {
+    return els.audioEl.currentTime;
+  }
   try {
     return player?.getCurrentTime() || 0;
   } catch {
@@ -173,6 +212,9 @@ function safeTime() {
 }
 
 function safeDuration() {
+  if (vocalActive && els.audioEl && Number.isFinite(els.audioEl.duration)) {
+    return els.audioEl.duration;
+  }
   try {
     return player?.getDuration() || 0;
   } catch {
@@ -207,10 +249,133 @@ async function loadLyricsFor(song: QueueSong) {
   }
 }
 
+async function stopVocalAudio() {
+  vocalActive = false;
+  vocalLoading = false;
+  try {
+    els.audioEl.pause();
+    els.audioEl.removeAttribute('src');
+    els.audioEl.load();
+  } catch {
+    /* ignore */
+  }
+  await vocalRemover.dispose();
+}
+
+async function enableVocalFor(videoId: string) {
+  if (!state) return false;
+  vocalLoading = true;
+  renderVocalStatus(state);
+  try {
+    const meta = await fetch(`/api/audio/${encodeURIComponent(videoId)}`);
+    const data = await meta.json();
+    if (!meta.ok || !data.ok) throw new Error(data.error || '音訊不可用');
+
+    await vocalRemover.dispose();
+    els.audioEl.crossOrigin = 'anonymous';
+    els.audioEl.src = data.url;
+    await new Promise<void>((resolve, reject) => {
+      const onReady = () => {
+        cleanup();
+        resolve();
+      };
+      const onErr = () => {
+        cleanup();
+        reject(new Error('音訊載入失敗'));
+      };
+      const cleanup = () => {
+        els.audioEl.removeEventListener('canplay', onReady);
+        els.audioEl.removeEventListener('error', onErr);
+      };
+      els.audioEl.addEventListener('canplay', onReady, { once: true });
+      els.audioEl.addEventListener('error', onErr, { once: true });
+      els.audioEl.load();
+    });
+
+    await vocalRemover.attach(els.audioEl);
+    vocalRemover.setMode((state.vocalRemove.mode || 'adaptive') as VocalMode);
+    vocalRemover.setStrength(state.vocalRemove.strength ?? 1);
+    vocalRemover.setEnabled(true);
+    vocalRemover.setMasterGain((state.playback.volume ?? 80) / 100);
+    await vocalRemover.resume();
+
+    // Video from YouTube (muted), audio from processed track
+    if (player) {
+      try {
+        player.mute();
+        player.setVolume(0);
+      } catch {
+        /* ignore */
+      }
+    }
+    els.audioEl.currentTime = 0;
+    await els.audioEl.play();
+    vocalActive = true;
+    vocalLoading = false;
+    hasReachedPlaying = true;
+    window.clearTimeout(errorSkipTimer);
+    renderVocalStatus(state);
+    return true;
+  } catch (err) {
+    console.warn('vocal remove fallback', err);
+    vocalLoading = false;
+    vocalActive = false;
+    await stopVocalAudio();
+    if (state) {
+      els.nowMeta.textContent = '人聲消除音軌取得失敗，改播原聲';
+      renderVocalStatus(state);
+    }
+    return false;
+  }
+}
+
+async function applyVocalModeForCurrent() {
+  if (!state || !currentVideoId) return;
+  if (!vocalWanted()) {
+    if (vocalActive) {
+      const t = safeTime();
+      await stopVocalAudio();
+      if (player) {
+        try {
+          player.unMute();
+          player.setVolume(state.playback.volume ?? 80);
+          player.seekTo(t, true);
+          player.playVideo();
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    renderVocalStatus(state);
+    return;
+  }
+
+  // Update live params if already active on same track
+  if (vocalActive) {
+    vocalRemover.setMode((state.vocalRemove.mode || 'adaptive') as VocalMode);
+    vocalRemover.setStrength(state.vocalRemove.strength ?? 1);
+    vocalRemover.setEnabled(true);
+    renderVocalStatus(state);
+    return;
+  }
+
+  const ok = await enableVocalFor(currentVideoId);
+  if (!ok && player) {
+    try {
+      player.unMute();
+      player.setVolume(state.playback.volume ?? 80);
+      player.playVideo();
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 async function playSong(song: QueueSong) {
   els.idle.classList.add('hidden');
   hasReachedPlaying = false;
   window.clearTimeout(errorSkipTimer);
+  await stopVocalAudio();
   const yt = await ensurePlayer();
   socket.emit('queue:playing', { songId: song.id });
   if (currentVideoId !== song.videoId) {
@@ -223,6 +388,7 @@ async function playSong(song: QueueSong) {
   els.nowTitle.textContent = song.title;
   els.nowMeta.textContent = `${song.channel || 'YouTube'} · ${song.requestedBy}`;
   await loadLyricsFor(song);
+  await applyVocalModeForCurrent();
 }
 
 function playNext() {
@@ -232,6 +398,7 @@ function playNext() {
     void playSong(next);
   } else {
     currentVideoId = null;
+    void stopVocalAudio();
     els.idle.classList.remove('hidden');
     els.nowTitle.textContent = '等待點歌中';
     els.nowMeta.textContent = '手機掃右側 QR Code 即可加入';
@@ -241,12 +408,19 @@ function playNext() {
 }
 
 function applyState(s: RoomState) {
+  const prevVocal = state?.vocalRemove;
   state = s;
   saveRoom(s.code);
   renderRoomChrome(s);
   renderQueue(s);
   lyricsLines = s.lyrics.lines || lyricsLines;
   els.lyricsOverlay.style.display = s.lyrics.enabled ? '' : 'none';
+
+  const vocalChanged =
+    !prevVocal ||
+    prevVocal.enabled !== s.vocalRemove.enabled ||
+    prevVocal.mode !== s.vocalRemove.mode ||
+    prevVocal.strength !== s.vocalRemove.strength;
 
   const playing = currentSong(s);
   if (playing) {
@@ -255,9 +429,9 @@ function applyState(s: RoomState) {
       els.nowTitle.textContent = playing.title;
       els.nowMeta.textContent = `${playing.channel || 'YouTube'} · ${playing.requestedBy}`;
       els.idle.classList.add('hidden');
+      if (vocalChanged) void applyVocalModeForCurrent();
     }
   } else if (!currentVideoId) {
-    // Auto-start first queued song when player is idle
     const next = nextQueued(s);
     if (next) void playSong(next);
     else {
@@ -265,24 +439,41 @@ function applyState(s: RoomState) {
       els.nowTitle.textContent = '等待點歌中';
       els.nowMeta.textContent = '手機掃右側 QR Code 即可加入';
     }
+  } else if (vocalChanged) {
+    void applyVocalModeForCurrent();
   }
 }
 
-function handleControl(cmd: {
-  action: string;
-  value?: number;
-}) {
-  if (!player) return;
+function handleControl(cmd: { action: string; value?: number }) {
+  const usingVocal = vocalActive;
+  if (!player && !usingVocal) return;
+
   switch (cmd.action) {
     case 'play':
-      player.playVideo();
+      if (usingVocal) {
+        void els.audioEl.play();
+        player?.playVideo();
+      } else player?.playVideo();
       break;
     case 'pause':
-      player.pauseVideo();
+      if (usingVocal) {
+        els.audioEl.pause();
+        player?.pauseVideo();
+      } else player?.pauseVideo();
       break;
     case 'toggle':
-      if (player.getPlayerState() === window.YT!.PlayerState.PLAYING) player.pauseVideo();
-      else player.playVideo();
+      if (usingVocal) {
+        if (els.audioEl.paused) {
+          void els.audioEl.play();
+          player?.playVideo();
+        } else {
+          els.audioEl.pause();
+          player?.pauseVideo();
+        }
+      } else if (player) {
+        if (player.getPlayerState() === window.YT!.PlayerState.PLAYING) player.pauseVideo();
+        else player.playVideo();
+      }
       break;
     case 'skip': {
       const cur = state && currentSong(state);
@@ -291,31 +482,49 @@ function handleControl(cmd: {
       break;
     }
     case 'replay':
-      player.seekTo(0, true);
-      player.playVideo();
+      if (usingVocal) {
+        els.audioEl.currentTime = 0;
+        void els.audioEl.play();
+        player?.seekTo(0, true);
+        player?.playVideo();
+      } else {
+        player?.seekTo(0, true);
+        player?.playVideo();
+      }
       break;
-    case 'seek':
-      player.seekTo(Math.max(0, safeTime() + (cmd.value || 0)), true);
+    case 'seek': {
+      const next = Math.max(0, safeTime() + (cmd.value || 0));
+      if (usingVocal) {
+        els.audioEl.currentTime = next;
+        player?.seekTo(next, true);
+      } else player?.seekTo(next, true);
       break;
-    case 'volume':
-      player.setVolume(Math.max(0, Math.min(100, cmd.value ?? 80)));
-      if (player.isMuted()) player.unMute();
+    }
+    case 'volume': {
+      const vol = Math.max(0, Math.min(100, cmd.value ?? 80));
+      if (state) state.playback.volume = vol;
+      if (usingVocal) vocalRemover.setMasterGain(vol / 100);
+      else {
+        player?.setVolume(vol);
+        if (player?.isMuted()) player.unMute();
+      }
       break;
+    }
     case 'mute':
-      if (player.isMuted()) player.unMute();
-      else player.mute();
+      if (usingVocal) {
+        const muted = els.audioEl.volume > 0;
+        vocalRemover.setMasterGain(muted ? 0 : (state?.playback.volume ?? 80) / 100);
+      } else if (player) {
+        if (player.isMuted()) player.unMute();
+        else player.mute();
+      }
       break;
     default:
       break;
   }
-  socket.emit('playback:update', {
-    playing: player.getPlayerState() === window.YT!.PlayerState.PLAYING,
-    position: safeTime(),
-    duration: safeDuration(),
-    volume: player.getVolume(),
-    muted: player.isMuted(),
-    currentId: state?.playback.currentId || null,
-  });
+  emitPlayback(
+    usingVocal ? !els.audioEl.paused : player?.getPlayerState() === window.YT!.PlayerState.PLAYING,
+  );
 }
 
 function tickLyrics() {
@@ -335,23 +544,29 @@ function startTicks() {
   window.clearInterval(tickTimer);
   tickTimer = window.setInterval(() => {
     tickLyrics();
-    if (player && state) {
-      const playing = player.getPlayerState() === window.YT!.PlayerState.PLAYING;
-      if (playing) {
-        socket.emit('playback:update', {
-          playing: true,
-          position: safeTime(),
-          duration: safeDuration(),
-          volume: player.getVolume(),
-          muted: player.isMuted(),
-          currentId: state.playback.currentId,
-        });
+    if (!state) return;
+    if (vocalActive) {
+      // Keep muted YouTube video roughly in sync for visuals
+      try {
+        const drift = Math.abs((player?.getCurrentTime?.() || 0) - els.audioEl.currentTime);
+        if (player && drift > 0.45) player.seekTo(els.audioEl.currentTime, true);
+      } catch {
+        /* ignore */
       }
+      if (!els.audioEl.paused) emitPlayback(true);
+      if (els.audioEl.ended) skipCurrent('ended');
+      return;
+    }
+    if (player) {
+      const playing = player.getPlayerState() === window.YT!.PlayerState.PLAYING;
+      if (playing) emitPlayback(true);
     }
   }, 200);
 }
 
 function boot() {
+  els.audioEl.addEventListener('ended', () => skipCurrent('ended'));
+
   const existing = savedRoom();
   const finish = (res: { ok: boolean; state?: RoomState; error?: string }) => {
     if (res.ok && res.state) applyState(res.state);

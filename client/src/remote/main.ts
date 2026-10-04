@@ -5,7 +5,7 @@ import {
   getActiveLyrics,
   renderHighlightedLine,
 } from '../shared/lyricsEngine';
-import type { QueueSong, RoomState, SearchResult } from '../shared/types';
+import type { QueueSong, RoomState, SearchResult, VocalMode } from '../shared/types';
 
 const socket = getSocket();
 const params = new URLSearchParams(location.search);
@@ -41,6 +41,9 @@ const els = {
   dockLine: document.querySelector('#dock-line') as HTMLElement,
   volume: document.querySelector('#volume') as HTMLInputElement,
   keywordRow: document.querySelector('#keyword-row') as HTMLElement,
+  vocalEnabled: document.querySelector('#vocal-enabled') as HTMLButtonElement,
+  vocalStrength: document.querySelector('#vocal-strength') as HTMLInputElement,
+  vocalStrengthLabel: document.querySelector('#vocal-strength-label') as HTMLElement,
 };
 
 let state: RoomState | null = null;
@@ -238,6 +241,19 @@ function control(action: string, value?: number) {
   socket.emit('player:control', { action, value });
 }
 
+function renderVocalControls(s: RoomState) {
+  const vr = s.vocalRemove || { enabled: false, mode: 'adaptive' as VocalMode, strength: 1 };
+  els.vocalEnabled.textContent = vr.enabled ? '開啟' : '關閉';
+  els.vocalEnabled.classList.toggle('accent', vr.enabled);
+  els.vocalStrength.value = String(Math.round((vr.strength ?? 1) * 100));
+  els.vocalStrengthLabel.textContent = `${els.vocalStrength.value}%`;
+  document.querySelectorAll<HTMLButtonElement>('[data-vocal-mode]').forEach((btn) => {
+    const mode = btn.dataset.vocalMode;
+    btn.classList.toggle('accent', mode === vr.mode);
+    btn.classList.toggle('ghost', mode !== vr.mode);
+  });
+}
+
 function applyState(s: RoomState) {
   state = s;
   els.roomChip.textContent = `包廂 ${s.code}`;
@@ -247,6 +263,7 @@ function applyState(s: RoomState) {
   els.lyricsEnabled.textContent = s.lyrics.enabled ? '字幕：開' : '字幕：關';
   els.volume.value = String(s.playback.volume ?? 80);
   lastPos = s.playback.position || lastPos;
+  renderVocalControls(s);
   paintLyrics();
 }
 
@@ -373,6 +390,28 @@ function boot() {
     btn.addEventListener('click', () => {
       socket.emit('lyrics:offset', { deltaMs: Number(btn.dataset.offset) });
     });
+  });
+
+  els.vocalEnabled.addEventListener('click', () => {
+    if (!state) return;
+    socket.emit('vocal:set', { enabled: !state.vocalRemove?.enabled });
+    toast(!state.vocalRemove?.enabled ? '人聲消除已開啟' : '人聲消除已關閉');
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-vocal-mode]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.vocalMode as VocalMode;
+      socket.emit('vocal:set', { mode });
+      toast(
+        mode === 'classic' ? '一般中置消除' : mode === 'hq' ? '高品質模式' : '自適應模式',
+      );
+    });
+  });
+
+  els.vocalStrength.addEventListener('input', () => {
+    const strength = Number(els.vocalStrength.value) / 100;
+    els.vocalStrengthLabel.textContent = `${els.vocalStrength.value}%`;
+    socket.emit('vocal:set', { strength });
   });
 
   onRoomState(applyState);

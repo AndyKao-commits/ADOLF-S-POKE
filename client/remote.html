@@ -84,6 +84,26 @@
                 <button type="button" data-offset="5000">+5s</button>
               </div>
             </div>
+
+            <div class="panel lyrics-panel" id="vocal-panel">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem">
+                <strong>人聲消除</strong>
+                <button id="vocal-enabled" type="button" class="ghost">關閉</button>
+              </div>
+              <p class="muted" style="margin: 0">
+                參考 KarOK：以 Mid/Side 壓制中央人聲。開啟後會改走可處理音軌（原聲 MV 較有效）。
+              </p>
+              <div class="offset-row" id="vocal-modes">
+                <button type="button" data-vocal-mode="classic">一般</button>
+                <button type="button" data-vocal-mode="adaptive" class="accent">自適應</button>
+                <button type="button" data-vocal-mode="hq">高品質</button>
+              </div>
+              <div class="volume-row" style="padding: 0">
+                <span>強度</span>
+                <input id="vocal-strength" type="range" min="0" max="100" value="100" />
+                <span id="vocal-strength-label">100%</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>

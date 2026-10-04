@@ -59,6 +59,11 @@ function createRoom(playerSocketId) {
       lines: [],
       source: null,
     },
+    vocalRemove: {
+      enabled: false,
+      mode: 'adaptive',
+      strength: 1,
+    },
     createdAt: Date.now(),
     lastActiveAt: Date.now(),
   };
@@ -86,6 +91,12 @@ function publicState(room) {
       trackKey: room.lyrics.trackKey,
       lines: room.lyrics.lines,
       source: room.lyrics.source,
+    },
+    vocalRemove: {
+      enabled: Boolean(room.vocalRemove?.enabled),
+      mode: room.vocalRemove?.mode || 'adaptive',
+      strength:
+        typeof room.vocalRemove?.strength === 'number' ? room.vocalRemove.strength : 1,
     },
     remoteCount: room.remotes.size,
     hasPlayer: Boolean(room.playerSocketId),

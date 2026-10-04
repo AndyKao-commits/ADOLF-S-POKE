@@ -17,8 +17,10 @@ import {
   destroyRoom,
   touch,
 } from './rooms.js';
+import { createReadStream } from 'node:fs';
 import { searchVideos, KARAOKE_SUFFIXES } from './youtube.js';
 import { fetchLyrics } from './lyrics.js';
+import { ensureAudioFile } from './audio.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8787);
@@ -79,6 +81,37 @@ app.get('/api/qr', async (req, res) => {
     res.setHeader('Cache-Control', 'no-store');
     res.send(png);
   } catch (err) {
+    res.status(500).json({ error: String(err?.message || err) });
+  }
+});
+
+app.get('/api/audio/:videoId', async (req, res) => {
+  try {
+    const entry = await ensureAudioFile(req.params.videoId);
+    res.json({
+      ok: true,
+      url: `/api/audio-stream/${encodeURIComponent(req.params.videoId)}`,
+      mime: entry.mime,
+    });
+  } catch (err) {
+    console.error('audio resolve failed', err);
+    res.status(500).json({
+      ok: false,
+      error: '無法取得音訊（人聲消除需要可下載的音軌）',
+      detail: String(err?.message || err),
+    });
+  }
+});
+
+app.get('/api/audio-stream/:videoId', async (req, res) => {
+  try {
+    const entry = await ensureAudioFile(req.params.videoId);
+    res.setHeader('Content-Type', entry.mime || 'audio/mp4');
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    createReadStream(entry.file).pipe(res);
+  } catch (err) {
+    console.error('audio stream failed', err);
     res.status(500).json({ error: String(err?.message || err) });
   }
 });
@@ -240,6 +273,29 @@ io.on('connection', (socket) => {
     touch(room);
     emitRoom(room);
     if (typeof ack === 'function') ack({ ok: true, offsetMs: room.lyrics.offsetMs });
+  });
+
+  socket.on('vocal:set', (payload = {}, ack) => {
+    const room = getRoom(socket.data.roomCode);
+    if (!room) return typeof ack === 'function' && ack({ ok: false });
+    room.vocalRemove = {
+      enabled:
+        typeof payload.enabled === 'boolean'
+          ? payload.enabled
+          : Boolean(room.vocalRemove?.enabled),
+      mode: ['classic', 'adaptive', 'hq'].includes(payload.mode)
+        ? payload.mode
+        : room.vocalRemove?.mode || 'adaptive',
+      strength:
+        typeof payload.strength === 'number'
+          ? Math.max(0, Math.min(1, payload.strength))
+          : typeof room.vocalRemove?.strength === 'number'
+            ? room.vocalRemove.strength
+            : 1,
+    };
+    touch(room);
+    emitRoom(room);
+    if (typeof ack === 'function') ack({ ok: true, vocalRemove: room.vocalRemove });
   });
 
   socket.on('disconnect', () => {

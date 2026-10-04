@@ -256,6 +256,15 @@ body.player-page {
   width: fit-content;
 }
 
+.status-pill.on {
+  background: rgba(224, 154, 43, 0.16);
+  color: #9a6210;
+}
+
+#vocal-audio {
+  display: none;
+}
+
 @media (max-width: 960px) {
   .player-shell {
     grid-template-columns: 1fr;
