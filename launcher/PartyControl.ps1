@@ -16,7 +16,7 @@ $CrashLog = Join-Path $PartyDir 'launcher-crash.log'
 $AliveFlag = Join-Path $PartyDir 'launcher-alive.flag'
 $DefaultPort = 8787
 $NoLanMarker = '__NO_LAN__'
-$LauncherStamp = 'launcher build 2026-10-04f'
+$LauncherStamp = 'launcher build 2026-10-04g'
 
 function Ensure-PartyDir {
   if (-not (Test-Path -LiteralPath $PartyDir)) {
@@ -63,17 +63,17 @@ function Test-PrivateIpv4([string]$ip) {
   return $false
 }
 
+$script:CachedLanIps = $null
+$script:LanCacheAt = Get-Date '2000-01-01'
+
 function Get-LanIps {
   # Pure .NET - avoid ipconfig/netstat exit-code leakage into powershell.exe
-  $ips = New-Object System.Collections.Generic.List[string]
   try {
-    $entry = [System.Net.Dns]::GetHostEntry([System.Net.Dns]::GetHostName())
-    foreach ($addr in $entry.AddressList) {
-      if ($addr.AddressFamily -ne [System.Net.Sockets.AddressFamily]::InterNetwork) { continue }
-      $ip = $addr.ToString()
-      if ((Test-PrivateIpv4 $ip) -and -not $ips.Contains($ip)) { [void]$ips.Add($ip) }
+    if ($script:CachedLanIps -and (((Get-Date) - $script:LanCacheAt).TotalSeconds -lt 45)) {
+      return $script:CachedLanIps
     }
   } catch {}
+  $ips = New-Object System.Collections.Generic.List[string]
   try {
     foreach ($ni in [System.Net.NetworkInformation.NetworkInterface]::GetAllNetworkInterfaces()) {
       if ($ni.OperationalStatus -ne 'Up') { continue }
@@ -85,9 +85,11 @@ function Get-LanIps {
       }
     }
   } catch {}
-  return @($ips | Sort-Object {
+  $script:CachedLanIps = @($ips | Sort-Object {
       if ($_ -like '192.168.*') { 0 } elseif ($_ -like '10.*') { 1 } else { 2 }
     }, { $_ })
+  $script:LanCacheAt = Get-Date
+  return $script:CachedLanIps
 }
 
 function Test-PortOpen([int]$port) {
@@ -118,10 +120,14 @@ function Get-ServerPid {
 }
 
 function Test-ServerRunning {
-  $port = Get-ConfiguredPort
-  if (Test-PortOpen $port) { return $true }
   $serverPid = Get-ServerPid
-  return ($null -ne $serverPid)
+  if ($null -ne $serverPid) { return $true }
+  try {
+    $port = Get-ConfiguredPort
+    return [bool](Test-PortOpen $port)
+  } catch {
+    return $false
+  }
 }
 
 function Get-NodeCmd {
@@ -399,6 +405,18 @@ function Open-Player {
   Start-Process (Get-PrimaryLanUrl)
 }
 
+function Open-YouTubeLogin {
+  Start-Process 'https://www.youtube.com/'
+  $msg = @"
+Open YouTube in Chrome or Edge and sign in.
+
+Then return here and press Start Party.
+Video download uses your browser login cookies
+when YouTube asks "confirm you are not a bot".
+"@
+  [System.Windows.Forms.MessageBox]::Show($msg, 'KaiChang') | Out-Null
+}
+
 function Get-StartupShortcutPath {
   $startup = [Environment]::GetFolderPath('Startup')
   return (Join-Path $startup 'KaiChang-Party-Control.lnk')
@@ -446,7 +464,7 @@ try {
   Write-Boot 'creating form'
   $form = New-Object System.Windows.Forms.Form
   $form.Text = 'KaiChang Party Control'
-  $form.Size = New-Object System.Drawing.Size(580, 500)
+  $form.Size = New-Object System.Drawing.Size(580, 540)
   $form.StartPosition = 'CenterScreen'
   $form.FormBorderStyle = 'FixedDialog'
   $form.MaximizeBox = $false
@@ -579,9 +597,22 @@ try {
   $btnUnstartup.Add_Click({ Remove-Startup })
   $form.Controls.Add($btnUnstartup)
 
+  $btnYt = New-Object System.Windows.Forms.Button
+  $btnYt.Text = 'Open YouTube login'
+  $btnYt.Location = New-Object System.Drawing.Point(400, 404)
+  $btnYt.Size = New-Object System.Drawing.Size(140, 30)
+  $btnYt.Add_Click({
+    try { Open-YouTubeLogin } catch {
+      [System.Windows.Forms.MessageBox]::Show("$_", 'KaiChang') | Out-Null
+    }
+  })
+  $form.Controls.Add($btnYt)
+
   $timer = New-Object System.Windows.Forms.Timer
-  $timer.Interval = 3000
-  $timer.Add_Tick({ Refresh-Ui })
+  $timer.Interval = 5000
+  $timer.Add_Tick({
+    try { Refresh-Ui } catch { Write-Boot ("timer: " + $_) } finally { Clear-NativeExitCode }
+  })
 
   $form.Add_Shown({
     try {
@@ -598,13 +629,14 @@ try {
     try { $timer.Stop() } catch {}
     Write-Boot 'closed'
     Clear-NativeExitCode
+    [Environment]::Exit(0)
   })
 
-  Write-Boot 'showdialog'
+  Write-Boot 'app-run'
   Set-Content -LiteralPath $AliveFlag -Value '1' -Encoding ASCII
   Clear-NativeExitCode
-  [void]$form.ShowDialog()
-  Write-Boot 'showdialog-returned'
+  [System.Windows.Forms.Application]::Run($form)
+  Write-Boot 'app-run-returned'
   Clear-NativeExitCode
   [Environment]::Exit(0)
 } catch {

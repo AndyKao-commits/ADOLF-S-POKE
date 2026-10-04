@@ -113,11 +113,15 @@ function prefetchLocalVideo(videoId: string) {
 
 async function playLocalFallback(videoId: string, reason: string) {
   if (!els.localVideo) return false;
-  if (localFallbackInFlight === videoId && useLocalVideo) return true;
+  if (localFallbackInFlight === videoId && useLocalVideo && els.localVideo.src) {
+    void els.localVideo.play().catch(() => showTapUnlock(true));
+    return true;
+  }
   localFallbackInFlight = videoId;
   window.clearTimeout(errorSkipTimer);
   window.clearTimeout(playWatchTimer);
-  els.nowMeta.textContent = `YouTube 無法嵌入（${reason}），改由電腦下載播放…`;
+  els.nowMeta.textContent =
+    reason === '本機自動播放' ? '電腦下載影片中，稍後自動播放…' : `改由電腦下載播放（${reason}）…`;
 
   try {
     try {
@@ -152,15 +156,21 @@ async function playLocalFallback(videoId: string, reason: string) {
     setLocalVideoVisible(true);
     els.localVideo.volume = (state?.playback.volume ?? 80) / 100;
     els.localVideo.muted = false;
-    await els.localVideo.play();
+    mediaUnlocked = true;
+    try {
+      await els.localVideo.play();
+      showTapUnlock(false);
+    } catch {
+      // Rare: only show tap overlay if the browser truly blocks autoplay.
+      showTapUnlock(true);
+    }
     hasReachedPlaying = true;
-    showTapUnlock(false);
-    els.nowMeta.textContent = '本機串流播放中（YouTube 嵌入被擋時的備援）';
+    els.nowMeta.textContent = '本機串流自動播放中';
     emitPlayback(true);
     return true;
   } catch (err) {
     console.warn('local video fallback failed', err);
-    els.nowMeta.textContent = `備援播放失敗：${String((err as Error)?.message || err)}`;
+    els.nowMeta.textContent = `本機播放失敗：${String((err as Error)?.message || err)}（可在電腦控制台按 Open YouTube login）`;
     localFallbackInFlight = null;
     return false;
   }
@@ -353,11 +363,12 @@ function emitPlayback(playing: boolean) {
 }
 
 function safeTime() {
-  if (vocalActive && els.audioEl && !Number.isNaN(els.audioEl.currentTime)) {
-    return els.audioEl.currentTime;
-  }
+  // When vocal graph is attached to local video, clock is still the video element.
   if (useLocalVideo && els.localVideo && !Number.isNaN(els.localVideo.currentTime)) {
     return els.localVideo.currentTime;
+  }
+  if (vocalActive && els.audioEl && !Number.isNaN(els.audioEl.currentTime)) {
+    return els.audioEl.currentTime;
   }
   try {
     return player?.getCurrentTime() || 0;
@@ -367,11 +378,11 @@ function safeTime() {
 }
 
 function safeDuration() {
-  if (vocalActive && els.audioEl && Number.isFinite(els.audioEl.duration)) {
-    return els.audioEl.duration;
-  }
   if (useLocalVideo && els.localVideo && Number.isFinite(els.localVideo.duration)) {
     return els.localVideo.duration;
+  }
+  if (vocalActive && els.audioEl && Number.isFinite(els.audioEl.duration)) {
+    return els.audioEl.duration;
   }
   try {
     return player?.getDuration() || 0;
@@ -425,6 +436,38 @@ async function enableVocalFor(videoId: string) {
   vocalLoading = true;
   renderVocalStatus(state);
   try {
+    // Best path: Mid/Side on the same-origin local <video> (no extra audio download).
+    if (useLocalVideo && els.localVideo?.src) {
+      const t = els.localVideo.currentTime || 0;
+      await vocalRemover.dispose();
+      await vocalRemover.attach(els.localVideo);
+      vocalRemover.setMode((state.vocalRemove.mode || 'adaptive') as VocalMode);
+      vocalRemover.setStrength(state.vocalRemove.strength ?? 1);
+      vocalRemover.setEnabled(true);
+      vocalRemover.setMasterGain((state.playback.volume ?? 80) / 100);
+      await vocalRemover.resume();
+      try {
+        els.localVideo.currentTime = t;
+      } catch {
+        /* ignore */
+      }
+      if (els.localVideo.paused) {
+        try {
+          await els.localVideo.play();
+        } catch {
+          showTapUnlock(true);
+        }
+      }
+      vocalActive = true;
+      vocalLoading = false;
+      hasReachedPlaying = true;
+      window.clearTimeout(errorSkipTimer);
+      renderVocalStatus(state);
+      els.nowMeta.textContent = '人聲消除已套用（本機串流）';
+      return true;
+    }
+
+    // Legacy iframe path: separate proxied audio track.
     const meta = await fetch(`/api/audio/${encodeURIComponent(videoId)}`);
     const data = await meta.json();
     if (!meta.ok || !data.ok) throw new Error(data.error || '音訊不可用');
@@ -457,10 +500,7 @@ async function enableVocalFor(videoId: string) {
     vocalRemover.setMasterGain((state.playback.volume ?? 80) / 100);
     await vocalRemover.resume();
 
-    // Keep picture (muted); audio from processed track
-    if (useLocalVideo && els.localVideo) {
-      els.localVideo.muted = true;
-    } else if (player) {
+    if (player) {
       try {
         player.mute();
         player.setVolume(0);
@@ -480,9 +520,9 @@ async function enableVocalFor(videoId: string) {
     console.warn('vocal remove fallback', err);
     vocalLoading = false;
     vocalActive = false;
-    await stopVocalAudio();
+    await vocalRemover.dispose();
     if (state) {
-      els.nowMeta.textContent = '人聲消除音軌取得失敗，改播原聲';
+      els.nowMeta.textContent = '人聲消除失敗，改播原聲（可先在電腦登入 YouTube）';
       renderVocalStatus(state);
     }
     return false;
@@ -495,7 +535,16 @@ async function applyVocalModeForCurrent() {
     if (vocalActive) {
       const t = safeTime();
       await stopVocalAudio();
-      if (player) {
+      if (useLocalVideo && els.localVideo) {
+        try {
+          els.localVideo.currentTime = t;
+        } catch {
+          /* ignore */
+        }
+        els.localVideo.muted = false;
+        els.localVideo.volume = (state.playback.volume ?? 80) / 100;
+        void els.localVideo.play().catch(() => showTapUnlock(true));
+      } else if (player) {
         try {
           player.unMute();
           player.setVolume(state.playback.volume ?? 80);
@@ -543,13 +592,10 @@ async function playSong(song: QueueSong) {
   window.clearTimeout(errorSkipTimer);
   window.clearTimeout(playWatchTimer);
   pendingPlay = song;
+  mediaUnlocked = true;
+  showTapUnlock(false);
   els.nowTitle.textContent = song.title;
   els.nowMeta.textContent = `${song.channel || 'YouTube'} · ${song.requestedBy}`;
-
-  // Tablets block autoplay+sound until the user taps once.
-  await waitForMediaUnlock();
-  if (pendingPlay && pendingPlay.id !== song.id) return;
-  pendingPlay = null;
 
   await stopVocalAudio();
   stopLocalVideo();
@@ -557,30 +603,23 @@ async function playSong(song: QueueSong) {
   prefetchLocalVideo(song.videoId);
   socket.emit('queue:playing', { songId: song.id });
 
-  // Many karaoke uploads block YouTube embeds. Prefer local stream when previous
-  // song already needed fallback, otherwise try embed then fall back.
-  const preferLocal = sessionStorage.getItem('homektv.preferLocalVideo') === '1';
-  if (preferLocal) {
-    const ok = await playLocalFallback(song.videoId, '慣用本機串流');
-    if (ok) {
-      await loadLyricsFor(song);
-      await applyVocalModeForCurrent();
-      return;
-    }
+  // Karaoke embeds are unreliable — always prefer PC-side download + autoplay.
+  const ok = await playLocalFallback(song.videoId, '本機自動播放');
+  if (ok) {
+    sessionStorage.setItem('homektv.preferLocalVideo', '1');
+    pendingPlay = null;
+    await loadLyricsFor(song);
+    await applyVocalModeForCurrent();
+    return;
   }
 
+  // Last resort: YouTube iframe (often blocked for karaoke).
   let yt: YtPlayer;
   try {
     yt = await ensurePlayer();
   } catch (err) {
-    const ok = await playLocalFallback(song.videoId, String((err as Error)?.message || err));
-    if (!ok) {
-      els.nowMeta.textContent = String((err as Error)?.message || err);
-      showTapUnlock(true);
-      return;
-    }
-    await loadLyricsFor(song);
-    await applyVocalModeForCurrent();
+    els.nowMeta.textContent = String((err as Error)?.message || err);
+    pendingPlay = null;
     return;
   }
   hardenYoutubeIframe(yt);
@@ -590,24 +629,11 @@ async function playSong(song: QueueSong) {
     yt.setVolume(state?.playback.volume ?? 80);
     yt.playVideo();
   } catch (err) {
-    const ok = await playLocalFallback(song.videoId, String((err as Error)?.message || err));
-    if (!ok) {
-      els.nowMeta.textContent = `播放失敗：${String((err as Error)?.message || err)}`;
-      showTapUnlock(true);
-      return;
-    }
+    els.nowMeta.textContent = `播放失敗：${String((err as Error)?.message || err)}`;
+    pendingPlay = null;
+    return;
   }
-
-  // If embed never reaches PLAYING, swap to local stream.
-  playWatchTimer = window.setTimeout(() => {
-    if (!hasReachedPlaying && !useLocalVideo && currentVideoId === song.videoId) {
-      void (async () => {
-        const ok = await playLocalFallback(song.videoId, '嵌入逾時');
-        if (ok) sessionStorage.setItem('homektv.preferLocalVideo', '1');
-      })();
-    }
-  }, 7000);
-
+  pendingPlay = null;
   await loadLyricsFor(song);
   await applyVocalModeForCurrent();
 }
@@ -668,40 +694,37 @@ function applyState(s: RoomState) {
 
 function handleControl(cmd: { action: string; value?: number }) {
   const usingVocal = vocalActive;
+  const vocalOnLocal = usingVocal && useLocalVideo;
   const usingLocal = useLocalVideo && !usingVocal;
   if (!player && !usingVocal && !useLocalVideo) return;
 
   switch (cmd.action) {
     case 'play':
-      if (usingVocal) {
+      if (vocalOnLocal || usingLocal) void els.localVideo.play().catch(() => undefined);
+      else if (usingVocal) {
         void els.audioEl.play();
-        if (useLocalVideo) void els.localVideo.play().catch(() => undefined);
-        else player?.playVideo();
-      } else if (usingLocal) void els.localVideo.play().catch(() => undefined);
-      else player?.playVideo();
+        player?.playVideo();
+      } else player?.playVideo();
       break;
     case 'pause':
-      if (usingVocal) {
+      if (vocalOnLocal || usingLocal) els.localVideo.pause();
+      else if (usingVocal) {
         els.audioEl.pause();
-        if (useLocalVideo) els.localVideo.pause();
-        else player?.pauseVideo();
-      } else if (usingLocal) els.localVideo.pause();
-      else player?.pauseVideo();
+        player?.pauseVideo();
+      } else player?.pauseVideo();
       break;
     case 'toggle':
-      if (usingVocal) {
-        if (els.audioEl.paused) {
-          void els.audioEl.play();
-          if (useLocalVideo) void els.localVideo.play().catch(() => undefined);
-          else player?.playVideo();
-        } else {
-          els.audioEl.pause();
-          if (useLocalVideo) els.localVideo.pause();
-          else player?.pauseVideo();
-        }
-      } else if (usingLocal) {
+      if (vocalOnLocal || usingLocal) {
         if (els.localVideo.paused) void els.localVideo.play().catch(() => undefined);
         else els.localVideo.pause();
+      } else if (usingVocal) {
+        if (els.audioEl.paused) {
+          void els.audioEl.play();
+          player?.playVideo();
+        } else {
+          els.audioEl.pause();
+          player?.pauseVideo();
+        }
       } else if (player) {
         if (player.getPlayerState() === window.YT!.PlayerState.PLAYING) player.pauseVideo();
         else player.playVideo();
@@ -714,19 +737,14 @@ function handleControl(cmd: { action: string; value?: number }) {
       break;
     }
     case 'replay':
-      if (usingVocal) {
-        els.audioEl.currentTime = 0;
-        void els.audioEl.play();
-        if (useLocalVideo) {
-          els.localVideo.currentTime = 0;
-          void els.localVideo.play().catch(() => undefined);
-        } else {
-          player?.seekTo(0, true);
-          player?.playVideo();
-        }
-      } else if (usingLocal) {
+      if (vocalOnLocal || usingLocal) {
         els.localVideo.currentTime = 0;
         void els.localVideo.play().catch(() => undefined);
+      } else if (usingVocal) {
+        els.audioEl.currentTime = 0;
+        void els.audioEl.play();
+        player?.seekTo(0, true);
+        player?.playVideo();
       } else {
         player?.seekTo(0, true);
         player?.playVideo();
@@ -734,12 +752,11 @@ function handleControl(cmd: { action: string; value?: number }) {
       break;
     case 'seek': {
       const next = Math.max(0, safeTime() + (cmd.value || 0));
-      if (usingVocal) {
+      if (vocalOnLocal || usingLocal) els.localVideo.currentTime = next;
+      else if (usingVocal) {
         els.audioEl.currentTime = next;
-        if (useLocalVideo) els.localVideo.currentTime = next;
-        else player?.seekTo(next, true);
-      } else if (usingLocal) els.localVideo.currentTime = next;
-      else player?.seekTo(next, true);
+        player?.seekTo(next, true);
+      } else player?.seekTo(next, true);
       break;
     }
     case 'volume': {
@@ -757,8 +774,10 @@ function handleControl(cmd: { action: string; value?: number }) {
     }
     case 'mute':
       if (usingVocal) {
-        const muted = els.audioEl.volume > 0;
-        vocalRemover.setMasterGain(muted ? 0 : (state?.playback.volume ?? 80) / 100);
+        const vol = (state?.playback.volume ?? 80) / 100;
+        const mutedNow = Boolean((state as { _vocalMuted?: boolean } | null)?._vocalMuted);
+        (state as { _vocalMuted?: boolean })._vocalMuted = !mutedNow;
+        vocalRemover.setMasterGain(!mutedNow ? 0 : vol);
       } else if (usingLocal) {
         els.localVideo.muted = !els.localVideo.muted;
       } else if (player) {
@@ -769,10 +788,10 @@ function handleControl(cmd: { action: string; value?: number }) {
     default:
       break;
   }
-  const playingNow = usingVocal
-    ? !els.audioEl.paused
-    : usingLocal
-      ? !els.localVideo.paused
+  const playingNow = vocalOnLocal || usingLocal
+    ? !els.localVideo.paused
+    : usingVocal
+      ? !els.audioEl.paused
       : player?.getPlayerState() === window.YT!.PlayerState.PLAYING;
   emitPlayback(Boolean(playingNow));
 }
@@ -796,15 +815,15 @@ function startTicks() {
     tickLyrics();
     if (!state) return;
     if (vocalActive) {
-      // Keep muted picture roughly in sync for visuals
+      if (useLocalVideo && els.localVideo) {
+        if (!els.localVideo.paused) emitPlayback(true);
+        if (els.localVideo.ended) skipCurrent('ended');
+        return;
+      }
+      // Legacy: separate audio + muted YouTube picture
       try {
-        if (useLocalVideo && els.localVideo) {
-          const drift = Math.abs(els.localVideo.currentTime - els.audioEl.currentTime);
-          if (drift > 0.45) els.localVideo.currentTime = els.audioEl.currentTime;
-        } else {
-          const drift = Math.abs((player?.getCurrentTime?.() || 0) - els.audioEl.currentTime);
-          if (player && drift > 0.45) player.seekTo(els.audioEl.currentTime, true);
-        }
+        const drift = Math.abs((player?.getCurrentTime?.() || 0) - els.audioEl.currentTime);
+        if (player && drift > 0.45) player.seekTo(els.audioEl.currentTime, true);
       } catch {
         /* ignore */
       }
