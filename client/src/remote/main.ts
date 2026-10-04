@@ -1,5 +1,6 @@
 import '../styles/remote.css';
 import { getSocket, onRoomState } from '../shared/socket';
+import { randomGuestName } from '../shared/format';
 import {
   estimateSpeedMsPerChar,
   getActiveLyrics,
@@ -301,6 +302,9 @@ function join(code: string) {
 function boot() {
   renderKeywords();
   if (presetRoom) els.roomInput.value = presetRoom;
+  if (!els.nameInput.value) {
+    els.nameInput.value = localStorage.getItem('homektv.name') || randomGuestName();
+  }
 
   els.joinBtn.addEventListener('click', () => join(els.roomInput.value.trim()));
   els.roomInput.addEventListener('keydown', (e) => {

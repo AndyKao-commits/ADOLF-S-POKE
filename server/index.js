@@ -21,6 +21,7 @@ import { createReadStream } from 'node:fs';
 import { searchVideos, KARAOKE_SUFFIXES } from './youtube.js';
 import { fetchLyrics } from './lyrics.js';
 import { ensureAudioFile } from './audio.js';
+import { listLanHosts } from './lan.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8787);
@@ -35,7 +36,18 @@ const io = new Server(httpServer, {
 app.use(express.json({ limit: '1mb' }));
 
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, service: 'home-ktv' });
+  res.json({ ok: true, service: 'home-ktv', party: true });
+});
+
+/** Help tablets that opened via localhost still show a phone-reachable QR. */
+app.get('/api/lan-hosts', (_req, res) => {
+  const hosts = listLanHosts();
+  res.json({
+    hosts,
+    port: PORT,
+    // Prefer production single-port; Vite dev uses the page's own port via the client.
+    suggestedOrigins: hosts.map((h) => `http://${h}:${PORT}`),
+  });
 });
 
 app.get('/api/karaoke-keywords', (_req, res) => {
@@ -334,6 +346,13 @@ if (isProd) {
   });
 }
 
-httpServer.listen(PORT, () => {
-  console.log(`HomeKTV server on http://localhost:${PORT}`);
+httpServer.listen(PORT, '0.0.0.0', () => {
+  const lans = listLanHosts();
+  console.log(`開唱（私人派對）http://localhost:${PORT}`);
+  for (const host of lans) {
+    console.log(`  同 Wi‑Fi 平板／手機：http://${host}:${PORT}`);
+  }
+  if (!lans.length) {
+    console.log('  （尚未偵測到區網 IP，請確認 Wi‑Fi）');
+  }
 });

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>開唱｜家庭 Web KTV</title>
+    <title>開唱｜私人派對 KTV</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f8f7a'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-size='30' fill='white' font-family='sans-serif'%3EK%3C/text%3E%3C/svg%3E" />
     <link rel="stylesheet" href="/src/styles/global.css" />
     <style>
@@ -36,16 +36,39 @@
       }
       .landing h1 {
         font-family: var(--font-display);
-        font-size: clamp(3rem, 10vw, 5.5rem);
+        font-size: clamp(2.8rem, 9vw, 4.8rem);
         margin: 0;
         letter-spacing: -0.05em;
         line-height: 0.95;
       }
       .landing .lead {
-        margin: 1rem 0 1.75rem;
-        font-size: 1.15rem;
+        margin: 1rem 0 1.5rem;
+        font-size: 1.1rem;
         color: var(--ink-soft);
-        max-width: 28ch;
+        max-width: 32ch;
+      }
+      .roles {
+        display: grid;
+        gap: 0.75rem;
+        margin-bottom: 1.25rem;
+      }
+      .role {
+        display: grid;
+        gap: 0.35rem;
+        padding: 1rem 1.1rem;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid var(--line);
+        backdrop-filter: blur(10px);
+      }
+      .role strong {
+        font-family: var(--font-display);
+        font-size: 1.15rem;
+      }
+      .role span {
+        color: var(--ink-soft);
+        font-size: 0.92rem;
+        line-height: 1.4;
       }
       .cta {
         display: flex;
@@ -71,23 +94,36 @@
         border: 1px solid var(--line);
       }
       .hint {
-        margin-top: 1.5rem;
+        margin-top: 1.35rem;
         color: var(--ink-soft);
-        font-size: 0.92rem;
+        font-size: 0.9rem;
+        line-height: 1.45;
       }
     </style>
   </head>
   <body>
     <main class="landing">
       <div class="landing-inner anim-rise">
-        <div class="brand" style="font-size: clamp(2.4rem, 8vw, 3.4rem); margin-bottom: 0.4rem">開唱</div>
-        <h1>客廳變包廂</h1>
-        <p class="lead">電視開播放器，手機掃碼點歌。同步歌詞、插播切歌，免 API Key。</p>
-        <div class="cta">
-          <a class="primary" href="/player.html">打開播放器</a>
-          <a class="secondary" href="/remote.html">手機點歌</a>
+        <div class="brand" style="font-size: clamp(2.2rem, 7vw, 3.1rem); margin-bottom: 0.35rem">開唱</div>
+        <h1>私人派對包廂</h1>
+        <p class="lead">平板投到電視當包廂機，手機掃碼點歌。不對外販售，給自己聚會用。</p>
+
+        <div class="roles">
+          <div class="role">
+            <strong>平板 → 播放器</strong>
+            <span>接 HDMI／無線投影到電視，打開播放頁，顯示 QR 與畫面。</span>
+          </div>
+          <div class="role">
+            <strong>手機 → 點歌</strong>
+            <span>掃 QR 或輸入包廂號：搜尋、點歌、插播、切歌。</span>
+          </div>
         </div>
-        <p class="hint">建議：電腦／電視開播放器，手機開點歌頁或直接掃 QR。</p>
+
+        <div class="cta">
+          <a class="primary" href="/player.html">我是平板（播放）</a>
+          <a class="secondary" href="/remote.html">我是手機（點歌）</a>
+        </div>
+        <p class="hint">派對前：平板與手機連同一 Wi‑Fi。建議用區網 IP 開播放器（終端機會印出網址），避免 QR 變成 localhost。</p>
       </div>
     </main>
   </body>

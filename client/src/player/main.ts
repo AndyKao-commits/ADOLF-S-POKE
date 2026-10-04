@@ -52,9 +52,9 @@ function vocalWanted(s: RoomState | null = state) {
   return Boolean(s?.vocalRemove?.enabled);
 }
 
-function renderRoomChrome(s: RoomState) {
+async function renderRoomChrome(s: RoomState) {
   els.roomCode.textContent = s.code;
-  const url = remoteJoinUrl(s.code);
+  const url = await remoteJoinUrl(s.code);
   els.qr.src = qrImageUrl(url);
   els.qr.alt = `包廂 ${s.code} QR Code`;
   els.joinHint.textContent = url.replace(/^https?:\/\//, '');
@@ -411,7 +411,7 @@ function applyState(s: RoomState) {
   const prevVocal = state?.vocalRemove;
   state = s;
   saveRoom(s.code);
-  renderRoomChrome(s);
+  void renderRoomChrome(s);
   renderQueue(s);
   lyricsLines = s.lyrics.lines || lyricsLines;
   els.lyricsOverlay.style.display = s.lyrics.enabled ? '' : 'none';

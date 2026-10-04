@@ -15,12 +15,12 @@
       </header>
 
       <section id="join-view" class="panel join-card anim-rise">
-        <h1>加入包廂</h1>
-        <p>掃電視上的 QR Code，或輸入 4 位包廂號碼。</p>
-        <input class="name-input" id="name-input" maxlength="20" placeholder="你的暱稱（選填）" />
+        <h1>手機點歌</h1>
+        <p>掃平板／電視上的 QR，或輸入 4 位包廂號。暱稱會顯示在點歌列表。</p>
+        <input class="name-input" id="name-input" maxlength="20" placeholder="暱稱（朋友比較認得出誰點的）" />
         <div class="pin-input">
-          <input id="room-input" inputmode="numeric" maxlength="4" placeholder="4 位包廂號" />
-          <button id="join-btn" class="accent">加入</button>
+          <input id="room-input" inputmode="numeric" maxlength="4" placeholder="4 位包廂號" autofocus />
+          <button id="join-btn" class="accent">加入派對</button>
         </div>
         <button id="scan-btn" class="ghost">掃描 QR Code</button>
       </section>
@@ -91,7 +91,7 @@
                 <button id="vocal-enabled" type="button" class="ghost">關閉</button>
               </div>
               <p class="muted" style="margin: 0">
-                參考 KarOK：以 Mid/Side 壓制中央人聲。開啟後會改走可處理音軌（原聲 MV 較有效）。
+                選用功能：壓制中央人聲。派對多數情況直接點「伴奏／KTV」搜尋即可；原聲 MV 才需要開這個。
               </p>
               <div class="offset-row" id="vocal-modes">
                 <button type="button" data-vocal-mode="classic">一般</button>

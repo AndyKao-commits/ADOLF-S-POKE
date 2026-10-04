@@ -1,61 +1,60 @@
-# 開唱 HomeKTV
+# 開唱（私人派對用）
 
-Web 型態家庭 KTV 點歌系統：電視／電腦當播放器，手機當點歌遙控器。
+給自己家聚會的 Web KTV：**平板投電視當播放器，手機點歌**。不是販售產品。
 
-## 功能
+## 派對怎麼開
 
-- **播放器** `/player.html`：YouTube 播放、待播歌單、4 位包廂號 + QR Code、卡拉 OK 字幕疊加
-- **遙控** `/remote.html`：掃碼或輸入包廂號、搜尋點歌／插播、歌單管理、播放控制
-- **搜尋**：伺服端 YouTube 搜尋（免 API Key），可自動加「伴奏 / KTV / karaoke / 左伴右唱」
-- **歌詞**：LRCLIB 同步歌詞（免 API Key），逐字／逐行 highlight，可調時間偏移
-- **人聲消除**：參考 [KarOK](https://karok.kaienet.work/) 的 Mid/Side 演算法（一般／自適應／高品質），在遙控頁開關與調強度
+1. 電腦或 NAS 跑服務（見下方）
+2. **平板**連同一 Wi‑Fi，用終端機印出的區網網址打開 `/player.html`，HDMI／投影到電視
+3. **手機**掃畫面上的 QR（或輸入 4 位包廂號）開始點歌
+4. 朋友都能掃同一個碼，一起排隊、插播
+
+> 若平板用 `localhost` 開播放器，系統會盡量把 QR 換成區網 IP；仍建議直接用 `http://192.168.x.x:8787/player.html`。
 
 ## 快速開始
 
 ```bash
 npm install
-npm run dev
-```
-
-- 前端（Vite）：http://localhost:5173/
-- 播放器：http://localhost:5173/player.html
-- 遙控：http://localhost:5173/remote.html
-- API / Socket：http://localhost:8787/
-
-正式環境：
-
-```bash
+pip install -U yt-dlp   # 選用：人聲消除才需要
 npm run build
 npm start
 ```
 
-預設監聽 `PORT=8787`。
+終端機會顯示例如：
 
-## 使用方式
-
-1. 在電視或電腦打開 `/player.html`，畫面會顯示包廂號碼與 QR Code
-2. 手機掃碼（或打開 `/remote.html` 輸入 4 碼）加入
-3. 搜尋歌曲 → 點歌／插播；播放器自動依序播放
-4. 遙控可切歌、重唱、±10 秒、音量／靜音，並同步歌詞
-
-## 人聲消除說明
-
-演算法參考 KarOK：在瀏覽器以 Web Audio 做 Mid/Side 中央人聲壓制（非 AI stem split）。
-
-1. 手機遙控 →「遙控」分頁 → 開啟「人聲消除」
-2. 播放器會下載可處理音軌，靜音 YouTube 原聲，改播處理後音訊（畫面仍用 MV）
-3. 需要本機可用的 `yt-dlp`（用於取得音訊）；若取得失敗會自動退回原聲
-
-```bash
-pip install -U yt-dlp
-# 或設定 YT_DLP_PATH=/path/to/yt-dlp
+```text
+開唱（私人派對）http://localhost:8787
+  同 Wi‑Fi 平板／手機：http://192.168.1.23:8787
 ```
 
-## 技術
+開發模式：
 
-- Vite + TypeScript（多頁：`player.html` / `remote.html`）
-- Express + Socket.IO（房間狀態、歌單、遙控指令）
-- YouTube 搜尋（innertube / HTML / Piped 備援，免 Data API Key）
-- [LRCLIB](https://lrclib.net/docs) 歌詞
-- YouTube IFrame Player API 播放 + Web Audio 人聲消除
-- `yt-dlp` 音訊擷取（人聲消除用）
+```bash
+npm run dev
+```
+
+- 播放器：`/player.html`（平板）
+- 點歌：`/remote.html`（手機）
+
+## 兩端分工
+
+| 裝置 | 頁面 | 負責 |
+|------|------|------|
+| 平板（投電視） | `/player.html` | 播放、字幕、包廂 QR、人聲消除處理 |
+| 手機 | `/remote.html` | 搜尋點歌、插播、歌單、輕量遙控 |
+
+## 功能摘要
+
+- 4 位包廂號 + QR，多人同時點歌
+- YouTube 搜尋（免 API Key），可加伴奏／KTV／karaoke／左伴右唱
+- 待播／插播／置頂／刪除／再唱
+- 遙控：播放暫停、切歌、重唱、±10 秒、音量
+- LRCLIB 同步歌詞 + 逐字／逐行 highlight
+- 選用：人聲消除（KarOK 風格 Mid/Side；原聲 MV 較有感）
+
+## 私人派對範圍（刻意不做）
+
+- 會員／付費／推薦碼
+- 麥克風混音、OBS、虛擬音效裝置
+- 智慧電視 App／遙控器焦點導航
+- 公開部署給陌生人用（請只開在自家區網）
