@@ -10,12 +10,14 @@ if errorlevel 1 (
   exit /b 1
 )
 
-powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-  "$path = Join-Path '%CD%' 'launcher\PartyControl.ps1';" ^
-  "if (-not (Test-Path -LiteralPath $path)) { Write-Host 'Missing launcher\PartyControl.ps1'; exit 1 };" ^
-  "$content = Get-Content -LiteralPath $path -Encoding UTF8 -Raw;" ^
-  "Invoke-Expression $content"
+if not exist "%~dp0launcher\PartyControl.ps1" (
+  echo Missing launcher\PartyControl.ps1
+  pause
+  exit /b 1
+)
 
+REM Script is UTF-8 with BOM so Windows PowerShell 5.1 can parse it.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0launcher\PartyControl.ps1"
 if errorlevel 1 (
   echo.
   echo Launcher exited with an error.
