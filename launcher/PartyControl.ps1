@@ -233,52 +233,41 @@ function Start-Server {
   if (Test-Path -LiteralPath $LogFile) { Remove-Item -LiteralPath $LogFile -Force -ErrorAction SilentlyContinue }
   if (Test-Path -LiteralPath $errLog) { Remove-Item -LiteralPath $errLog -Force -ErrorAction SilentlyContinue }
 
-  # IMPORTANT: never attach Process OutputDataReceived handlers in PowerShell
-  # WinForms — those callbacks run on thread-pool threads and can kill the host
-  # right after the server starts writing logs ("UI flash close").
-  $startCmd = Join-Path $PartyDir 'start-server.cmd'
-  $pidOut = Join-Path $PartyDir 'server.pid.txt'
-  if (Test-Path -LiteralPath $pidOut) {
-    Remove-Item -LiteralPath $pidOut -Force -ErrorAction SilentlyContinue
+  # IMPORTANT: do NOT use Process.OutputDataReceived/ErrorDataReceived script
+  # handlers in PowerShell WinForms — they run on thread-pool threads and can
+  # tear down the whole UI right after the server starts logging.
+  # Start-Process file redirects are safe (separate stdout/stderr files).
+  $prevNodeEnv = $env:NODE_ENV
+  $prevPort = $env:PORT
+  $proc = $null
+  try {
+    $env:NODE_ENV = 'production'
+    $env:PORT = "$port"
+    $proc = Start-Process -FilePath $node `
+      -ArgumentList @('server/index.js') `
+      -WorkingDirectory $Root `
+      -WindowStyle Hidden `
+      -RedirectStandardOutput $LogFile `
+      -RedirectStandardError $errLog `
+      -PassThru
+  } finally {
+    if ($null -ne $prevNodeEnv) { $env:NODE_ENV = $prevNodeEnv } else { Remove-Item Env:NODE_ENV -ErrorAction SilentlyContinue }
+    if ($null -ne $prevPort) { $env:PORT = $prevPort } else { Remove-Item Env:PORT -ErrorAction SilentlyContinue }
   }
-  $startLines = @(
-    '@echo off',
-    "cd /d `"$Root`"",
-    "set NODE_ENV=production",
-    "set PORT=$port",
-    "start /b `"`" `"$node`" server/index.js > `"$LogFile`" 2> `"$errLog`"",
-    'exit /b 0'
-  )
-  Set-Content -LiteralPath $startCmd -Value $startLines -Encoding ASCII
 
-  # Launch via cmd so stdout/stderr go to files; no event handlers in this process.
-  $null = Start-Process -FilePath $env:ComSpec `
-    -ArgumentList @('/d', '/c', "`"$startCmd`"") `
-    -WorkingDirectory $Root `
-    -WindowStyle Hidden `
-    -Wait -PassThru
+  if (-not $proc) {
+    throw 'Failed to start node process'
+  }
+  Set-Content -LiteralPath $PidFile -Value $proc.Id -Encoding UTF8
+  Write-Boot ("server-pid=" + $proc.Id)
 
-  # Discover the node PID listening on the port (or matching command line).
-  $startedPid = $null
   $ok = $false
   for ($i = 0; $i -lt 40; $i++) {
     Start-Sleep -Milliseconds 250
-    if (Test-PortOpen $port) {
-      $ok = $true
-      try {
-        $hit = Get-CimInstance Win32_Process -Filter "Name = 'node.exe'" -ErrorAction SilentlyContinue |
-          Where-Object { $_.CommandLine -and $_.CommandLine -like '*server/index.js*' } |
-          Select-Object -First 1
-        if ($hit) { $startedPid = [int]$hit.ProcessId }
-      } catch {}
-      break
-    }
-  }
-
-  if ($startedPid) {
-    Set-Content -LiteralPath $PidFile -Value $startedPid -Encoding UTF8
-  } elseif ($ok) {
-    Set-Content -LiteralPath $PidFile -Value '0' -Encoding UTF8
+    if (Test-PortOpen $port) { $ok = $true; break }
+    try {
+      if ($proc.HasExited) { break }
+    } catch {}
   }
 
   if (-not $ok) {
