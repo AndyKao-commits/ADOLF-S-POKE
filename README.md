@@ -2,36 +2,31 @@
 
 給自己家聚會的 Web KTV：**平板投電視當播放器，手機點歌**。不是販售產品。
 
-## 派對怎麼開
+## 派對怎麼開（推薦：Windows 控制台）
 
-1. 電腦或 NAS 跑服務（見下方）
-2. **平板**連同一 Wi‑Fi，用終端機印出的區網網址打開 `/player.html`，HDMI／投影到電視
-3. **手機**掃畫面上的 QR（或輸入 4 位包廂號）開始點歌
-4. 朋友都能掃同一個碼，一起排隊、插播
+電腦負責跑伺服器；**平板／手機不用裝 App，只開網頁。**
 
-> 若平板用 `localhost` 開播放器，系統會盡量把 QR 換成區網 IP；仍建議直接用 `http://192.168.x.x:8787/player.html`。
+1. 電腦安裝 [Node.js LTS](https://nodejs.org/)
+2. 雙擊專案裡的 **`啟動開唱.bat`**
+3. 第一次按「第一次準備（install + build）」
+4. 按「啟動派對」→ 複製平板網址
+5. **平板**打橫開啟該網址／`player.html`，投到電視
+6. **手機**掃畫面上的 QR 點歌
+7. 結束時在控制台按「關閉派對」
 
-## 快速開始
+詳見 [`launcher/README.md`](launcher/README.md)。
+
+> 也可選用「加入開機啟動」：開機後只開控制台，要唱再按啟動。
+
+## 指令列（進階／非 Windows）
 
 ```bash
 npm install
-pip install -U yt-dlp   # 選用：人聲消除才需要
 npm run build
 npm start
 ```
 
-終端機會顯示例如：
-
-```text
-開唱（私人派對）http://localhost:8787
-  同 Wi‑Fi 平板／手機：http://192.168.1.23:8787
-```
-
-開發模式：
-
-```bash
-npm run dev
-```
+終端機會顯示區網網址，例如 `http://192.168.1.23:8787`。
 
 - 播放器：`/player.html`（平板）
 - 點歌：`/remote.html`（手機）
