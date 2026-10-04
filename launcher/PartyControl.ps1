@@ -5,7 +5,7 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
-$ErrorActionPreference = 'Stop'
+$ErrorActionPreference = 'Continue'
 $Root = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $PartyDir = Join-Path $Root '.party'
 $PidFile = Join-Path $PartyDir 'server.pid'
@@ -114,49 +114,56 @@ function Get-NpmCmd {
 }
 
 function Write-Status($text, $color = 'Black') {
-  $lblStatus.Text = $text
-  $lblStatus.ForeColor = [System.Drawing.Color]::$color
-  $lblStatus.Refresh()
-  [System.Windows.Forms.Application]::DoEvents()
+  try {
+    $lblStatus.Text = $text
+    $lblStatus.ForeColor = [System.Drawing.Color]::FromName($color)
+    $lblStatus.Refresh()
+    [System.Windows.Forms.Application]::DoEvents()
+  } catch {}
 }
 
 function Refresh-Ui {
-  $port = Get-ConfiguredPort
-  $running = Test-ServerRunning
-  $ips = @(Get-LanIps)
-  if ($ips.Count -eq 0) { $ips = @($NoLanMarker) }
+  try {
+    $port = Get-ConfiguredPort
+    $running = Test-ServerRunning
+    $ips = @(Get-LanIps)
+    if ($ips.Count -eq 0) { $ips = @($NoLanMarker) }
 
-  $lines = New-Object System.Collections.Generic.List[string]
-  $lines.Add("Project: $Root")
-  $lines.Add("Port: $port")
-  if ($running) {
-    $lines.Add("Status: RUNNING (PID $(Get-ServerPid))")
-    $lines.Add("Local: http://localhost:$port")
-    foreach ($ip in $ips) {
-      if ($ip -eq $NoLanMarker) {
-        $lines.Add("LAN IP not detected yet")
-      } else {
-        $lines.Add("Tablet player: http://${ip}:$port/player.html")
-        $lines.Add("Phone remote:  http://${ip}:$port/remote.html")
+    $lines = New-Object System.Collections.Generic.List[string]
+    $lines.Add("Project: $Root")
+    $lines.Add("Port: $port")
+    if ($running) {
+      $lines.Add("Status: RUNNING (PID $(Get-ServerPid))")
+      $lines.Add("Local: http://localhost:$port")
+      foreach ($ip in $ips) {
+        if ($ip -eq $NoLanMarker) {
+          $lines.Add("LAN IP not detected yet")
+        } else {
+          $lines.Add("Tablet player: http://${ip}:$port/player.html")
+          $lines.Add("Phone remote:  http://${ip}:$port/remote.html")
+        }
+      }
+    } else {
+      $lines.Add("Status: STOPPED")
+      $lines.Add("Press Start, then open the URL on tablet/phone:")
+      foreach ($ip in $ips) {
+        if ($ip -eq $NoLanMarker) { $lines.Add("LAN IP not detected yet") }
+        else { $lines.Add("http://${ip}:$port") }
       }
     }
-  } else {
-    $lines.Add("Status: STOPPED")
-    $lines.Add("Press Start, then open the URL on tablet/phone:")
-    foreach ($ip in $ips) {
-      if ($ip -eq $NoLanMarker) { $lines.Add("LAN IP not detected yet") }
-      else { $lines.Add("http://${ip}:$port") }
-    }
+    $txtInfo.Text = ($lines -join [Environment]::NewLine)
+
+    $btnStart.Enabled = -not $running
+    $btnStop.Enabled = $running
+    $btnOpenPlayer.Enabled = $running
+    $lanCount = @($ips | Where-Object { $_ -ne $NoLanMarker }).Count
+    $btnCopy.Enabled = $running -and ($lanCount -gt 0)
+
+    if ($running) { Write-Status "Party RUNNING" 'DarkGreen' }
+    else { Write-Status "Ready - press Start" 'DimGray' }
+  } catch {
+    try { Write-Status "UI refresh warning: $_" 'Firebrick' } catch {}
   }
-  $txtInfo.Text = ($lines -join [Environment]::NewLine)
-
-  $btnStart.Enabled = -not $running
-  $btnStop.Enabled = $running
-  $btnOpenPlayer.Enabled = $running
-  $btnCopy.Enabled = $running -and (($ips | Where-Object { $_ -ne $NoLanMarker }).Count -gt 0)
-
-  if ($running) { Write-Status "Party RUNNING" 'DarkGreen' }
-  else { Write-Status "Ready - press Start" 'DimGray' }
 }
 
 function Start-Server {
@@ -263,13 +270,36 @@ function Stop-Server {
 function Invoke-Prepare {
   Write-Status 'Installing/building (first time may take minutes)...' 'DarkOrange'
   $npm = Get-NpmCmd
+  Ensure-PartyDir
+  $installLog = Join-Path $PartyDir 'npm-install.log'
+  $buildLog = Join-Path $PartyDir 'npm-build.log'
   $form.Enabled = $false
   try {
-    $install = Start-Process -FilePath $npm -ArgumentList 'install' -WorkingDirectory $Root -Wait -PassThru -NoNewWindow
-    if ($install.ExitCode -ne 0) { throw "npm install failed (exit $($install.ExitCode))" }
-    $build = Start-Process -FilePath $npm -ArgumentList @('run','build') -WorkingDirectory $Root -Wait -PassThru -NoNewWindow
-    if ($build.ExitCode -ne 0) { throw "npm run build failed (exit $($build.ExitCode))" }
-    [System.Windows.Forms.MessageBox]::Show('Build complete. You can press Start.', 'KaiChang') | Out-Null
+    # Hidden window: -NoNewWindow can kill this PowerShell host when npm exits.
+    if (Test-Path $installLog) { Remove-Item -LiteralPath $installLog -Force -ErrorAction SilentlyContinue }
+    if (Test-Path $buildLog) { Remove-Item -LiteralPath $buildLog -Force -ErrorAction SilentlyContinue }
+
+    $install = Start-Process -FilePath $npm `
+      -ArgumentList @('install','--no-fund','--no-audit') `
+      -WorkingDirectory $Root `
+      -Wait -PassThru -WindowStyle Hidden `
+      -RedirectStandardOutput $installLog `
+      -RedirectStandardError $installLog
+    if ($install.ExitCode -ne 0) {
+      throw "npm install failed (exit $($install.ExitCode)). See .party/npm-install.log"
+    }
+
+    $build = Start-Process -FilePath $npm `
+      -ArgumentList @('run','build') `
+      -WorkingDirectory $Root `
+      -Wait -PassThru -WindowStyle Hidden `
+      -RedirectStandardOutput $buildLog `
+      -RedirectStandardError $buildLog
+    if ($build.ExitCode -ne 0) {
+      throw "npm run build failed (exit $($build.ExitCode)). See .party/npm-build.log"
+    }
+
+    [System.Windows.Forms.MessageBox]::Show('Build complete. You can press Start Party.', 'KaiChang') | Out-Null
   } finally {
     $form.Enabled = $true
     Refresh-Ui
@@ -454,4 +484,13 @@ $timer.Start()
 $form.Add_Shown({ Refresh-Ui })
 $form.Add_FormClosed({ $timer.Stop() })
 
-[void]$form.ShowDialog()
+try {
+  [void]$form.ShowDialog()
+  exit 0
+} catch {
+  Ensure-PartyDir
+  $crashLog = Join-Path $PartyDir 'launcher-crash.log'
+  $_ | Out-String | Set-Content -LiteralPath $crashLog -Encoding UTF8
+  [System.Windows.Forms.MessageBox]::Show("Launcher error:`n$_`n`nSee .party/launcher-crash.log", 'KaiChang') | Out-Null
+  exit 1
+}
