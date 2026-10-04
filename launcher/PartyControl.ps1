@@ -1,4 +1,4 @@
-# 開唱｜私人派對控制台（Windows）
+﻿# 開唱｜私人派對控制台（Windows）
 # 只負責在電腦上啟動／關閉伺服器；平板與手機仍用瀏覽器。
 
 Add-Type -AssemblyName System.Windows.Forms
