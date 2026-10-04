@@ -191,6 +191,7 @@ function Start-Server {
     } else {
       return
     }
+    if (-not (Test-BuildOutputReady)) { return }
   }
 
   Write-Status 'Starting...' 'DarkOrange'
