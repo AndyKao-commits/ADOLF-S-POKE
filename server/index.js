@@ -35,6 +35,12 @@ const io = new Server(httpServer, {
 
 app.use(express.json({ limit: '1mb' }));
 
+// YouTube IFrame embeds need a Referer. Do not use same-origin / no-referrer.
+app.use((_req, res, next) => {
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  next();
+});
+
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'home-ktv', party: true });
 });

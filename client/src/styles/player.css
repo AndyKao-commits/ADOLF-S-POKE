@@ -73,6 +73,36 @@ body.player-page {
   min-height: 1.3em;
 }
 
+.tap-unlock {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-content: center;
+  gap: 0.55rem;
+  border: 0;
+  margin: 0;
+  cursor: pointer;
+  color: #f7fafc;
+  background: rgba(8, 12, 16, 0.72);
+  backdrop-filter: blur(2px);
+  font: inherit;
+  text-align: center;
+  padding: 2rem;
+}
+
+.tap-unlock span {
+  font-family: var(--font-display);
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.tap-unlock small {
+  color: rgba(247, 250, 252, 0.72);
+  font-size: 0.95rem;
+}
+
 .idle-hero {
   position: absolute;
   inset: 0;

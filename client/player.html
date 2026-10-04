@@ -4,6 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#d9e6ef" />
+    <!-- YouTube embeds require a Referer; never use no-referrer / same-origin here. -->
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <title>開唱｜播放器</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230f8f7a'/%3E%3Ctext x='32' y='42' text-anchor='middle' font-size='30' fill='white' font-family='sans-serif'%3EK%3C/text%3E%3C/svg%3E" />
   </head>
@@ -11,6 +13,10 @@
     <div class="player-shell">
       <section class="stage" id="stage">
         <div id="yt-host"></div>
+        <button type="button" class="tap-unlock hidden" id="tap-unlock" aria-label="點一下開始播放">
+          <span>點一下開始播放</span>
+          <small>瀏覽器需要先允許聲音與自動播放</small>
+        </button>
         <div class="idle-hero" id="idle-hero">
           <div class="anim-rise">
             <div class="brand" style="opacity: 0.8; font-size: 1.1rem; margin-bottom: 0.4rem">開唱 · 私人派對</div>

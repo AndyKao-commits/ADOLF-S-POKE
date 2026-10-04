@@ -7,7 +7,7 @@ import {
   renderHighlightedLine,
 } from '../shared/lyricsEngine';
 import type { LyricLine, QueueSong, RoomState, VocalMode } from '../shared/types';
-import { createPlayer, type YtPlayer } from './youtubePlayer';
+import { createPlayer, describeYtError, hardenYoutubeIframe, type YtPlayer } from './youtubePlayer';
 import { VocalRemover } from './vocalRemover';
 
 const socket = getSocket();
@@ -25,6 +25,7 @@ const els = {
   lyricsOverlay: document.querySelector('#lyrics-overlay') as HTMLElement,
   vocalStatus: document.querySelector('#vocal-status') as HTMLElement,
   audioEl: document.querySelector('#vocal-audio') as HTMLAudioElement,
+  tapUnlock: document.querySelector('#tap-unlock') as HTMLButtonElement,
 };
 
 let state: RoomState | null = null;
@@ -39,6 +40,42 @@ let errorSkipTimer = 0;
 let vocalActive = false;
 let vocalLoading = false;
 const vocalRemover = new VocalRemover();
+let mediaUnlocked = false;
+let unlockWaiters: Array<() => void> = [];
+let pendingPlay: QueueSong | null = null;
+
+function showTapUnlock(show: boolean) {
+  if (!els.tapUnlock) return;
+  els.tapUnlock.classList.toggle('hidden', !show);
+}
+
+function waitForMediaUnlock(): Promise<void> {
+  if (mediaUnlocked) return Promise.resolve();
+  showTapUnlock(true);
+  return new Promise((resolve) => {
+    unlockWaiters.push(resolve);
+  });
+}
+
+function unlockMedia() {
+  if (mediaUnlocked) return;
+  mediaUnlocked = true;
+  showTapUnlock(false);
+  const waiters = unlockWaiters.splice(0);
+  const resumedQueuedPlay = waiters.length > 0;
+  waiters.forEach((fn) => fn());
+  // Only nudge if nothing was waiting on unlock (already-loaded, autoplay-blocked).
+  if (!resumedQueuedPlay && player && currentVideoId) {
+    try {
+      hardenYoutubeIframe(player);
+      player.unMute();
+      player.setVolume(state?.playback.volume ?? 80);
+      player.playVideo();
+    } catch {
+      /* ignore */
+    }
+  }
+}
 
 function savedRoom(): string | null {
   return localStorage.getItem('homektv.playerRoom');
@@ -170,21 +207,29 @@ async function ensurePlayer() {
       if (playing) {
         hasReachedPlaying = true;
         window.clearTimeout(errorSkipTimer);
+        showTapUnlock(false);
+      }
+      // Autoplay blocked → paused/cued with no user gesture
+      if (!mediaUnlocked && (st === window.YT!.PlayerState.CUED || st === window.YT!.PlayerState.PAUSED)) {
+        showTapUnlock(true);
       }
       emitPlayback(playing);
       if (ended) skipCurrent('ended');
     },
-    onError: () => {
+    onError: (code) => {
       if (vocalActive) return;
       window.clearTimeout(errorSkipTimer);
+      const detail = describeYtError(code);
+      els.nowMeta.textContent = detail;
       errorSkipTimer = window.setTimeout(() => {
         if (!hasReachedPlaying) {
-          els.nowMeta.textContent = '此影片目前無法嵌入播放，已跳過';
+          els.nowMeta.textContent = `${detail}，已跳過`;
         }
         skipCurrent('error');
-      }, hasReachedPlaying ? 800 : 4500);
+      }, hasReachedPlaying ? 800 : code === 101 || code === 150 || code === 100 ? 2500 : 4500);
     },
   });
+  hardenYoutubeIframe(player);
   return player;
 }
 
@@ -375,18 +420,41 @@ async function playSong(song: QueueSong) {
   els.idle.classList.add('hidden');
   hasReachedPlaying = false;
   window.clearTimeout(errorSkipTimer);
-  await stopVocalAudio();
-  const yt = await ensurePlayer();
-  socket.emit('queue:playing', { songId: song.id });
-  if (currentVideoId !== song.videoId) {
-    yt.loadVideoById(song.videoId);
-    currentVideoId = song.videoId;
-  } else {
-    yt.seekTo(0, true);
-    yt.playVideo();
-  }
+  pendingPlay = song;
   els.nowTitle.textContent = song.title;
   els.nowMeta.textContent = `${song.channel || 'YouTube'} · ${song.requestedBy}`;
+
+  // Tablets block autoplay+sound until the user taps once.
+  await waitForMediaUnlock();
+  if (pendingPlay && pendingPlay.id !== song.id) return;
+  pendingPlay = null;
+
+  await stopVocalAudio();
+  let yt: YtPlayer;
+  try {
+    yt = await ensurePlayer();
+  } catch (err) {
+    els.nowMeta.textContent = String((err as Error)?.message || err);
+    showTapUnlock(true);
+    return;
+  }
+  hardenYoutubeIframe(yt);
+  socket.emit('queue:playing', { songId: song.id });
+  try {
+    if (currentVideoId !== song.videoId) {
+      yt.loadVideoById(song.videoId);
+      currentVideoId = song.videoId;
+    } else {
+      yt.seekTo(0, true);
+    }
+    yt.unMute();
+    yt.setVolume(state?.playback.volume ?? 80);
+    yt.playVideo();
+  } catch (err) {
+    els.nowMeta.textContent = `播放失敗：${String((err as Error)?.message || err)}`;
+    showTapUnlock(true);
+    return;
+  }
   await loadLyricsFor(song);
   await applyVocalModeForCurrent();
 }
@@ -566,6 +634,15 @@ function startTicks() {
 
 function boot() {
   els.audioEl.addEventListener('ended', () => skipCurrent('ended'));
+  els.tapUnlock?.addEventListener('click', () => unlockMedia());
+  // Also accept a tap anywhere on the stage the first time.
+  document.querySelector('#stage')?.addEventListener(
+    'pointerdown',
+    () => {
+      if (!mediaUnlocked) unlockMedia();
+    },
+    { capture: true },
+  );
 
   const existing = savedRoom();
   const finish = (res: { ok: boolean; state?: RoomState; error?: string }) => {
