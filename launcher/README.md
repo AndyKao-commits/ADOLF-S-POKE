@@ -23,6 +23,16 @@ git pull
 
 視窗右上角應顯示 `launcher build 2026-10-04f`。
 
+## 影片播不出來（YouTube 顯示無法播放）
+
+很多伴奏／KTV 影片**禁止嵌入**。播放器會自動改由電腦下載後串流給平板（第一次可能等 10–60 秒，並自動安裝 `yt-dlp`）。
+
+請確認：
+1. 電腦能連外網（YouTube）
+2. 控制台：**Stop Party → First-time setup → Start Party**
+3. 平板重新整理 `player.html`，點「點一下開始播放」
+4. 若仍失敗：在電腦用 **Chrome 打開 YouTube 並登入一次**，再開派對（程式會嘗試讀取瀏覽器 cookies 繞過驗證）
+
 ## 開機啟動（選用）
 
 控制台裡可按「加入開機啟動」：  

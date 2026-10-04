@@ -17,10 +17,11 @@ import {
   destroyRoom,
   touch,
 } from './rooms.js';
-import { createReadStream } from 'node:fs';
+import { createReadStream, statSync } from 'node:fs';
 import { searchVideos, KARAOKE_SUFFIXES } from './youtube.js';
 import { fetchLyrics } from './lyrics.js';
-import { ensureAudioFile } from './audio.js';
+import { ensureAudioFile, ensureVideoFile } from './audio.js';
+import { ytDlpStatus } from './ytdlp.js';
 import { listLanHosts } from './lan.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -103,6 +104,43 @@ app.get('/api/qr', async (req, res) => {
   }
 });
 
+function sendMediaFile(req, res, file, mime) {
+  const stat = statSync(file);
+  const size = stat.size;
+  res.setHeader('Content-Type', mime || 'application/octet-stream');
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Accept-Ranges', 'bytes');
+
+  const range = req.headers.range;
+  if (range) {
+    const m = /bytes=(\d+)-(\d*)/.exec(range);
+    if (!m) {
+      res.status(416).end();
+      return;
+    }
+    const start = Number(m[1]);
+    const end = m[2] ? Number(m[2]) : size - 1;
+    if (Number.isNaN(start) || Number.isNaN(end) || start > end || start >= size) {
+      res.status(416).setHeader('Content-Range', `bytes */${size}`).end();
+      return;
+    }
+    const safeEnd = Math.min(end, size - 1);
+    res.status(206);
+    res.setHeader('Content-Range', `bytes ${start}-${safeEnd}/${size}`);
+    res.setHeader('Content-Length', safeEnd - start + 1);
+    createReadStream(file, { start, end: safeEnd }).pipe(res);
+    return;
+  }
+
+  res.setHeader('Content-Length', size);
+  createReadStream(file).pipe(res);
+}
+
+app.get('/api/media-status', async (_req, res) => {
+  res.json(await ytDlpStatus());
+});
+
 app.get('/api/audio/:videoId', async (req, res) => {
   try {
     const entry = await ensureAudioFile(req.params.videoId);
@@ -124,12 +162,37 @@ app.get('/api/audio/:videoId', async (req, res) => {
 app.get('/api/audio-stream/:videoId', async (req, res) => {
   try {
     const entry = await ensureAudioFile(req.params.videoId);
-    res.setHeader('Content-Type', entry.mime || 'audio/mp4');
-    res.setHeader('Cache-Control', 'no-store');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    createReadStream(entry.file).pipe(res);
+    sendMediaFile(req, res, entry.file, entry.mime || 'audio/mp4');
   } catch (err) {
     console.error('audio stream failed', err);
+    res.status(500).json({ error: String(err?.message || err) });
+  }
+});
+
+app.get('/api/video/:videoId', async (req, res) => {
+  try {
+    const entry = await ensureVideoFile(req.params.videoId);
+    res.json({
+      ok: true,
+      url: `/api/video-stream/${encodeURIComponent(req.params.videoId)}`,
+      mime: entry.mime,
+    });
+  } catch (err) {
+    console.error('video resolve failed', err);
+    res.status(500).json({
+      ok: false,
+      error: '無法取得影片（電腦需能連 YouTube；首次會自動下載 yt-dlp）',
+      detail: String(err?.message || err),
+    });
+  }
+});
+
+app.get('/api/video-stream/:videoId', async (req, res) => {
+  try {
+    const entry = await ensureVideoFile(req.params.videoId);
+    sendMediaFile(req, res, entry.file, entry.mime || 'video/mp4');
+  } catch (err) {
+    console.error('video stream failed', err);
     res.status(500).json({ error: String(err?.message || err) });
   }
 });

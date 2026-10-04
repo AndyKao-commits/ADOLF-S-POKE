@@ -26,6 +26,8 @@ const els = {
   vocalStatus: document.querySelector('#vocal-status') as HTMLElement,
   audioEl: document.querySelector('#vocal-audio') as HTMLAudioElement,
   tapUnlock: document.querySelector('#tap-unlock') as HTMLButtonElement,
+  localVideo: document.querySelector('#local-video') as HTMLVideoElement,
+  ytHost: document.querySelector('#yt-host') as HTMLElement,
 };
 
 let state: RoomState | null = null;
@@ -43,6 +45,10 @@ const vocalRemover = new VocalRemover();
 let mediaUnlocked = false;
 let unlockWaiters: Array<() => void> = [];
 let pendingPlay: QueueSong | null = null;
+/** When true, HTML5 local stream is the active video source (YouTube embed blocked). */
+let useLocalVideo = false;
+let localFallbackInFlight: string | null = null;
+let playWatchTimer = 0;
 
 function showTapUnlock(show: boolean) {
   if (!els.tapUnlock) return;
@@ -65,15 +71,98 @@ function unlockMedia() {
   const resumedQueuedPlay = waiters.length > 0;
   waiters.forEach((fn) => fn());
   // Only nudge if nothing was waiting on unlock (already-loaded, autoplay-blocked).
-  if (!resumedQueuedPlay && player && currentVideoId) {
+  if (!resumedQueuedPlay && currentVideoId) {
+    if (useLocalVideo && els.localVideo) {
+      void els.localVideo.play().catch(() => undefined);
+    } else if (player) {
+      try {
+        hardenYoutubeIframe(player);
+        player.unMute();
+        player.setVolume(state?.playback.volume ?? 80);
+        player.playVideo();
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+}
+
+function setLocalVideoVisible(on: boolean) {
+  useLocalVideo = on;
+  els.localVideo?.classList.toggle('hidden', !on);
+  els.ytHost?.classList.toggle('hidden-host', on);
+}
+
+function stopLocalVideo() {
+  window.clearTimeout(playWatchTimer);
+  localFallbackInFlight = null;
+  if (!els.localVideo) return;
+  try {
+    els.localVideo.pause();
+    els.localVideo.removeAttribute('src');
+    els.localVideo.load();
+  } catch {
+    /* ignore */
+  }
+  setLocalVideoVisible(false);
+}
+
+function prefetchLocalVideo(videoId: string) {
+  void fetch(`/api/video/${encodeURIComponent(videoId)}`).catch(() => undefined);
+}
+
+async function playLocalFallback(videoId: string, reason: string) {
+  if (!els.localVideo) return false;
+  if (localFallbackInFlight === videoId && useLocalVideo) return true;
+  localFallbackInFlight = videoId;
+  window.clearTimeout(errorSkipTimer);
+  window.clearTimeout(playWatchTimer);
+  els.nowMeta.textContent = `YouTube 無法嵌入（${reason}），改由電腦下載播放…`;
+
+  try {
     try {
-      hardenYoutubeIframe(player);
-      player.unMute();
-      player.setVolume(state?.playback.volume ?? 80);
-      player.playVideo();
+      player?.stopVideo();
     } catch {
       /* ignore */
     }
+
+    const meta = await fetch(`/api/video/${encodeURIComponent(videoId)}`);
+    const data = await meta.json();
+    if (!meta.ok || !data.ok) throw new Error(data.error || data.detail || '本機影片不可用');
+
+    await new Promise<void>((resolve, reject) => {
+      const onReady = () => {
+        cleanup();
+        resolve();
+      };
+      const onErr = () => {
+        cleanup();
+        reject(new Error('本機影片載入失敗'));
+      };
+      const cleanup = () => {
+        els.localVideo.removeEventListener('canplay', onReady);
+        els.localVideo.removeEventListener('error', onErr);
+      };
+      els.localVideo.addEventListener('canplay', onReady, { once: true });
+      els.localVideo.addEventListener('error', onErr, { once: true });
+      els.localVideo.src = data.url;
+      els.localVideo.load();
+    });
+
+    setLocalVideoVisible(true);
+    els.localVideo.volume = (state?.playback.volume ?? 80) / 100;
+    els.localVideo.muted = false;
+    await els.localVideo.play();
+    hasReachedPlaying = true;
+    showTapUnlock(false);
+    els.nowMeta.textContent = '本機串流播放中（YouTube 嵌入被擋時的備援）';
+    emitPlayback(true);
+    return true;
+  } catch (err) {
+    console.warn('local video fallback failed', err);
+    els.nowMeta.textContent = `備援播放失敗：${String((err as Error)?.message || err)}`;
+    localFallbackInFlight = null;
+    return false;
   }
 }
 
@@ -200,13 +289,14 @@ async function ensurePlayer() {
   if (player) return player;
   player = await createPlayer('yt-host', {
     onStateChange: (st) => {
-      if (!state || !player) return;
+      if (!state || !player || useLocalVideo) return;
       if (vocalActive) return; // clock driven by processed audio
       const playing = st === window.YT!.PlayerState.PLAYING;
       const ended = st === window.YT!.PlayerState.ENDED;
       if (playing) {
         hasReachedPlaying = true;
         window.clearTimeout(errorSkipTimer);
+        window.clearTimeout(playWatchTimer);
         showTapUnlock(false);
       }
       // Autoplay blocked → paused/cued with no user gesture
@@ -217,16 +307,23 @@ async function ensurePlayer() {
       if (ended) skipCurrent('ended');
     },
     onError: (code) => {
-      if (vocalActive) return;
+      if (vocalActive || useLocalVideo) return;
       window.clearTimeout(errorSkipTimer);
       const detail = describeYtError(code);
       els.nowMeta.textContent = detail;
+      const vid = currentVideoId;
+      if (!vid) return;
+      // Karaoke tracks often block embedding (101/150). Fall back instead of skipping.
       errorSkipTimer = window.setTimeout(() => {
-        if (!hasReachedPlaying) {
-          els.nowMeta.textContent = `${detail}，已跳過`;
-        }
-        skipCurrent('error');
-      }, hasReachedPlaying ? 800 : code === 101 || code === 150 || code === 100 ? 2500 : 4500);
+        void (async () => {
+          const ok = await playLocalFallback(vid, detail);
+          if (ok) sessionStorage.setItem('homektv.preferLocalVideo', '1');
+          else if (!hasReachedPlaying) {
+            els.nowMeta.textContent = `${detail}，已跳過`;
+            skipCurrent('error');
+          }
+        })();
+      }, 400);
     },
   });
   hardenYoutubeIframe(player);
@@ -235,12 +332,22 @@ async function ensurePlayer() {
 
 function emitPlayback(playing: boolean) {
   if (!state) return;
+  const volume = vocalActive
+    ? Math.round(state.playback.volume ?? 80)
+    : useLocalVideo
+      ? Math.round((els.localVideo?.volume ?? 0.8) * 100)
+      : player?.getVolume?.() ?? 80;
+  const muted = vocalActive
+    ? false
+    : useLocalVideo
+      ? Boolean(els.localVideo?.muted)
+      : Boolean(player?.isMuted?.());
   socket.emit('playback:update', {
     playing,
     position: safeTime(),
     duration: safeDuration(),
-    volume: vocalActive ? Math.round((state.playback.volume ?? 80)) : player?.getVolume?.() ?? 80,
-    muted: vocalActive ? false : Boolean(player?.isMuted?.()),
+    volume,
+    muted,
     currentId: state.playback.currentId,
   });
 }
@@ -248,6 +355,9 @@ function emitPlayback(playing: boolean) {
 function safeTime() {
   if (vocalActive && els.audioEl && !Number.isNaN(els.audioEl.currentTime)) {
     return els.audioEl.currentTime;
+  }
+  if (useLocalVideo && els.localVideo && !Number.isNaN(els.localVideo.currentTime)) {
+    return els.localVideo.currentTime;
   }
   try {
     return player?.getCurrentTime() || 0;
@@ -259,6 +369,9 @@ function safeTime() {
 function safeDuration() {
   if (vocalActive && els.audioEl && Number.isFinite(els.audioEl.duration)) {
     return els.audioEl.duration;
+  }
+  if (useLocalVideo && els.localVideo && Number.isFinite(els.localVideo.duration)) {
+    return els.localVideo.duration;
   }
   try {
     return player?.getDuration() || 0;
@@ -344,8 +457,10 @@ async function enableVocalFor(videoId: string) {
     vocalRemover.setMasterGain((state.playback.volume ?? 80) / 100);
     await vocalRemover.resume();
 
-    // Video from YouTube (muted), audio from processed track
-    if (player) {
+    // Keep picture (muted); audio from processed track
+    if (useLocalVideo && els.localVideo) {
+      els.localVideo.muted = true;
+    } else if (player) {
       try {
         player.mute();
         player.setVolume(0);
@@ -405,13 +520,19 @@ async function applyVocalModeForCurrent() {
   }
 
   const ok = await enableVocalFor(currentVideoId);
-  if (!ok && player) {
-    try {
-      player.unMute();
-      player.setVolume(state.playback.volume ?? 80);
-      player.playVideo();
-    } catch {
-      /* ignore */
+  if (!ok) {
+    if (useLocalVideo && els.localVideo) {
+      els.localVideo.muted = false;
+      els.localVideo.volume = (state.playback.volume ?? 80) / 100;
+      void els.localVideo.play().catch(() => undefined);
+    } else if (player) {
+      try {
+        player.unMute();
+        player.setVolume(state.playback.volume ?? 80);
+        player.playVideo();
+      } catch {
+        /* ignore */
+      }
     }
   }
 }
@@ -420,6 +541,7 @@ async function playSong(song: QueueSong) {
   els.idle.classList.add('hidden');
   hasReachedPlaying = false;
   window.clearTimeout(errorSkipTimer);
+  window.clearTimeout(playWatchTimer);
   pendingPlay = song;
   els.nowTitle.textContent = song.title;
   els.nowMeta.textContent = `${song.channel || 'YouTube'} · ${song.requestedBy}`;
@@ -430,31 +552,62 @@ async function playSong(song: QueueSong) {
   pendingPlay = null;
 
   await stopVocalAudio();
+  stopLocalVideo();
+  currentVideoId = song.videoId;
+  prefetchLocalVideo(song.videoId);
+  socket.emit('queue:playing', { songId: song.id });
+
+  // Many karaoke uploads block YouTube embeds. Prefer local stream when previous
+  // song already needed fallback, otherwise try embed then fall back.
+  const preferLocal = sessionStorage.getItem('homektv.preferLocalVideo') === '1';
+  if (preferLocal) {
+    const ok = await playLocalFallback(song.videoId, '慣用本機串流');
+    if (ok) {
+      await loadLyricsFor(song);
+      await applyVocalModeForCurrent();
+      return;
+    }
+  }
+
   let yt: YtPlayer;
   try {
     yt = await ensurePlayer();
   } catch (err) {
-    els.nowMeta.textContent = String((err as Error)?.message || err);
-    showTapUnlock(true);
+    const ok = await playLocalFallback(song.videoId, String((err as Error)?.message || err));
+    if (!ok) {
+      els.nowMeta.textContent = String((err as Error)?.message || err);
+      showTapUnlock(true);
+      return;
+    }
+    await loadLyricsFor(song);
+    await applyVocalModeForCurrent();
     return;
   }
   hardenYoutubeIframe(yt);
-  socket.emit('queue:playing', { songId: song.id });
   try {
-    if (currentVideoId !== song.videoId) {
-      yt.loadVideoById(song.videoId);
-      currentVideoId = song.videoId;
-    } else {
-      yt.seekTo(0, true);
-    }
+    yt.loadVideoById(song.videoId);
     yt.unMute();
     yt.setVolume(state?.playback.volume ?? 80);
     yt.playVideo();
   } catch (err) {
-    els.nowMeta.textContent = `播放失敗：${String((err as Error)?.message || err)}`;
-    showTapUnlock(true);
-    return;
+    const ok = await playLocalFallback(song.videoId, String((err as Error)?.message || err));
+    if (!ok) {
+      els.nowMeta.textContent = `播放失敗：${String((err as Error)?.message || err)}`;
+      showTapUnlock(true);
+      return;
+    }
   }
+
+  // If embed never reaches PLAYING, swap to local stream.
+  playWatchTimer = window.setTimeout(() => {
+    if (!hasReachedPlaying && !useLocalVideo && currentVideoId === song.videoId) {
+      void (async () => {
+        const ok = await playLocalFallback(song.videoId, '嵌入逾時');
+        if (ok) sessionStorage.setItem('homektv.preferLocalVideo', '1');
+      })();
+    }
+  }, 7000);
+
   await loadLyricsFor(song);
   await applyVocalModeForCurrent();
 }
@@ -467,6 +620,7 @@ function playNext() {
   } else {
     currentVideoId = null;
     void stopVocalAudio();
+    stopLocalVideo();
     els.idle.classList.remove('hidden');
     els.nowTitle.textContent = '等待點歌中';
     els.nowMeta.textContent = '手機掃右側 QR Code 即可加入';
@@ -514,30 +668,40 @@ function applyState(s: RoomState) {
 
 function handleControl(cmd: { action: string; value?: number }) {
   const usingVocal = vocalActive;
-  if (!player && !usingVocal) return;
+  const usingLocal = useLocalVideo && !usingVocal;
+  if (!player && !usingVocal && !useLocalVideo) return;
 
   switch (cmd.action) {
     case 'play':
       if (usingVocal) {
         void els.audioEl.play();
-        player?.playVideo();
-      } else player?.playVideo();
+        if (useLocalVideo) void els.localVideo.play().catch(() => undefined);
+        else player?.playVideo();
+      } else if (usingLocal) void els.localVideo.play().catch(() => undefined);
+      else player?.playVideo();
       break;
     case 'pause':
       if (usingVocal) {
         els.audioEl.pause();
-        player?.pauseVideo();
-      } else player?.pauseVideo();
+        if (useLocalVideo) els.localVideo.pause();
+        else player?.pauseVideo();
+      } else if (usingLocal) els.localVideo.pause();
+      else player?.pauseVideo();
       break;
     case 'toggle':
       if (usingVocal) {
         if (els.audioEl.paused) {
           void els.audioEl.play();
-          player?.playVideo();
+          if (useLocalVideo) void els.localVideo.play().catch(() => undefined);
+          else player?.playVideo();
         } else {
           els.audioEl.pause();
-          player?.pauseVideo();
+          if (useLocalVideo) els.localVideo.pause();
+          else player?.pauseVideo();
         }
+      } else if (usingLocal) {
+        if (els.localVideo.paused) void els.localVideo.play().catch(() => undefined);
+        else els.localVideo.pause();
       } else if (player) {
         if (player.getPlayerState() === window.YT!.PlayerState.PLAYING) player.pauseVideo();
         else player.playVideo();
@@ -553,8 +717,16 @@ function handleControl(cmd: { action: string; value?: number }) {
       if (usingVocal) {
         els.audioEl.currentTime = 0;
         void els.audioEl.play();
-        player?.seekTo(0, true);
-        player?.playVideo();
+        if (useLocalVideo) {
+          els.localVideo.currentTime = 0;
+          void els.localVideo.play().catch(() => undefined);
+        } else {
+          player?.seekTo(0, true);
+          player?.playVideo();
+        }
+      } else if (usingLocal) {
+        els.localVideo.currentTime = 0;
+        void els.localVideo.play().catch(() => undefined);
       } else {
         player?.seekTo(0, true);
         player?.playVideo();
@@ -564,15 +736,20 @@ function handleControl(cmd: { action: string; value?: number }) {
       const next = Math.max(0, safeTime() + (cmd.value || 0));
       if (usingVocal) {
         els.audioEl.currentTime = next;
-        player?.seekTo(next, true);
-      } else player?.seekTo(next, true);
+        if (useLocalVideo) els.localVideo.currentTime = next;
+        else player?.seekTo(next, true);
+      } else if (usingLocal) els.localVideo.currentTime = next;
+      else player?.seekTo(next, true);
       break;
     }
     case 'volume': {
       const vol = Math.max(0, Math.min(100, cmd.value ?? 80));
       if (state) state.playback.volume = vol;
       if (usingVocal) vocalRemover.setMasterGain(vol / 100);
-      else {
+      else if (usingLocal) {
+        els.localVideo.volume = vol / 100;
+        els.localVideo.muted = false;
+      } else {
         player?.setVolume(vol);
         if (player?.isMuted()) player.unMute();
       }
@@ -582,6 +759,8 @@ function handleControl(cmd: { action: string; value?: number }) {
       if (usingVocal) {
         const muted = els.audioEl.volume > 0;
         vocalRemover.setMasterGain(muted ? 0 : (state?.playback.volume ?? 80) / 100);
+      } else if (usingLocal) {
+        els.localVideo.muted = !els.localVideo.muted;
       } else if (player) {
         if (player.isMuted()) player.unMute();
         else player.mute();
@@ -590,9 +769,12 @@ function handleControl(cmd: { action: string; value?: number }) {
     default:
       break;
   }
-  emitPlayback(
-    usingVocal ? !els.audioEl.paused : player?.getPlayerState() === window.YT!.PlayerState.PLAYING,
-  );
+  const playingNow = usingVocal
+    ? !els.audioEl.paused
+    : usingLocal
+      ? !els.localVideo.paused
+      : player?.getPlayerState() === window.YT!.PlayerState.PLAYING;
+  emitPlayback(Boolean(playingNow));
 }
 
 function tickLyrics() {
@@ -614,15 +796,24 @@ function startTicks() {
     tickLyrics();
     if (!state) return;
     if (vocalActive) {
-      // Keep muted YouTube video roughly in sync for visuals
+      // Keep muted picture roughly in sync for visuals
       try {
-        const drift = Math.abs((player?.getCurrentTime?.() || 0) - els.audioEl.currentTime);
-        if (player && drift > 0.45) player.seekTo(els.audioEl.currentTime, true);
+        if (useLocalVideo && els.localVideo) {
+          const drift = Math.abs(els.localVideo.currentTime - els.audioEl.currentTime);
+          if (drift > 0.45) els.localVideo.currentTime = els.audioEl.currentTime;
+        } else {
+          const drift = Math.abs((player?.getCurrentTime?.() || 0) - els.audioEl.currentTime);
+          if (player && drift > 0.45) player.seekTo(els.audioEl.currentTime, true);
+        }
       } catch {
         /* ignore */
       }
       if (!els.audioEl.paused) emitPlayback(true);
       if (els.audioEl.ended) skipCurrent('ended');
+      return;
+    }
+    if (useLocalVideo && els.localVideo) {
+      if (!els.localVideo.paused) emitPlayback(true);
       return;
     }
     if (player) {
@@ -634,6 +825,16 @@ function startTicks() {
 
 function boot() {
   els.audioEl.addEventListener('ended', () => skipCurrent('ended'));
+  els.localVideo?.addEventListener('ended', () => {
+    if (!vocalActive && useLocalVideo) skipCurrent('ended');
+  });
+  els.localVideo?.addEventListener('play', () => {
+    if (useLocalVideo) {
+      hasReachedPlaying = true;
+      showTapUnlock(false);
+      emitPlayback(true);
+    }
+  });
   els.tapUnlock?.addEventListener('click', () => unlockMedia());
   // Also accept a tap anywhere on the stage the first time.
   document.querySelector('#stage')?.addEventListener(

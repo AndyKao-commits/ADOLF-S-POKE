@@ -23,10 +23,24 @@ body.player-page {
 }
 
 #yt-host,
-#yt-host iframe {
+#yt-host iframe,
+.local-video {
   width: 100%;
   height: 100%;
   border: 0;
+}
+
+.local-video {
+  position: absolute;
+  inset: 0;
+  object-fit: contain;
+  background: #000;
+  z-index: 1;
+}
+
+#yt-host.hidden-host {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .stage-overlay {
