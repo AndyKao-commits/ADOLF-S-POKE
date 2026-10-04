@@ -37,11 +37,15 @@ if not "%ERR%"=="0" (
     powershell -NoProfile -Command "Get-Content -LiteralPath '%~dp0.party\npm-build.log' -Tail 20 -ErrorAction SilentlyContinue"
   )
   echo.
+  if exist "%~dp0.party\prepare.log" (
+    echo --- prepare.log ---
+    type "%~dp0.party\prepare.log"
+  )
   echo If this keeps happening, in PowerShell run:
   echo   cd C:\Users\tr197\KTV
   echo   git pull
   echo   .\start-kaichang.bat
-  echo Confirm the window shows: launcher build 2026-10-04c
+  echo Confirm the window shows: launcher build 2026-10-04d
   pause
   exit /b %ERR%
 )

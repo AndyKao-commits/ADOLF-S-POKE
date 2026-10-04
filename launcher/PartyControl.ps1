@@ -267,62 +267,113 @@ function Stop-Server {
   Refresh-Ui
 }
 
+function Clear-NativeExitCode {
+  # PowerShell may return the last native exit code from the process if we
+  # don't clear it / call [Environment]::Exit explicitly.
+  $global:LASTEXITCODE = 0
+  try { cmd.exe /c "exit /b 0" | Out-Null } catch {}
+  $global:LASTEXITCODE = 0
+}
+
 function Invoke-NpmStep([string]$StepName, [string]$NpmArgs, [string]$LogFile) {
-  # Run via a tiny .cmd so npm.cmd works and stdout/stderr can share one log.
-  # Do NOT use Start-Process -NoNewWindow (can kill this PowerShell host).
-  # Do NOT point RedirectStandardOutput/Error at the same file (Windows throws).
+  # Run via helper .cmd so npm.cmd + combined logs work.
+  # Wrapper ALWAYS exits 0 so a flaky npm ERRORLEVEL cannot kill this host.
+  # Real status is written to <log>.exit and/or checked via build artifacts.
   Ensure-PartyDir
-  if (Test-Path -LiteralPath $LogFile) {
-    Remove-Item -LiteralPath $LogFile -Force -ErrorAction SilentlyContinue
+  $exitFile = "$LogFile.exit"
+  foreach ($p in @($LogFile, $exitFile)) {
+    if (Test-Path -LiteralPath $p) {
+      Remove-Item -LiteralPath $p -Force -ErrorAction SilentlyContinue
+    }
   }
+
   $stepBat = Join-Path $PartyDir ("npm-" + $StepName + ".cmd")
   $lines = @(
     '@echo off',
+    'setlocal EnableDelayedExpansion',
     "cd /d `"$Root`"",
     "call npm $NpmArgs > `"$LogFile`" 2>&1",
-    'exit /b %ERRORLEVEL%'
+    'set EC=!ERRORLEVEL!',
+    "echo !EC!> `"$exitFile`"",
+    'endlocal',
+    'exit /b 0'
   )
   Set-Content -LiteralPath $stepBat -Value $lines -Encoding ASCII
   Write-Status "Running npm $StepName (see .party)..." 'DarkOrange'
-  $proc = Start-Process -FilePath $stepBat `
+
+  $proc = Start-Process -FilePath $env:ComSpec `
+    -ArgumentList @('/d', '/c', "`"$stepBat`"") `
     -WorkingDirectory $Root `
     -Wait -PassThru -WindowStyle Hidden
+
   $code = 0
-  if ($null -ne $proc.ExitCode) { $code = [int]$proc.ExitCode }
+  if (Test-Path -LiteralPath $exitFile) {
+    $raw = (Get-Content -LiteralPath $exitFile -Encoding ASCII -Raw).Trim()
+    if ($raw -match '^\d+$') { $code = [int]$raw }
+  } elseif ($null -ne $proc.ExitCode -and $proc.ExitCode -ne 0) {
+    $code = [int]$proc.ExitCode
+  }
+
   Remove-Item -LiteralPath $stepBat -Force -ErrorAction SilentlyContinue
-  return $code
+  Clear-NativeExitCode
+  return ,[int]$code
+}
+
+function Test-BuildOutputReady {
+  return (Test-Path -LiteralPath (Join-Path $Root 'dist\player.html'))
 }
 
 function Invoke-Prepare {
   Write-Status 'Installing/building (first time may take minutes)...' 'DarkOrange'
-  $null = Get-NpmCmd
+  try { $null = Get-NpmCmd } catch {
+    [System.Windows.Forms.MessageBox]::Show("$_", 'KaiChang') | Out-Null
+    return
+  }
   Ensure-PartyDir
   $installLog = Join-Path $PartyDir 'npm-install.log'
   $buildLog = Join-Path $PartyDir 'npm-build.log'
+  $prepareLog = Join-Path $PartyDir 'prepare.log'
   $form.Enabled = $false
+  $ok = $false
+  $errorText = $null
   try {
-    $installCode = Invoke-NpmStep 'install' 'install --no-fund --no-audit' $installLog
-    if ($installCode -ne 0) {
-      throw "npm install failed (exit $installCode). See .party/npm-install.log"
-    }
+    $installCode = [int](Invoke-NpmStep 'install' 'install --no-fund --no-audit' $installLog)
+    $hasModules = Test-Path -LiteralPath (Join-Path $Root 'node_modules')
+    "install exit=$installCode modules=$hasModules" | Set-Content -LiteralPath $prepareLog -Encoding UTF8
+    if (-not $hasModules) {
+      $errorText = "npm install did not create node_modules (exit $installCode). See .party/npm-install.log"
+    } else {
+      $buildCode = [int](Invoke-NpmStep 'build' 'run build' $buildLog)
+      $ready = Test-BuildOutputReady
+      "build exit=$buildCode distReady=$ready" | Add-Content -LiteralPath $prepareLog -Encoding UTF8
 
-    $buildCode = Invoke-NpmStep 'build' 'run build' $buildLog
-    if ($buildCode -ne 0) {
-      throw "npm run build failed (exit $buildCode). See .party/npm-build.log"
+      # Prefer artifact check: npm/cmd often returns 2 even after a good vite build.
+      if ($ready) {
+        $ok = $true
+      } else {
+        $errorText = "Build did not produce dist\player.html (exit $buildCode). See .party/npm-build.log"
+      }
     }
+  } catch {
+    $errorText = "$_"
+    try { $_ | Out-String | Add-Content -LiteralPath $prepareLog -Encoding UTF8 } catch {}
+  } finally {
+    Clear-NativeExitCode
+    $form.Enabled = $true
+    Refresh-Ui
+  }
 
-    if (-not (Test-Path (Join-Path $Root 'dist\player.html'))) {
-      throw "Build finished but dist\player.html is missing. See .party/npm-build.log"
-    }
-
+  if ($ok) {
+    Write-Status 'Build complete - press Start Party' 'DarkGreen'
     [System.Windows.Forms.MessageBox]::Show(
       'Build complete. Press Start Party next.',
       'KaiChang'
     ) | Out-Null
-  } finally {
-    $form.Enabled = $true
-    Refresh-Ui
+  } elseif ($errorText) {
+    Write-Status 'Setup failed - see .party logs' 'Firebrick'
+    [System.Windows.Forms.MessageBox]::Show($errorText, 'KaiChang') | Out-Null
   }
+  Clear-NativeExitCode
 }
 
 function Get-PrimaryLanUrl {
@@ -394,7 +445,7 @@ $form.Controls.Add($lblTitle)
 
 # Visible build stamp so we can confirm the Windows copy was updated.
 $lblVer = New-Object System.Windows.Forms.Label
-$lblVer.Text = 'launcher build 2026-10-04c'
+$lblVer.Text = 'launcher build 2026-10-04d'
 $lblVer.Location = New-Object System.Drawing.Point(390, 20)
 $lblVer.Size = New-Object System.Drawing.Size(150, 22)
 $lblVer.ForeColor = [System.Drawing.Color]::Gray
@@ -465,9 +516,17 @@ $btnPrepare.Text = 'First-time setup (install + build)'
 $btnPrepare.Location = New-Object System.Drawing.Point(20, 360)
 $btnPrepare.Size = New-Object System.Drawing.Size(250, 34)
 $btnPrepare.Add_Click({
-  try { Invoke-Prepare } catch {
+  try {
+    Invoke-Prepare
+  } catch {
+    try {
+      Ensure-PartyDir
+      $_ | Out-String | Set-Content -LiteralPath (Join-Path $PartyDir 'prepare.log') -Encoding UTF8
+    } catch {}
     [System.Windows.Forms.MessageBox]::Show("$_", 'KaiChang') | Out-Null
     Refresh-Ui
+  } finally {
+    Clear-NativeExitCode
   }
 })
 $form.Controls.Add($btnPrepare)
@@ -512,8 +571,26 @@ $timer.Start()
 $form.Add_Shown({ Refresh-Ui })
 $form.Add_FormClosed({ $timer.Stop() })
 
+# Keep WinForms exceptions from tearing down the process with a native exit code.
+[System.Windows.Forms.Application]::SetUnhandledExceptionMode(
+  [System.Windows.Forms.UnhandledExceptionMode]::CatchException
+)
+[System.Windows.Forms.Application]::add_ThreadException({
+  param($sender, $e)
+  try {
+    Ensure-PartyDir
+    $e.Exception | Out-String | Set-Content -LiteralPath (Join-Path $PartyDir 'launcher-crash.log') -Encoding UTF8
+    [System.Windows.Forms.MessageBox]::Show(
+      ("Launcher error:`n" + $e.Exception.Message + "`n`nSee .party/launcher-crash.log"),
+      'KaiChang'
+    ) | Out-Null
+  } catch {}
+})
+
 try {
+  Clear-NativeExitCode
   [void]$form.ShowDialog()
+  Clear-NativeExitCode
   [Environment]::Exit(0)
 } catch {
   try {
