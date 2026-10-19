@@ -92,6 +92,7 @@
     <div class="logo">
       <div class="t1">PokéSurvivor</div>
       <div class="t2">Mundo Misterioso</div>
+      <div class="brand-name" translate="no">AULF's friends GAME</div>
     </div>
     <p class="login-tag">Sobrevive a las hordas con tu compañero Pokémon · gratis, en PC y móvil</p>
     <p class="login-official">Web oficial: pokesurvivor.com · si alguien te pide pagar, no somos nosotros</p>
@@ -168,7 +169,14 @@
     <div class="logo">
       <div class="t1">PokéSurvivor<span class="splash">Folagor, Sekiam, PokeAlex: ¿un hueco?</span></div>
       <div class="t2">Mundo Misterioso</div>
+      <div class="brand-name" translate="no">AULF's friends GAME</div>
     </div>
+    <form id="menu-code" class="code-join" autocomplete="off">
+      <input id="menu-code-in" class="field" maxlength="6" spellcheck="false" autocapitalize="characters" placeholder="Código de la sala">
+      <button class="btn gold" type="submit">Unirse</button>
+      <button id="menu-code-new" class="btn" type="button">Crear sala</button>
+    </form>
+    <p id="menu-code-msg" class="err"></p>
     <div class="partner-card">
       <canvas id="menu-partner" class="stage" width="260" height="200"></canvas>
       <div class="nm" id="menu-partner-name"></div>
@@ -371,6 +379,7 @@
     <div class="row between"><h2>Sala</h2>
       <div class="row"><button id="lobby-menu" class="btn small ghost">Menú</button><button id="lobby-leave" class="btn small ghost">Salir de la sala</button></div></div>
     <p class="sub" id="lobby-sub"></p>
+    <p class="room-code-line"><span>Código de la sala</span> <b id="lobby-code" translate="no"></b></p>
     <div id="lobby-rules"></div>
     <div id="lobby-members" class="lobby-members"></div>
     <h3 id="lobby-inv-title" style="margin:14px 0 6px">Invitar amigos</h3>

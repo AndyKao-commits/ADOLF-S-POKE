@@ -161,6 +161,13 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
 .logo .t1 { font-size: 46px; font-weight: 700; line-height: 1; color: var(--gold);
   text-shadow: 3px 3px 0 #a55f00, 6px 6px 0 var(--shadow); letter-spacing: 1px; }
 .logo .t2 { font-size: 18px; color: #fff; margin-top: 6px; letter-spacing: 3px; text-transform: uppercase; }
+.brand-name { margin-top: 10px; font-size: 22px; font-weight: 700; letter-spacing: .5px; color: #fff;
+  text-shadow: 2px 2px 0 #3a2a6a, 4px 4px 0 var(--shadow); }
+.code-join { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
+.code-join .field { width: 8.2em; text-transform: uppercase; letter-spacing: .18em; font-weight: 700; text-align: center; }
+.room-code-line { margin: 8px 0 0; font-size: 15px; }
+.room-code-line b { display: inline-block; margin-left: 8px; font-size: 28px; letter-spacing: .28em; color: var(--gold);
+  cursor: pointer; text-shadow: 2px 2px 0 var(--shadow); }
 
 /* ---------- test de personalidad ---------- */
 .test-box { width: min(620px, 100%); }
@@ -780,6 +787,9 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   .menu-left .logo .t1 { font-size: 28px; }
   .splash { top: 50%; font-size: 9px; max-width: 10em; margin-right: -3.6em; }
   .logo .t2 { font-size: 10px; margin-top: 2px; letter-spacing: 2px; }
+  .brand-name { font-size: 13px; margin-top: 4px; }
+  .code-join { margin-top: 6px; gap: 4px; }
+  .room-code-line b { font-size: 20px; }
   #menu-partner { height: min(34vh, 130px); width: auto; }
   .partner-card { margin-top: 2px; }
   .partner-card .nm { font-size: 17px; }

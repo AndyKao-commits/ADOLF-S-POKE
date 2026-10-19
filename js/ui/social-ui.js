@@ -195,6 +195,16 @@
       $('lobby-sub').textContent = room.isHost
         ? 'Eres el anfitrión. Invita a tus amigos (hasta ' + cap + ') y empezad cuando estéis.'
         : 'Estás en la sala de ' + ((ms.find(m => m.uid === room.host) || {}).name || '…') + '. El anfitrión empezará la partida.';
+      const codeEl = $('lobby-code');
+      if (codeEl) {
+        codeEl.textContent = room.id;
+        codeEl.onclick = () => {
+          const t = room.id;
+          const done = () => G.UI.toast('Código copiado');
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done).catch(done);
+          else done();
+        };
+      }
 
       // Las tarjetas sólo se rehacen si cambian los miembros (los sprites no parpadean).
       const key = cap + '|' + ms.map(m => m.uid + ':' + m.dex + ':' + (m.shiny ? 1 : 0)).join('|');

@@ -27,6 +27,20 @@ G.MenuUI = (() => {
       };
     });
     document.querySelectorAll('[data-back]').forEach(b => { b.onclick = open; });
+    $('menu-code').onsubmit = e => { e.preventDefault(); joinByCode($('menu-code-in').value); };
+    $('menu-code-new').onclick = () => G.SocialUI.withNick(async () => {
+      $('menu-code-msg').textContent = '';
+      $('menu-code-new').disabled = true;
+      try {
+        await G.Social.createRoom();
+        G.Audio.sfx('confirm');
+        G.LobbyUI.open();
+      } catch (e) {
+        $('menu-code-msg').textContent = 'No se pudo crear la sala.';
+        G.Audio.sfx('error');
+      }
+      $('menu-code-new').disabled = false;
+    });
     G.Social.on(() => { if (G.UI.isOpen('scr-menu')) socialLine(); });
     $('btn-logout').onclick = () => {
       if (G.DB.guest && !confirm('Eres invitado: se perderá todo el progreso. ¿Salir?')) return;
@@ -87,6 +101,26 @@ G.MenuUI = (() => {
       });
     }
     G.InvitePop.refresh();
+  }
+
+  function joinByCode(raw) {
+    G.SocialUI.withNick(async () => {
+      const code = G.Social.cleanCode(raw);
+      const msg = $('menu-code-msg');
+      if (code.length !== 6) {
+        msg.textContent = 'El código tiene 6 caracteres.';
+        G.Audio.sfx('error');
+        return;
+      }
+      msg.textContent = '';
+      const btn = $('menu-code').querySelector('button[type=submit]');
+      btn.disabled = true;
+      const r = await G.Social.joinRoom(code);
+      btn.disabled = false;
+      if (!r.ok) { msg.textContent = r.error; G.Audio.sfx('error'); return; }
+      G.Audio.sfx('confirm');
+      G.LobbyUI.open();
+    });
   }
 
   /** Texto bajo "Amigos" y "Jugar": quién está en línea, solicitudes, sala. */

@@ -385,6 +385,12 @@
     ["Ya sois más que ese máximo.", "Vous êtes déjà plus que ce maximum.", "Siete già più di quel massimo.", "Vocês já são mais que esse máximo.", "当前人数已经超过这个上限。", "目前人數已經超過這個上限。"],
     ["En esta sala manda el anfitrión. Lo de aquí se guarda en este aparato para cuando juegues solo o abras tú la sala.", "Dans cette salle, l’hôte décide. Ce réglage reste sur cet appareil pour le solo ou quand tu ouvres une salle.", "In questa stanza decide l’host. Qui si salva su questo dispositivo per il gioco in solitaria o quando apri tu la stanza.", "Nesta sala, o anfitrião decide. Isto fica salvo neste aparelho para jogar solo ou quando você abrir a sala.", "这间房间由房主决定。这里的设置会留在这台设备上，供单人游戏或你自己开房时使用。", "這間房間由房主決定。這裡的設定會留在這台裝置上，供單人遊戲或你自己開房時使用。"],
     ["Se guarda en este aparato. En una sala, al empezar manda quien invita.", "Enregistré sur cet appareil. Dans une salle, au lancement, c’est l’hôte qui décide.", "Salvato su questo dispositivo. In una stanza, all’avvio decide chi invita.", "Salvo neste aparelho. Numa sala, ao começar, vale quem convida.", "保存在这台设备上。开局时以邀请者的设置为准。", "儲存在這台裝置上。開局時以邀請者的設定為準。"],
+    ["Código de la sala", "Code de la salle", "Codice della stanza", "Código da sala", "房间序号", "房間序號"],
+    ["Unirse", "Rejoindre", "Unisciti", "Entrar", "加入", "加入"],
+    ["Crear sala", "Ouvrir une salle", "Apri una stanza", "Abrir sala", "开房", "開房"],
+    ["El código tiene 6 caracteres.", "Le code fait 6 caractères.", "Il codice ha 6 caratteri.", "O código tem 6 caracteres.", "序号是 6 个字符。", "序號是 6 個字元。"],
+    ["No se pudo crear la sala.", "Impossible d’ouvrir la salle.", "Non si è potuta aprire la stanza.", "Não foi possível abrir a sala.", "无法创建房间。", "無法建立房間。"],
+    ["Código copiado", "Code copié", "Codice copiato", "Código copiado", "序号已复制", "序號已複製"],
   ];
   languages.forEach((lang, i) => G.I18n.add(Object.fromEntries(rows.map(r => [r[0], r[i + 1]])), lang));
   G.I18n.add({

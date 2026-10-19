@@ -24,6 +24,8 @@
 G.Social = (() => {
   const VALID = /^[A-Za-z0-9_ñÑáéíóúÁÉÍÓÚ]{3,16}$/;
   const MAX_PLAYERS = 10;
+  // Seis caracteres, sin 0/O ni 1/I para que se puedan decir en voz alta.
+  const CODE_ALPH = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const INVITE_TTL = 3 * 60 * 1000;
   /*
    * Hora real: la del servidor de la web (cabecera Date de version.json, gratis).
@@ -308,17 +310,48 @@ G.Social = (() => {
   function rtOn() { if (fb.rtdb) fb.rtdb.goOnline(); }
   function rtOff() { if (fb && fb.rtdb && !room) fb.rtdb.goOffline(); }
 
+  function randomCode() {
+    const buf = new Uint8Array(6);
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) crypto.getRandomValues(buf);
+    else for (let i = 0; i < 6; i++) buf[i] = Math.floor(Math.random() * 256);
+    let s = '';
+    for (let i = 0; i < 6; i++) s += CODE_ALPH[buf[i] % CODE_ALPH.length];
+    return s;
+  }
+  function cleanCode(raw) {
+    return String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
+  }
+
   async function createRoom() {
     if (room) return room;
     rtOn();
-    const id = fb.rtdb.ref('rooms').push().key;
     const rules = G.Coop.publicRules(G.Coop.rulesFromSettings());
-    await fb.rtdb.ref('rooms/' + id).set({ host: uid, open: true, at: ts(), cap: rules.cap, rules, m: { [uid]: memberInfo() } });
-    enterRoom(id, uid);
-    return room;
+    const base = memberInfo();
+    for (let n = 0; n < 8; n++) {
+      const code = randomCode();
+      const ref = fb.rtdb.ref('rooms/' + code);
+      let committed = false;
+      try {
+        const res = await ref.transaction(cur => {
+          if (cur) return;
+          return {
+            host: uid, open: true, at: Date.now(), cap: rules.cap, rules, code,
+            m: { [uid]: Object.assign({}, base, { at: Date.now() }) }
+          };
+        });
+        committed = !!(res && res.committed);
+      } catch (e) { committed = false; }
+      if (!committed) continue;
+      enterRoom(code, uid);
+      return room;
+    }
+    rtOff();
+    throw new Error('No se pudo crear la sala.');
   }
 
   async function joinRoom(id) {
+    id = cleanCode(id);
+    if (id.length !== 6) return { ok: false, error: 'El código tiene 6 caracteres.' };
     if (room && room.id === id) return { ok: true };
     if (room) await leaveRoom();
     rtOn();
@@ -564,7 +597,7 @@ G.Social = (() => {
 
   return {
     start, stop, claimNick, request, accept, remove, publishProfile, getProfile, profileData,
-    createRoom, joinRoom, leaveRoom, setOpen, refreshMember, setPlaying, refreshPresence, pushRules,
+    createRoom, joinRoom, leaveRoom, setOpen, refreshMember, setPlaying, refreshPresence, pushRules, cleanCode,
     invite, acceptInvite, declineInvite,
     on(fn) { listeners.add(fn); }, off(fn) { listeners.delete(fn); },
     get me() { return me; },
