@@ -5,7 +5,7 @@
  *   (se van guardando según se usan: no se descarga todo de golpe).
  * - Firebase y demás servicios de fuera no se tocan.
  */
-const CODE = 'ps-code-v1', ART = 'ps-art-v1';
+const CODE = 'ps-code-v2', ART = 'ps-art-v1';
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CODE).then(c => c.addAll(['./', './index.html', './css/style.css', './manifest.webmanifest'])).catch(() => {}));
@@ -33,7 +33,9 @@ self.addEventListener('fetch', e => {
     }));
     return;
   }
-  e.respondWith(fetch(req).then(res => {
+  // no-cache: el navegador no se queda una hora con el JavaScript viejo
+  // (si no, crear sala sigue fallando aunque el arreglo ya esté publicado).
+  e.respondWith(fetch(req, { cache: 'no-cache' }).then(res => {
     if (res.ok) { const copy = res.clone(); caches.open(CODE).then(c => c.put(req, copy)); }
     return res;
   }).catch(async () => {
