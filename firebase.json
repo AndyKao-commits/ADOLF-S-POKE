@@ -6,6 +6,21 @@
   "database": {
     "rules": "database.rules.json"
   },
+  "auth": {
+    "providers": {
+      "emailPassword": true
+    }
+  },
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "tools/cache/**",
+      "videos/**"
+    ]
+  },
   "emulators": {
     "auth": {
       "port": 9099

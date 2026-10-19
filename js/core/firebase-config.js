@@ -8,17 +8,15 @@
  *
  * Si se pone a null, el juego funciona en modo local (sólo en el navegador).
  */
-// Proyecto pokesurvivor-free (desde el 12-10-2026): autenticación normal de Firebase,
-// SIN Identity Platform, así las cuentas son gratis sin límite. ¡No pulsar nunca
-// "Actualizar a Identity Platform" en su consola! (El viejo era pokesurvivor-jpter.)
+// Proyecto propio de AULF's friends GAME. No es el de pokesurvivor.com.
 G.FIREBASE_CONFIG = {
-  apiKey: 'AIzaSyB1LpJcsnT7gj7c8cpRMGjhswLPr8-dnBw',
-  authDomain: 'pokesurvivor-free.firebaseapp.com',
-  projectId: 'pokesurvivor-free',
-  storageBucket: 'pokesurvivor-free.firebasestorage.app',
-  messagingSenderId: '798271504277',
-  appId: '1:798271504277:web:dcac4409f969239e87009c',
-  databaseURL: 'https://pokesurvivor-free-default-rtdb.europe-west1.firebasedatabase.app'
+  apiKey: 'AIzaSyCz8Xrp1U1Sxv-yIPwVwqWubqugVwbewq8',
+  authDomain: 'aulf-friends-game.firebaseapp.com',
+  projectId: 'aulf-friends-game',
+  storageBucket: 'aulf-friends-game.firebasestorage.app',
+  messagingSenderId: '430797822667',
+  appId: '1:430797822667:web:37ca392a3b81ea7573994e',
+  databaseURL: 'https://aulf-friends-game-default-rtdb.europe-west1.firebasedatabase.app'
 };
 
 /* Ejemplo de cómo debe quedar:
