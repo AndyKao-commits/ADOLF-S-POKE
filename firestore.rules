@@ -149,7 +149,7 @@ service cloud.firestore {
         && d.at == request.time
         && (board.matches('s_.*')
               ? (d.uids.size() == 1 && id == me())
-              : (d.uids.size() >= 2 && d.uids.size() <= 4 && id == d.uids.join('_')))
+              : (d.uids.size() >= 2 && d.uids.size() <= 10 && id == d.uids.join('_')))
         && (resource == null || d.t > resource.data.t);
     }
 

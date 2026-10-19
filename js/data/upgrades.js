@@ -24,7 +24,9 @@ G.Upgrades = (() => {
 
   function cost(id, lvl) {
     const u = BY[id];
-    return Math.round(u.base * Math.pow(u.grow, lvl) / 10) * 10;
+    const full = Math.round(u.base * Math.pow(u.grow, lvl) / 10) * 10;
+    // 朋友房：強化一律半價，再取到 10 的倍數（至少 10）。
+    return Math.max(10, Math.floor(full / 2 / 10) * 10);
   }
 
   /** Niveles comprados -> modificadores para G.Player. */

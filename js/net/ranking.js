@@ -42,10 +42,10 @@ G.Ranking = (() => {
   //  Pokémon y escribía; ahora también sólo el top 50.)
   const TOP_ONLY = new Set(['d', 'w', 'm', 'p']);
   const TOP = 50;
-  // Las runs de menos de 2 minutos no se suben (nunca entran en un top que
-  // importe y eran muchas lecturas y escrituras para nada: los que empiezan
-  // mueren a menudo en el primer minuto; era 1 min hasta el 14-10-2026).
-  const MIN_T = 120;
+  // Antes de 2 minutos no subía: una partida de amigos de menos de eso
+  // (por ejemplo 41 s) mejoraba el récord local y el ranking seguía vacío.
+  // Menos de 15 s sigue sin subirse, para no apuntar un abandono al momento.
+  const MIN_T = 15;
   const TTL = 30 * 60 * 1000;            // caché de lo leído (30 min: menos lecturas de Firestore)
 
   const fbx = () => G.DB.online ? G.DB.fb : null;
@@ -164,9 +164,9 @@ G.Ranking = (() => {
   // Fila de otro jugador: todo limpio (ver G.U.int / str), sea lo que sea que haya en la base de datos.
   const rowOf = (id, v) => {
     const U = G.U; v = v || {};
-    return { id: U.str(String(id), 200), t: U.int(v.t, 86400), uids: U.list(v.uids, 4).map(x => U.str(x, 128)),
-             names: U.list(v.names, 4).map(x => U.str(x, 24)), dex: U.list(v.dex, 4).map(x => U.int(x, 2000)),
-             shiny: U.list(v.shiny, 4).map(x => x === true), lv: U.int(v.lv, 999) || 1, kills: U.int(v.kills, 1e9) };
+    return { id: U.str(String(id), 200), t: U.int(v.t, 86400), uids: U.list(v.uids, 10).map(x => U.str(x, 128)),
+             names: U.list(v.names, 10).map(x => U.str(x, 24)), dex: U.list(v.dex, 10).map(x => U.int(x, 2000)),
+             shiny: U.list(v.shiny, 10).map(x => x === true), lv: U.int(v.lv, 999) || 1, kills: U.int(v.kills, 1e9) };
   };
   const sorted = top => Object.entries(top || {}).map(([id, v]) => rowOf(id, v)).sort((a, b) => b.t - a.t);
   const now = () => firebase.firestore.FieldValue.serverTimestamp();
