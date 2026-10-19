@@ -327,21 +327,18 @@ G.Social = (() => {
     rtOn();
     const rules = G.Coop.publicRules(G.Coop.rulesFromSettings());
     const base = memberInfo();
+    // set(), no transacción: las reglas no dejan LEER una sala hasta ser miembro,
+    // y la transacción tiene que leerla antes de crearla, así que fallaba siempre
+    // (permission_denied) y nadie podía abrir sala ni invitar.
     for (let n = 0; n < 8; n++) {
       const code = randomCode();
       const ref = fb.rtdb.ref('rooms/' + code);
-      let committed = false;
       try {
-        const res = await ref.transaction(cur => {
-          if (cur) return;
-          return {
-            host: uid, open: true, at: Date.now(), cap: rules.cap, rules, code,
-            m: { [uid]: Object.assign({}, base, { at: Date.now() }) }
-          };
+        await ref.set({
+          host: uid, open: true, at: Date.now(), cap: rules.cap, rules, code,
+          m: { [uid]: Object.assign({}, base, { at: Date.now() }) }
         });
-        committed = !!(res && res.committed);
-      } catch (e) { committed = false; }
-      if (!committed) continue;
+      } catch (e) { continue; }
       enterRoom(code, uid);
       return room;
     }
