@@ -7,7 +7,9 @@
   function needOnline() {
     if (G.DB.online) return true;
     G.UI.toast(G.DB.guest ? 'Crea una cuenta para jugar con amigos y salir en el ranking.'
-      : 'Esto necesita la versión online del juego (con la nube).', 3200);
+      : G.DB.mode !== 'cloud'
+        ? 'Para jugar en línea abre https://aulf-friends-game.firebaseapp.com'
+        : 'Entra con una cuenta para usar la nube. La base de datos ya está lista.', 4200);
     return false;
   }
 

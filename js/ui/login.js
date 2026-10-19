@@ -109,9 +109,9 @@ G.LoginUI = (() => {
   function modeNote() {
     if (G.DB.mode === 'cloud') return 'Tu partida se guarda en la nube: entra desde cualquier ordenador. Como invitado no se guarda.';
     const why = G.DB.localReason === 'file'
-      ? 'Abierto desde un archivo: la partida sólo se guarda en este navegador. Para guardar en la nube, juega en la versión publicada.'
+      ? 'Abierto desde un archivo: la partida sólo se guarda en este navegador. Para jugar con amigos abre https://aulf-friends-game.firebaseapp.com'
       : G.DB.localReason === 'host'
-        ? 'Esta no es la web oficial: la partida sólo se guarda en este navegador. El juego oficial y gratis está en pokesurvivor.com.'
+        ? 'Esta dirección no usa la nube. Entra en https://aulf-friends-game.firebaseapp.com'
       : G.DB.localReason === 'config'
         ? 'Nube sin configurar: la partida sólo se guarda en este navegador.'
         : 'No se pudo conectar con la nube: la partida sólo se guarda en este navegador.';
