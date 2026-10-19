@@ -21,7 +21,7 @@ G.Slots = (() => {
     led: '#2a0f14', bulbOn: '#ffe9a0', bulbOff: '#6b4a20'
   };
 
-  let cv = null, ctx = null, st = null, raf = 0, last = 0, fast = false;
+  let cv = null, ctx = null, st = null, raf = 0, last = 0, fast = false, skip = false;
 
   const symOf = r => (r.shiny ? 'shiny' : SYM[r.rarity]);
   const colOf = r => (r.shiny ? '#9ae6ff' : G.Gacha.RARITY_COLOR[r.rarity]);
@@ -29,14 +29,18 @@ G.Slots = (() => {
   function wait(s) {
     return new Promise(res => {
       const end = performance.now() + s * 1000 * (fast ? 0.25 : 1);
-      (function chk() { if (performance.now() >= end || !st) res(); else setTimeout(chk, 16); })();
+      (function chk() { if (skip || performance.now() >= end || !st) res(); else setTimeout(chk, 16); })();
     });
   }
+
+  /** Corta la tragaperras y deja que la pantalla enseñe ya las cartas. */
+  function skipNow() { skip = true; fast = true; }
 
   /** Anima las tiradas. → Promise que se resuelve al terminar. */
   async function play(canvas, results) {
     cv = canvas; ctx = cv.getContext('2d');
     fast = false;
+    skip = false;
     cv.onclick = () => { fast = true; };
     st = {
       t: 0, lever: 0, reels: REEL_X.map(() => ({ off: Math.random() * 400, spin: false, sym: 'ball', bounce: 0, speed: 0 })),
@@ -47,54 +51,63 @@ G.Slots = (() => {
     raf = requestAnimationFrame(frame);
 
     const ten = results.length === 10;
-    for (let i = 0; i < results.length; i++) {
-      const r = results[i];
-      if (ten) st.led = 'TIRADA ' + (i + 1) + '/10';
-      // Palanca.
-      G.Audio.sfx('ball');
-      await tween(v => { st.lever = v; }, 0, 1, ten ? 0.12 : 0.22);
-      for (const rl of st.reels) { rl.spin = true; rl.speed = 520; }
-      await tween(v => { st.lever = v; }, 1, 0, ten ? 0.1 : 0.2);
-      st.win = null;
-      await wait(ten ? 0.18 : 0.6);
-      const big = r.rarity >= 4 || r.shiny;
-      for (let k = 0; k < 3; k++) {
-        if (k === 2 && big) {
-          // Suspense: el último rodillo frena despacio y las luces parpadean.
-          st.frenzy = 1;
-          st.led = r.shiny ? '¡¿SHINY?!' : r.rarity === 5 ? '¡¿LEGENDARIO?!' : '¡¿ÉPICO?!';
-          st.ledCol = colOf(r);
-          await tween(v => { st.reels[2].speed = v; }, 520, 120, ten ? 0.5 : 1.1);
+    try {
+      for (let i = 0; i < results.length && !skip; i++) {
+        const r = results[i];
+        if (ten) st.led = 'TIRADA ' + (i + 1) + '/10';
+        // Palanca.
+        G.Audio.sfx('ball');
+        await tween(v => { if (st) st.lever = v; }, 0, 1, ten ? 0.12 : 0.22);
+        if (skip || !st) break;
+        for (const rl of st.reels) { rl.spin = true; rl.speed = 520; }
+        await tween(v => { if (st) st.lever = v; }, 1, 0, ten ? 0.1 : 0.2);
+        if (skip || !st) break;
+        st.win = null;
+        await wait(ten ? 0.18 : 0.6);
+        if (skip || !st) break;
+        const big = r.rarity >= 4 || r.shiny;
+        for (let k = 0; k < 3 && !skip; k++) {
+          if (k === 2 && big) {
+            // Suspense: el último rodillo frena despacio y las luces parpadean.
+            st.frenzy = 1;
+            st.led = r.shiny ? '¡¿SHINY?!' : r.rarity === 5 ? '¡¿LEGENDARIO?!' : '¡¿ÉPICO?!';
+            st.ledCol = colOf(r);
+            await tween(v => { if (st && st.reels[2]) st.reels[2].speed = v; }, 520, 120, ten ? 0.5 : 1.1);
+            if (skip || !st) break;
+          }
+          stopReel(st.reels[k], symOf(r));
+          G.Audio.sfx('shake');
+          await wait(ten ? 0.08 : 0.32);
         }
-        stopReel(st.reels[k], symOf(r));
-        G.Audio.sfx('shake');
-        await wait(ten ? 0.08 : 0.32);
+        if (skip || !st) break;
+        st.frenzy = 0;
+        // Premio.
+        st.win = { col: colOf(r), t: 0 };
+        st.led = (r.shiny ? 'SHINY · ' : '') + G.Gacha.RARITY_NAME[r.rarity].toUpperCase();
+        st.ledCol = colOf(r);
+        G.Audio.sfx('reveal', { rarity: r.rarity });
+        if (r.rarity === 5) G.Audio.sfx('legend');
+        if (r.shiny) G.Audio.sfx('shiny');
+        if (big) burst(colOf(r), r.rarity === 5 || r.shiny ? 60 : 30);
+        st.tray.push({ sym: symOf(r), y: 104, vy: 0, done: false });
+        await wait(ten ? (big ? 0.7 : 0.28) : 1.0);
       }
-      st.frenzy = 0;
-      // Premio.
-      st.win = { col: colOf(r), t: 0 };
-      st.led = (r.shiny ? 'SHINY · ' : '') + G.Gacha.RARITY_NAME[r.rarity].toUpperCase();
-      st.ledCol = colOf(r);
-      G.Audio.sfx('reveal', { rarity: r.rarity });
-      if (r.rarity === 5) G.Audio.sfx('legend');
-      if (r.shiny) G.Audio.sfx('shiny');
-      if (big) burst(colOf(r), r.rarity === 5 || r.shiny ? 60 : 30);
-      st.tray.push({ sym: symOf(r), y: 104, vy: 0, done: false });
-      await wait(ten ? (big ? 0.7 : 0.28) : 1.0);
+      if (!skip && st) await wait(0.4);
+    } finally {
+      stopAll();
     }
-    await wait(0.4);
-    stopAll();
   }
 
   function stopAll() { cancelAnimationFrame(raf); st = null; if (cv) cv.onclick = null; }
 
   function tween(set, a, b, dur) {
     return new Promise(res => {
-      const t0 = performance.now(), d = dur * 1000 * (fast ? 0.25 : 1);
+      const t0 = performance.now(), d = Math.max(1, dur * 1000 * (fast ? 0.25 : 1));
       (function step() {
+        if (skip || !st) { res(); return; }
         const k = Math.min(1, (performance.now() - t0) / d);
         set(a + (b - a) * k);
-        if (k < 1 && st) requestAnimationFrame(step); else res();
+        if (k < 1) requestAnimationFrame(step); else res();
       })();
     });
   }
@@ -252,5 +265,5 @@ G.Slots = (() => {
     R(x - 1, REEL_Y, 1, REEL_H, C.dark); R(x + REEL_W, REEL_Y, 1, REEL_H, C.dark);
   }
 
-  return { play, stop: stopAll };
+  return { play, stop: stopAll, skip: skipNow };
 })();

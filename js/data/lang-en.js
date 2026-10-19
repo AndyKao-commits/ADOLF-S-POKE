@@ -314,6 +314,8 @@ G.I18n.add({
   'Código copiado': 'Code copied',
   'Nuestros récords': 'Our records',
   'Sólo las mejores marcas de quienes juegan aquí.': 'Only the best records of the people who play here.',
+  'Las mejores marcas de todos los que juegan en este servidor, no sólo las tuyas.': 'The best records of everyone who plays on this server, not only yours.',
+  'Saltar animación': 'Skip animation',
   'Código': 'Code',
   'Código promocional': 'Promo code',
   'Cada código se puede usar una vez en esta cuenta.': 'Each code can be used once on this account.',

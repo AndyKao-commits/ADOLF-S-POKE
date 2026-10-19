@@ -396,6 +396,8 @@
     ["Código copiado", "Code copié", "Codice copiato", "Código copiado", "序号已复制", "序號已複製"],
     ["Nuestros récords", "Nos records", "I nostri record", "Nossos recordes", "我们的最强纪录", "我們的最強紀錄"],
     ["Sólo las mejores marcas de quienes juegan aquí.", "Seulement les meilleurs temps de ceux qui jouent ici.", "Solo i migliori tempi di chi gioca qui.", "Só os melhores tempos de quem joga aqui.", "只记录我们自己玩的最强纪录。", "只記錄我們自己玩的最強紀錄。"],
+    ["Las mejores marcas de todos los que juegan en este servidor, no sólo las tuyas.", "Les meilleurs temps de tous ceux qui jouent sur ce serveur, pas seulement les tiens.", "I migliori tempi di tutti quelli che giocano su questo server, non solo i tuoi.", "Os melhores tempos de todos que jogam neste servidor, não só os seus.", "这是这个服务器上所有人的最佳纪录，不只是你自己的。", "這是這個伺服器上所有人的最佳紀錄，不只是你自己的。"],
+    ["Saltar animación", "Passer l’animation", "Salta animazione", "Pular animação", "跳过动画", "跳過動畫"],
     ["Código", "Code", "Codice", "Código", "优惠码", "優惠碼"],
     ["Código promocional", "Code promo", "Codice promozionale", "Código promocional", "优惠码", "優惠碼"],
     ["Cada código se puede usar una vez en esta cuenta.", "Chaque code ne peut être utilisé qu’une fois sur ce compte.", "Ogni codice si può usare una volta su questo account.", "Cada código só pode ser usado uma vez nesta conta.", "每个优惠码在这个账号只能用一次。", "每個優惠碼在這個帳號只能用一次。"],

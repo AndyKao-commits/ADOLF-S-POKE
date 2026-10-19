@@ -4,6 +4,7 @@
 G.GachaUI = (() => {
   const $ = G.UI.$;
   let busy = false;
+  let skipPull = false;
   let gen = 1;
 
   function init() {
@@ -11,6 +12,7 @@ G.GachaUI = (() => {
     $('pull-10').onclick = () => pull(10, 't1');
     $('pull-10b').onclick = () => pull(10, 't10');
     $('pull-close').onclick = close;
+    $('pull-skip').onclick = skipAnim;
 
     const tabs = $('gacha-gens');
     G.Gacha.BANNERS.forEach(b => {
@@ -76,7 +78,36 @@ G.GachaUI = (() => {
     G.UI.refreshCoins();
   }
 
-  const wait = ms => new Promise(r => setTimeout(r, ms));
+  function wait(ms) {
+    return new Promise(res => {
+      const t0 = performance.now();
+      (function chk() {
+        if (skipPull || performance.now() - t0 >= ms) res();
+        else setTimeout(chk, 16);
+      })();
+    });
+  }
+
+  function cardOf(r) {
+    const mon = G.DEX_BY[r.dex];
+    const c = document.createElement('div');
+    c.className = 'pcard r' + r.rarity + (r.shiny ? ' shiny' : '');
+    c.style.setProperty('--rc', r.shiny ? '#9ae6ff' : G.Gacha.RARITY_COLOR[r.rarity]);
+    c.innerHTML = `<div class="stars">${G.UI.stars(r.rarity, 24)}</div>`;
+    c.appendChild(G.UI.spriteCanvas(r.dex, 132, 120, { lively: r.rarity >= 4 || r.shiny, scale: 2, shiny: r.shiny }));
+    const tag = r.isNew
+      ? `<span class="new">${r.shiny ? '¡SHINY NUEVO!' : '¡NUEVO!'}</span>`
+      : `Repetido · <span class="coin"></span> +${r.refund}`;
+    c.insertAdjacentHTML('beforeend', `<b>${r.shiny ? G.Icons.html('shiny', 12) + ' ' : ''}${mon.name}</b><div class="tag">${tag}</div>`);
+    return c;
+  }
+
+  /** Corta la tragaperras y pone todas las cartas de golpe. */
+  function skipAnim() {
+    if (!busy) return;
+    skipPull = true;
+    G.Slots.skip();
+  }
 
   async function pull(n, use = 't1') {
     if (busy) return;
@@ -85,39 +116,39 @@ G.GachaUI = (() => {
     G.Progress.checkAch();
     G.DB.commit(true);
     busy = true;
+    skipPull = false;
 
     const best = Math.max(...res.map(r => r.rarity));
     const fx = $('pull-fx'), slot = $('slot'), out = $('pull-results');
     out.innerHTML = '';
     $('pull-close').classList.add('hidden');
+    $('pull-skip').classList.remove('hidden');
     slot.style.display = '';
     fx.classList.remove('hidden');
 
-    // La tragaperras (ui/slots.js) y luego las cartas.
+    // La tragaperras (ui/slots.js) y luego las cartas. Saltar corta las dos.
     await G.Slots.play(slot, res);
     G.Audio.sfx('burst', { rarity: best });
     slot.style.display = 'none';
 
-    for (const r of res) {
-      const mon = G.DEX_BY[r.dex];
-      const c = document.createElement('div');
-      c.className = 'pcard r' + r.rarity + (r.shiny ? ' shiny' : '');
-      c.style.setProperty('--rc', r.shiny ? '#9ae6ff' : G.Gacha.RARITY_COLOR[r.rarity]);
-      c.innerHTML = `<div class="stars">${G.UI.stars(r.rarity, 24)}</div>`;
-      c.appendChild(G.UI.spriteCanvas(r.dex, 132, 120, { lively: r.rarity >= 4 || r.shiny, scale: 2, shiny: r.shiny }));
-      const tag = r.isNew
-        ? `<span class="new">${r.shiny ? '¡SHINY NUEVO!' : '¡NUEVO!'}</span>`
-        : `Repetido · <span class="coin"></span> +${r.refund}`;
-      c.insertAdjacentHTML('beforeend', `<b>${r.shiny ? G.Icons.html('shiny', 12) + ' ' : ''}${mon.name}</b><div class="tag">${tag}</div>`);
-      out.appendChild(c);
-      G.Audio.sfx('reveal', { rarity: r.rarity });
-      await wait(n === 10 ? 150 : 0);
+    for (let i = 0; i < res.length; i++) {
+      out.appendChild(cardOf(res[i]));
+      if (skipPull) {
+        for (let j = i + 1; j < res.length; j++) out.appendChild(cardOf(res[j]));
+        break;
+      }
+      G.Audio.sfx('reveal', { rarity: res[i].rarity });
+      if (n === 10) await wait(150);
     }
+    $('pull-skip').classList.add('hidden');
     $('pull-close').classList.remove('hidden');
     busy = false;
   }
 
   function close() {
+    skipPull = true;
+    G.Slots.stop();
+    $('pull-skip').classList.add('hidden');
     $('pull-fx').classList.add('hidden');
     refresh();
   }
