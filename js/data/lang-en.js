@@ -218,6 +218,7 @@ G.I18n.add({
   'Juego de supervivencia con Pokémon, gratis en el navegador y en el móvil.': 'A Pokémon survival game, free in your browser and on mobile.',
   'Cargando…': 'Loading…', 'Guía': 'Guide', 'Aviso legal y privacidad': 'Legal notice & privacy',
   'Tu partida se guarda en la nube: entra desde cualquier ordenador. Como invitado no se guarda.': 'Your game is saved in the cloud: log in from any computer. Guest progress is not saved.',
+  'Tu partida se guarda en la nube: entra desde cualquier ordenador con tu nombre y tu contraseña.': 'Your game is saved in the cloud: sign in from any computer with your name and password.',
   'Abierto desde un archivo: la partida sólo se guarda en este navegador. Para guardar en la nube, juega en la versión publicada.': 'Opened from a file: your game is only saved in this browser. To save in the cloud, play the online version.',
   'Abierto desde un archivo: la partida sólo se guarda en este navegador. Para jugar con amigos abre https://aulf-friends-game.firebaseapp.com': 'Opened from a file: your game is only saved in this browser. To play with friends open https://aulf-friends-game.firebaseapp.com',
   'Esta dirección no usa la nube. Entra en https://aulf-friends-game.firebaseapp.com': 'This address does not use the cloud. Open https://aulf-friends-game.firebaseapp.com',
@@ -228,6 +229,7 @@ G.I18n.add({
   'No se pudo conectar con la nube: la partida sólo se guarda en este navegador.': 'Couldn\'t connect to the cloud: your game is only saved in this browser.',
   'Nube sin configurar: la partida sólo se guarda en este navegador.': 'Cloud not configured: your game is only saved in this browser.',
   'Este navegador no deja guardar datos: juega como invitado.': 'This browser won\'t let us save data: play as a guest.',
+  'Este navegador no deja guardar datos. Prueba con otro navegador.': 'This browser won\'t let us save data. Try another browser.',
   'Usuario o contraseña incorrectos.': 'Wrong username or password.', 'Ese nombre ya existe.': 'That name is already taken.',
   'La contraseña debe tener al menos 6 caracteres.': 'The password must be at least 6 characters long.',
   'La contraseña debe tener al menos {x} caracteres.': 'The password must be at least {x} characters long.',
@@ -784,6 +786,7 @@ G.I18n.add({
 
   // ---------------- recuperar la cuenta (vincular Gmail) ----------------
   '¿Olvidaste tu contraseña?': 'Forgot your password?',
+  'La contraseña no se puede consultar: sólo se guarda cifrada. Si la olvidaste, dile tu nombre a 小柯 y te pone una contraseña nueva. La antigua no se puede ver.': 'The password cannot be looked up: only an encrypted copy is stored. If you forgot it, tell 小柯 your name and they will set a new one. The old password cannot be seen.',
   '¿Te da miedo perder tu cuenta?': 'Afraid of losing your account?',
   'Vincular mi Gmail': 'Link my Gmail', 'Ahora no': 'Not now', 'No volver a preguntar': "Don't ask again",
   '¡Gmail vinculado! Si olvidas la contraseña, entra con Google.': 'Gmail linked! If you forget your password, sign in with Google.',
