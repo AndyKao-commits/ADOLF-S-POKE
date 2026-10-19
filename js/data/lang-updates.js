@@ -391,6 +391,16 @@
     ["El código tiene 6 caracteres.", "Le code fait 6 caractères.", "Il codice ha 6 caratteri.", "O código tem 6 caracteres.", "序号是 6 个字符。", "序號是 6 個字元。"],
     ["No se pudo crear la sala.", "Impossible d’ouvrir la salle.", "Non si è potuta aprire la stanza.", "Não foi possível abrir a sala.", "无法创建房间。", "無法建立房間。"],
     ["Código copiado", "Code copié", "Codice copiato", "Código copiado", "序号已复制", "序號已複製"],
+    ["Nuestros récords", "Nos records", "I nostri record", "Nossos recordes", "我们的最强纪录", "我們的最強紀錄"],
+    ["Sólo las mejores marcas de quienes juegan aquí.", "Seulement les meilleurs temps de ceux qui jouent ici.", "Solo i migliori tempi di chi gioca qui.", "Só os melhores tempos de quem joga aqui.", "只记录我们自己玩的最强纪录。", "只記錄我們自己玩的最強紀錄。"],
+    ["Código", "Code", "Codice", "Código", "优惠码", "優惠碼"],
+    ["Código promocional", "Code promo", "Codice promozionale", "Código promocional", "优惠码", "優惠碼"],
+    ["Cada código se puede usar una vez en esta cuenta.", "Chaque code ne peut être utilisé qu’une fois sur ce compte.", "Ogni codice si può usare una volta su questo account.", "Cada código só pode ser usado uma vez nesta conta.", "每个优惠码在这个账号只能用一次。", "每個優惠碼在這個帳號只能用一次。"],
+    ["Canjear", "Utiliser", "Riscatta", "Resgatar", "兑换", "兌換"],
+    ["Ese código no existe.", "Ce code n’existe pas.", "Quel codice non esiste.", "Esse código não existe.", "没有这个优惠码。", "沒有這個優惠碼。"],
+    ["Ese código ya está usado.", "Ce code a déjà été utilisé.", "Quel codice è già stato usato.", "Esse código já foi usado.", "这个优惠码已经用过了。", "這個優惠碼已經用過了。"],
+    ["Crea una cuenta para usar un código.", "Crée un compte pour utiliser un code.", "Crea un account per usare un codice.", "Crie uma conta para usar um código.", "请先建立账号再使用优惠码。", "請先建立帳號再使用優惠碼。"],
+    ["Código canjeado: +{x} tickets, +{x} tickets ×10.", "Code utilisé : +{x} tickets, +{x} tickets ×10.", "Codice usato: +{x} ticket, +{x} ticket ×10.", "Código resgatado: +{x} tickets, +{x} tickets ×10.", "已兑换：+{x} 张普通券，+{x} 张十连券。", "已兌換：+{x} 張一般券，+{x} 張十連券。"],
   ];
   languages.forEach((lang, i) => G.I18n.add(Object.fromEntries(rows.map(r => [r[0], r[i + 1]])), lang));
   G.I18n.add({

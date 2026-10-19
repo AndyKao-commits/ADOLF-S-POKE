@@ -33,9 +33,13 @@ G.RankingUI = (() => {
 
   function open() {
     if (!G.SocialUI.needOnline()) return;
+    period = 'a'; scope = 'all'; dex = null;
     G.UI.show('scr-rank', true);
     if (!G.Social.started) G.Social.start();
-    $('rk-mod').classList.toggle('hidden', !G.Ranking.isAdmin());
+    $('rk-period').classList.add('hidden');
+    const tools = document.querySelector('#scr-rank .rk-tools');
+    if (tools) tools.classList.add('hidden');
+    $('rk-mod').classList.add('hidden');
     tabs();
     load();
   }
@@ -53,11 +57,6 @@ G.RankingUI = (() => {
     };
     mk($('rk-mode'), [['s', `<b>${G.Icons.html('user', 16)} Solo</b>`], ['g', `<b>${G.Icons.html('friends', 16)} Grupo</b>`]],
        mode, k => { mode = k; }, 'gen-tab');
-    mk($('rk-period'), G.Ranking.PERIODS, period, k => {
-      period = k;
-      if (k !== 'a' && dex) { dex = null; $('rk-poke').value = ''; $('rk-clear').classList.add('hidden'); }
-    }, 'chip');
-    mk($('rk-scope'), [['all', 'Todos'], ['friends', 'Sólo amigos']], scope, k => { scope = k; }, 'chip');
   }
 
   const fmt = t => t >= 3600 ? Math.floor(t / 3600) + ':' + G.U.mmss(t % 3600).padStart(5, '0') : G.U.mmss(t);

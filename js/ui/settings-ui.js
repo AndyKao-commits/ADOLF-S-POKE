@@ -131,23 +131,24 @@ G.SettingsUI = (() => {
         : '<p class="note">Se guarda en este aparato. En una sala, al empezar manda quien invita.</p>');
     } else if (tab === 'acc') {
       renderAccount(box);
+    } else if (tab === 'code') {
+      box.innerHTML = section('Código promocional', 'Cada código se puede usar una vez en esta cuenta.')
+        + `<form id="code-form" class="row" autocomplete="off">
+             <input id="code-in" class="field grow" maxlength="24" spellcheck="false" placeholder="Código" autocapitalize="characters">
+             <button class="btn gold" type="submit">Canjear</button>
+           </form>
+           <p id="code-msg" class="err"></p>`;
+      $('code-form').onsubmit = e => {
+        e.preventDefault();
+        const r = redeemCode($('code-in').value);
+        const msg = $('code-msg');
+        msg.textContent = r.ok ? r.msg : r.error;
+        msg.style.color = r.ok ? '' : '#ffb0b8';
+        G.Audio.sfx(r.ok ? 'confirm' : 'error');
+        if (r.ok) $('code-in').value = '';
+      };
     } else {
-      box.innerHTML = `<div class="about-logo">PokéSurvivor</div><p class="sub center">Versión ${esc(VERSION)}</p>`
-        + `<p class="sub">Juego de fans <b>gratuito y sin ánimo de lucro</b>: sin anuncios ni compras. Pokémon y sus personajes son propiedad de Nintendo, Creatures y GAME FREAK; este proyecto no está afiliado a ellos.</p>`
-        + section('Créditos')
-        + `<ul class="credits">
-             <li><b>Sprites:</b> PMD SpriteCollab y sus artistas (CC BY-NC 4.0).</li>
-             <li><b>Datos de los Pokémon:</b> PokéAPI.</li>
-             <li><b>Música y sonidos:</b> originales, generados por el propio juego.</li>
-             <li><b>Fuente:</b> Pixelify Sans (OFL).</li>
-           </ul>`
-        + `<div class="row wrap" style="justify-content:center;gap:8px">
-             ${window.PS_PAGES ? `<a class="btn small" href="${G.I18n.lang === 'en' ? 'en/guide/' : 'guia/'}" target="_blank">Guía y preguntas</a>
-             <a class="btn small" href="${G.I18n.lang === 'en' ? 'en/pokedex/' : 'pokedex/'}" target="_blank">Pokédex</a>` : ''}
-             <button class="btn small" data-legal>Aviso legal y privacidad</button>
-             <a class="btn small" href="contacto/" target="_blank" rel="noopener">Contacto</a>
-             <a class="btn small" href="${REPO}" target="_blank" rel="noopener">Código (GitHub)</a>
-           </div>`;
+      box.innerHTML = '<p class="sub" translate="no">有問題 問小柯</p>';
     }
     wire(box);
   }
@@ -171,6 +172,25 @@ G.SettingsUI = (() => {
            <button class="btn" id="set-logout">Cerrar sesión</button>
            <button class="btn danger" id="set-delete">Borrar cuenta</button>
          </div><p class="note" id="set-msg"></p>`;
+  }
+
+  const CODES = { XIAOKE: { t1: 30, t10: 0 }, XIAOKE10: { t1: 0, t10: 5 } };
+
+  function redeemCode(raw) {
+    const code = String(raw || '').trim().toUpperCase().replace(/\s+/g, '');
+    const gift = CODES[code];
+    if (!gift) return { ok: false, error: 'Ese código no existe.' };
+    if (G.DB.guest || !G.DB.save) return { ok: false, error: 'Crea una cuenta para usar un código.' };
+    const s = G.DB.save;
+    s.codes = Array.isArray(s.codes) ? s.codes : [];
+    if (s.codes.includes(code)) return { ok: false, error: 'Ese código ya está usado.' };
+    s.codes.push(code);
+    s.tickets = s.tickets || { t1: 0, t10: 0 };
+    s.tickets.t1 += gift.t1;
+    s.tickets.t10 += gift.t10;
+    G.DB.commit(true);
+    if (G.UI.refreshCoins) G.UI.refreshCoins();
+    return { ok: true, msg: 'Código canjeado: +' + gift.t1 + ' tickets, +' + gift.t10 + ' tickets ×10.' };
   }
 
   function wire(box) {

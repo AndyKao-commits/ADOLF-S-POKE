@@ -129,6 +129,7 @@ G.DB = (() => {
     s.coins = n(s.coins);
     s.tickets.t1 = n(s.tickets.t1);
     s.tickets.t10 = n(s.tickets.t10);
+    s.codes = Array.isArray(s.codes) ? [...new Set(s.codes.filter(c => typeof c === 'string' && c.length <= 24))].slice(0, 40) : [];
     if (isObj(s.led)) {
       for (const dev of Object.keys(s.led)) {
         const e = s.led[dev];
@@ -296,6 +297,7 @@ G.DB = (() => {
       });
     }
     for (const k in older.stats || {}) r.stats[k] = Math.max(r.stats[k] || 0, older.stats[k] || 0);
+    r.codes = [...new Set([].concat(a.codes || [], b.codes || []).filter(c => typeof c === 'string'))];
     if (r.starter == null) r.starter = older.starter;
     if (r.personality == null) r.personality = older.personality;
     if (r.partner == null || !r.owned[r.partner]) { r.partner = older.partner; r.partnerShiny = older.partnerShiny; }
