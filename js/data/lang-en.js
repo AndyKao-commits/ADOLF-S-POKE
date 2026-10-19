@@ -315,6 +315,7 @@ G.I18n.add({
   'Código': 'Code',
   'Código promocional': 'Promo code',
   'Cada código se puede usar una vez en esta cuenta.': 'Each code can be used once on this account.',
+  'Estos códigos se pueden usar todas las veces que quieras.': 'These codes can be used as many times as you want.',
   'Canjear': 'Redeem',
   'Ese código no existe.': 'That code does not exist.',
   'Ese código ya está usado.': 'That code was already used.',

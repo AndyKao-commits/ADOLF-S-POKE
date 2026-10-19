@@ -396,6 +396,7 @@
     ["Código", "Code", "Codice", "Código", "优惠码", "優惠碼"],
     ["Código promocional", "Code promo", "Codice promozionale", "Código promocional", "优惠码", "優惠碼"],
     ["Cada código se puede usar una vez en esta cuenta.", "Chaque code ne peut être utilisé qu’une fois sur ce compte.", "Ogni codice si può usare una volta su questo account.", "Cada código só pode ser usado uma vez nesta conta.", "每个优惠码在这个账号只能用一次。", "每個優惠碼在這個帳號只能用一次。"],
+    ["Estos códigos se pueden usar todas las veces que quieras.", "Tu peux utiliser ces codes autant de fois que tu veux.", "Puoi usare questi codici tutte le volte che vuoi.", "Você pode usar estes códigos quantas vezes quiser.", "这些优惠码可以一直重复使用。", "這些優惠碼可以一直重複使用。"],
     ["Canjear", "Utiliser", "Riscatta", "Resgatar", "兑换", "兌換"],
     ["Ese código no existe.", "Ce code n’existe pas.", "Quel codice non esiste.", "Esse código não existe.", "没有这个优惠码。", "沒有這個優惠碼。"],
     ["Ese código ya está usado.", "Ce code a déjà été utilisé.", "Quel codice è già stato usato.", "Esse código já foi usado.", "这个优惠码已经用过了。", "這個優惠碼已經用過了。"],

@@ -132,7 +132,7 @@ G.SettingsUI = (() => {
     } else if (tab === 'acc') {
       renderAccount(box);
     } else if (tab === 'code') {
-      box.innerHTML = section('Código promocional', 'Cada código se puede usar una vez en esta cuenta.')
+      box.innerHTML = section('Código promocional', 'Estos códigos se pueden usar todas las veces que quieras.')
         + `<form id="code-form" class="row" autocomplete="off">
              <input id="code-in" class="field grow" maxlength="24" spellcheck="false" placeholder="Código" autocapitalize="characters">
              <button class="btn gold" type="submit">Canjear</button>
@@ -182,9 +182,6 @@ G.SettingsUI = (() => {
     if (!gift) return { ok: false, error: 'Ese código no existe.' };
     if (G.DB.guest || !G.DB.save) return { ok: false, error: 'Crea una cuenta para usar un código.' };
     const s = G.DB.save;
-    s.codes = Array.isArray(s.codes) ? s.codes : [];
-    if (s.codes.includes(code)) return { ok: false, error: 'Ese código ya está usado.' };
-    s.codes.push(code);
     s.tickets = s.tickets || { t1: 0, t10: 0 };
     s.tickets.t1 += gift.t1;
     s.tickets.t10 += gift.t10;
