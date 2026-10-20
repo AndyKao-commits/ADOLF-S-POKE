@@ -111,7 +111,7 @@ G.RunUI = (() => {
   function showOver(r, onBack) {
     $('over-title').textContent = r.cause === 'castle-win' ? '¡Has protegido al cachorro!'
       : r.cause === 'castle' ? 'El cachorro ha caído…'
-      : r.cause === 'siege-win' ? 'Has derribado un castillo'
+      : r.cause === 'siege-win' ? 'Eres el último en pie'
       : r.cause === 'siege-lose' ? 'Tu castillo ha caído…'
       : r.dead ? 'Has caído…' : 'Run terminada';
     $('over-stats').innerHTML = `

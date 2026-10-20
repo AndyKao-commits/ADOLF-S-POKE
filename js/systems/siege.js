@@ -2,7 +2,7 @@
  * Cada jugador tiene un castillo y sube de nivel por su cuenta.
  * Los monstruos salen de cada castillo: atacan a los demás, no a los suyos.
  * A los 3 minutos un jefe en el centro ataca sólo a jugadores.
- * Gana quien derriba un castillo (un jugador, o el dueño de sus monstruos).
+ * Gana el último castillo en pie. El destruido deja de invocar y sus monstruos se van.
  */
 G.Siege = (() => {
   const HALF = 832;
@@ -41,7 +41,7 @@ G.Siege = (() => {
     bossSpawned = false; bossHit = new Map(); bestUid = null; best = 0;
     for (const k in pk) delete pk[k];
     let people;
-    if (G.Coop.active && members && members.length) {
+    if (members && members.length) {
       people = members.slice(0, 4).map((m, i) => ({
         uid: m.uid, name: m.name || '?', color: G.Coop.COLORS[i % G.Coop.COLORS.length]
       }));
@@ -93,14 +93,55 @@ G.Siege = (() => {
 
   function clampDmg(n) { return Math.max(1, Math.min(800, Math.round(+n || 0))); }
 
-  function fall(c, attackerUid) {
-    if (ended) return;
-    ended = true;
-    let win = attackerUid && attackerUid !== c.uid && attackerUid !== 'rival' ? attackerUid : null;
-    if (!win) {
-      const left = castles.find(o => o !== c && o.uid !== 'rival' && o.hp > 0);
-      win = left ? left.uid : '';
+  /** Este jugador ya no lucha: sin revivir y sin seguir pegando. */
+  function knockLocal() {
+    const pl = G.Game && G.Game.player;
+    if (!pl || pl.dead) return;
+    pl.invuln = 0;
+    pl.hp = 0;
+    pl.dead = true;
+    pl.reviveT = 0;
+    if (pl.anim) pl.anim.play('Faint', { hold: true });
+    G.Projectiles.clearOrbs(pl);
+  }
+
+  function knockOut(uid) {
+    if (!uid || uid === 'rival') return;
+    if (uid === meId()) knockLocal();
+    else if (G.Coop.mate) {
+      const m = G.Coop.mate(uid);
+      const p = m && m.pl;
+      if (p && !p.dead) {
+        p.hp = 0;
+        p.dead = true;
+        if (p.anim) p.anim.play('Faint', { hold: true });
+      }
     }
+    if (G.Coop.active && G.Coop.isHost) G.Coop.broadcast(['so', uid]);
+  }
+
+  /** Los monstruos de un castillo caído se van, sin experiencia. */
+  function dismiss(uid) {
+    if (!authority()) return;
+    for (const e of G.EnemyMgr.all()) {
+      if (e.dead || e.remote || !e.siegeCreep || e.owner !== uid) continue;
+      e.noReward = true;
+      e.hurt(Math.max(1, e.hp));
+    }
+  }
+
+  function fall(c) {
+    if (ended || !c || c.fallen) return;
+    c.fallen = true;
+    dismiss(c.uid);
+    knockOut(c.uid);
+    const left = castles.filter(x => x.hp > 0);
+    if (left.length > 1) {
+      if (G.Spawner) G.Spawner.say('¡' + c.name + ' queda fuera!', 2.6);
+      return;
+    }
+    ended = true;
+    const win = left.length === 1 && left[0].uid !== 'rival' ? left[0].uid : '';
     if (G.Game.siegeOver) G.Game.siegeOver({ win: win || '', fallen: c.uid });
   }
 
@@ -109,10 +150,12 @@ G.Siege = (() => {
     if (!on || ended) return;
     const c = castles.find(x => x.uid === uid);
     if (!c || c.hp <= 0 || attackerUid === c.uid) return;
+    const atk = attackerUid && castles.find(x => x.uid === attackerUid);
+    if (atk && atk.hp <= 0) return;
     dmg = clampDmg(dmg);
     c.hp = Math.max(0, c.hp - dmg);
     G.FX.dmgText(c.x + G.U.rand(-8, 8), c.y - 40, dmg, '#ff8b8b');
-    if (c.hp <= 0) fall(c, attackerUid);
+    if (c.hp <= 0) fall(c);
   }
 
   function localHit(c, dmg) {
@@ -193,7 +236,7 @@ G.Siege = (() => {
   function onCreepDown(e) {
     if (!authority() || !e) return;
     const who = e.lastUid;
-    if (!who || who === e.owner || who === 'rival') return;
+    if (e.noReward || !who || who === e.owner || who === 'rival') return;
     grant(who, 6, 0);
   }
 
@@ -285,7 +328,7 @@ G.Siege = (() => {
         if (G.U.dist2(e.x, e.y, c.x, c.y) > reach * reach) continue;
         e.castleCd = 0.5;
         applyHit(c.uid, Math.max(2, Math.round(e.dmg)), e.owner);
-        if (!on) return;
+        if (!on || ended || e.dead) return;
         break;
       }
     }
@@ -307,11 +350,14 @@ G.Siege = (() => {
 
   function tick(dt, pl, time) {
     if (!on || !pl) return;
-    if (pl.dead) {
+    const mine = castles.find(x => x.uid === meId());
+    const out = !!(mine && mine.hp <= 0);
+    if (out) {
+      if (!pl.dead) knockLocal();
+    } else if (pl.dead) {
       respawnT += dt;
       if (respawnT >= RESPAWN) {
-        const c = castles.find(x => x.uid === meId());
-        if (c) placeAt(pl, c);
+        if (mine) placeAt(pl, mine);
         pl.revive(1);
         respawnT = 0;
       }
@@ -403,7 +449,7 @@ G.Siege = (() => {
     ctx.beginPath();
     ctx.ellipse(0, -1, 34, 10, 0, 0, 6.2832);
     ctx.fill();
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = c.hp <= 0 ? 0.4 : 1;
     ctx.fillStyle = 'rgba(0,0,0,.34)';
     ctx.beginPath();
     ctx.ellipse(0, 0, 28, 7, 0, 0, 6.2832);
@@ -451,7 +497,7 @@ G.Siege = (() => {
 
   return {
     begin, end, clamp, contain, smack, strike, tick, net, snapshot, target, aimFor, drawBorder, drawables, applyHit,
-    onCreepDown, onBossDown, noteBoss, playerDown, ally,
+    onCreepDown, onBossDown, noteBoss, playerDown, ally, knockOut,
     get up() { return on; },
     get half() { return HALF; }
   };

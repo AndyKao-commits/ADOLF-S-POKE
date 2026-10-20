@@ -505,6 +505,9 @@ G.Coop = (() => {
       case 'cb':
         if (G.Castle && G.Castle.giveBond) G.Castle.giveBond();
         break;
+      case 'so':
+        if (G.Siege && G.Siege.knockOut) G.Siege.knockOut(ev[1]);
+        break;
       case 'rift': case 'riftx': case 'arena': case 'aw': case 'al': G.Rift.onEvent(ev); break;
       case 'jd': case 'jk': G.Judgment.onEvent(ev); break;
       case 'wx': G.Weather.onEvent(ev); break;
