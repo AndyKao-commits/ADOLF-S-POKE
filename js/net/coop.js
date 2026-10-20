@@ -76,11 +76,13 @@ G.Coop = (() => {
     const mode = r.mode === 'count' || r.mode === 'custom' ? r.mode : 'auto';
     const cap = clampCap(r.cap == null ? 4 : r.cap);
     const n = clampCap(r.n == null ? 4 : r.n);
+    const bossRaw = Math.round(+r.bossN);
     return {
       cap, mode, n,
       rate: clampMul(r.rate, 0.25, 12, autoRate(4)),
       hp: clampMul(r.hp, 0.25, 8, autoHp(4)),
-      xp: clampMul(r.xp, 0.25, 12, autoXp(4))
+      xp: clampMul(r.xp, 0.25, 12, autoXp(4)),
+      bossN: Math.min(10, Math.max(0, isFinite(bossRaw) ? bossRaw : 5))
     };
   }
   function rulesFromSettings() {
@@ -90,12 +92,13 @@ G.Coop = (() => {
       n: G.Settings.get('diffN'),
       rate: G.Settings.get('diffRate'),
       hp: G.Settings.get('diffHp'),
-      xp: G.Settings.get('diffXp')
+      xp: G.Settings.get('diffXp'),
+      bossN: G.Settings.get('bossN')
     });
   }
   function publicRules(r) {
     const n = normalizeRules(r);
-    return { cap: n.cap, mode: n.mode, n: n.n, rate: n.rate, hp: n.hp, xp: n.xp };
+    return { cap: n.cap, mode: n.mode, n: n.n, rate: n.rate, hp: n.hp, xp: n.xp, bossN: n.bossN };
   }
   /** Fija la dificultad de esta partida. Sin rules y useSettings, la de este aparato. */
   function lockRun(rules, useSettings) {
@@ -579,7 +582,7 @@ G.Coop = (() => {
 
   return {
     ANIMS, COLORS, ABS_MAX, begin, end, leave, tick, players, puppets, xpFactor, scaleRate, scaleHp,
-    clampCap, normalizeRules, rulesFromSettings, publicRules, lockRun, unlockRun, preview, fmtMul, autoRate, autoHp, autoXp,
+    clampCap, normalizeRules, rulesFromSettings, publicRules, lockRun, unlockRun, activeRules, preview, fmtMul, autoRate, autoHp, autoXp,
     cast, hit, status, hurtShown, enemyAdded, enemyGone, enemyShot, pickupAdded, pickupGone, say,
     propBroken, collected, shinyCaught, levelStart, localPicked, over, holdStart, holdEnd,
     /** Anfitrión: evento para todos. Invitado: evento para el anfitrión. */

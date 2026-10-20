@@ -41,6 +41,28 @@ G.Enemies = (() => {
   ];
 
   // Franjas de jefe: minuto en que salen, PV base y franja de BST.
+  // Con más de 5 asaltos se sigue cada 3 minutos, un poco más duros.
+  function bossSlots() {
+    let n = 5;
+    try { if (G.Coop && G.Coop.activeRules) n = G.Coop.activeRules().bossN; } catch (e) { /* 5 */ }
+    n = Math.max(0, Math.min(10, n | 0));
+    const out = [];
+    for (let i = 0; i < n; i++) {
+      if (i < BOSS_SLOTS.length) out.push(BOSS_SLOTS[i]);
+      else {
+        const last = BOSS_SLOTS[BOSS_SLOTS.length - 1];
+        const extra = i - BOSS_SLOTS.length + 1;
+        out.push({
+          at: last.at + extra * 180,
+          hp: Math.round(last.hp * Math.pow(1.45, extra)),
+          dmg: Math.round(last.dmg * Math.pow(1.12, extra)),
+          xp: Math.round(last.xp * Math.pow(1.25, extra)),
+          bst: last.bst
+        });
+      }
+    }
+    return out;
+  }
   const BOSS_SLOTS = [
     { at: 180, hp: 1400,  dmg: 34, xp: 220,  bst: [490, 545] },
     { at: 360, hp: 3200,  dmg: 42, xp: 420,  bst: [520, 580] },
@@ -153,7 +175,7 @@ G.Enemies = (() => {
       if (r) { r.behavior = 'runner'; r.spd = Math.round(r.spd * 1.6); r.hp = Math.round(r.hp * 0.7); }
     }
     const used = new Set();
-    bosses = BOSS_SLOTS.map(slot => {
+    bosses = bossSlots().map(slot => {
       const ok = p => !p.leg && G.SPRITE_META[p.dex] && !used.has(p.dex);
       let pool = G.DEX.filter(p => ok(p) && p.bst >= slot.bst[0] && p.bst <= slot.bst[1]);
       if (!pool.length) pool = G.DEX.filter(p => ok(p) && p.bst >= 580);

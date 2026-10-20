@@ -67,3 +67,15 @@ test('se puede fijar el número o los tres valores', () => {
   assert.equal(Coop.scaleHp(8), 2);
   assert.equal(Coop.preview(8).xp, 3);
 });
+
+test('los asaltos de jefe van de 0 a 10 y lo normal son 5', () => {
+  const { Coop, Settings } = boot();
+  Coop.lockRun(null, true);
+  assert.equal(Coop.activeRules().bossN, 5);
+  Settings.set('bossN', 8);
+  Coop.lockRun(null, true);
+  assert.equal(Coop.activeRules().bossN, 8);
+  assert.equal(Coop.publicRules({ bossN: 99 }).bossN, 10);
+  assert.equal(Coop.publicRules({ bossN: -3 }).bossN, 0);
+  assert.equal(Coop.publicRules({}).bossN, 5);
+});

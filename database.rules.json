@@ -7,7 +7,8 @@
         ".read": "auth != null && data.child('m').child(auth.uid).exists()",
         ".write": "auth != null && ((!data.exists() && newData.child('host').val() === auth.uid) || data.child('host').val() === auth.uid)",
         "host": {
-          ".read": "auth != null"
+          ".read": "auth != null",
+          ".write": "auth != null && newData.isString() && newData.val() === auth.uid && root.child('rooms').child($room).child('m').child(auth.uid).exists() && !root.child('rooms').child($room).child('m').child(data.val()).exists()"
         },
         "open": {
           ".read": "auth != null"

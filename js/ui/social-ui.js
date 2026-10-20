@@ -332,7 +332,7 @@
     function sentence(opt) {
       const rules = liveRules(opt);
       const p = G.Coop.preview(opt.liveN || 1, rules);
-      return 'Con ' + p.n + ': aparecen ×' + G.Coop.fmtMul(p.rate) + ', vida ×' + G.Coop.fmtMul(p.hp) + ' y la experiencia se reparte entre ' + G.Coop.fmtMul(p.xp) + '.';
+      return 'Con ' + p.n + ': aparecen ×' + G.Coop.fmtMul(p.rate) + ', vida ×' + G.Coop.fmtMul(p.hp) + ' y la experiencia se reparte entre ' + G.Coop.fmtMul(p.xp) + '. Jefes: ' + rules.bossN + '.';
     }
 
     function html(opt) {
@@ -359,6 +359,8 @@
         + slider('cap', 1, 10, 1, rules.cap)
         + `<div class="chips set-chips">${mode('auto', 'Automática')}${mode('count', 'Por número')}${mode('custom', 'A medida')}</div>`
         + extra
+        + `<div class="set-row"><div class="grow"><b>Asaltos de jefe</b><small>Cuántos jefes salen. Lo normal son 5, uno cada 3 minutos. 0 no saca ninguno.</small></div><span class="rule-val" data-for="boss">${rules.bossN}</span></div>`
+        + slider('boss', 0, 10, 1, rules.bossN)
         + `<p class="note" data-preview>${esc(sentence(opt))}</p>`;
     }
 
@@ -368,8 +370,8 @@
       const rules = liveRules(opt);
       el.querySelectorAll('[data-for]').forEach(s => {
         const k = s.dataset.for;
-        const v = k === 'cap' ? rules.cap : k === 'n' ? rules.n : k === 'rate' ? rules.rate : k === 'hp' ? rules.hp : rules.xp;
-        s.textContent = k === 'cap' || k === 'n' ? String(v) : G.Coop.fmtMul(v);
+        const v = k === 'cap' ? rules.cap : k === 'n' ? rules.n : k === 'boss' ? rules.bossN : k === 'rate' ? rules.rate : k === 'hp' ? rules.hp : rules.xp;
+        s.textContent = k === 'cap' || k === 'n' || k === 'boss' ? String(v) : G.Coop.fmtMul(v);
       });
     }
 
@@ -388,6 +390,7 @@
       else if (key === 'rate') G.Settings.set('diffRate', Math.round(+raw * 100) / 100);
       else if (key === 'hp') G.Settings.set('diffHp', Math.round(+raw * 100) / 100);
       else if (key === 'xp') G.Settings.set('diffXp', Math.round(+raw * 100) / 100);
+      else if (key === 'boss') G.Settings.set('bossN', Math.min(10, Math.max(0, Math.round(+raw))));
       if (room && room.isHost) G.Social.pushRules();
       opt.rules = G.Coop.rulesFromSettings();
       paint(el, opt);

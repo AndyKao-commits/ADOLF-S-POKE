@@ -115,6 +115,8 @@ G.Game = (() => {
     G.Combat.clearFields();
     G.EnemyMgr.clear();
     G.Pickups.clear();
+    if (coop) G.Coop.lockRun(coop.rules, false);
+    else G.Coop.lockRun(null, true);
     G.Spawner.reset();
     G.Rift.reset();
     G.Judgment.reset();

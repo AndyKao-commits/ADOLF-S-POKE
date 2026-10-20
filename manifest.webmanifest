@@ -1,7 +1,7 @@
 {
-  "name": "PokéSurvivor",
-  "short_name": "PokéSurvivor",
-  "description": "Fan game gratuito: sobrevive a las hordas con tu compañero Pokémon. Sin anuncios.",
+  "name": "小柯Survivor",
+  "short_name": "小柯Survivor",
+  "description": "小柯與他的朋友。改版過的 10 人聯機版本。",
   "lang": "es",
   "start_url": "./",
   "scope": "./",

@@ -59,6 +59,8 @@ G.Social = (() => {
   const pres = new Map();           // otherUid -> { online, play, room, seen } (lo último leído)
   const sentInv = new Set();        // a quién invitaste (para retirarlo al salir)
   let room = null;                  // { id, host, isHost, members: [{ uid, name, dex, shiny }] }
+  let discKey = '';
+  let claiming = false;
   let roomRefs = [];
   const invites = new Map();        // fromUid -> { from, name, room, at }
   const listeners = new Set();
@@ -383,10 +385,32 @@ G.Social = (() => {
       // El anfitrión siempre primero; el resto por orden de llegada.
       room.members = Object.keys(m).map(k => Object.assign({ uid: k }, m[k]))
         .sort((a, b) => (a.uid === room.host ? -1 : b.uid === room.host ? 1 : (a.at || 0) - (b.at || 0)));
+      // El anfitrión ya no está: el que llegó primero se queda con la sala.
+      if (room.host && !room.members.some(x => x.uid === room.host)) {
+        const next = nextHost(room.members, room.host);
+        if (next && next.uid === uid) claimHost();
+      }
+      watchRoomDisconnect();
       emit('room');
     }, () => closedRoom());
+    let seenHost = false, prevHost = host;
     const href = fb.rtdb.ref('rooms/' + id + '/host');
-    href.on('value', s => { if (room && room.id === id && !s.val()) closedRoom(); }, () => closedRoom());
+    href.on('value', s => {
+      if (!room || room.id !== id) return;
+      const h = s.val();
+      if (!h) { closedRoom(); return; }
+      const first = !seenHost;
+      seenHost = true;
+      const became = h === uid && !room.isHost;
+      room.host = h;
+      room.isHost = h === uid;
+      if (!first && h !== prevHost) {
+        G.UI.toast(became ? 'Ahora eres el anfitrión.' : 'Hay un anfitrión nuevo.', 3600);
+        watchRoomDisconnect();
+      }
+      prevHost = h;
+      emit('room');
+    }, () => closedRoom());
     const oref = fb.rtdb.ref('rooms/' + id + '/open');
     oref.on('value', s => { if (room && room.id === id) { room.open = s.val() === true; emit('room'); } }, () => {});
     const cref = fb.rtdb.ref('rooms/' + id + '/cap');
@@ -406,16 +430,38 @@ G.Social = (() => {
     emit('room');
   }
 
-  /** Si se cierra el navegador, la sala (anfitrión) o tu plaza (invitado) se borran solas. */
+  /** El siguiente anfitrión: el que lleva más tiempo en la sala. */
+  function nextHost(members, oldHost) {
+    return members.filter(m => m.uid !== oldHost)
+      .sort((a, b) => (a.at || 0) - (b.at || 0) || (a.uid < b.uid ? -1 : 1))[0] || null;
+  }
+
+  /** Si se cierra el navegador: la sala se borra sólo si no queda nadie; si no, se queda tu plaza vacía y otro pasa a anfitrión. */
   function watchRoomDisconnect() {
-    if (!room) return;
-    const ref = room.isHost ? fb.rtdb.ref('rooms/' + room.id) : fb.rtdb.ref('rooms/' + room.id + '/m/' + uid);
-    ref.onDisconnect().remove();
+    if (!room || !fb) return;
+    const others = room.members.filter(m => m.uid !== uid).length;
+    const key = (room.isHost ? 'h' : 'g') + (room.isHost && others === 0 ? ':solo' : ':slot');
+    if (key === discKey) return;
+    discKey = key;
+    const roomRef = fb.rtdb.ref('rooms/' + room.id);
+    const mine = fb.rtdb.ref('rooms/' + room.id + '/m/' + uid);
+    roomRef.onDisconnect().cancel();
+    mine.onDisconnect().cancel();
+    if (room.isHost && others === 0) roomRef.onDisconnect().remove();
+    else mine.onDisconnect().remove();
+  }
+
+  function claimHost() {
+    if (!room || claiming || room.isHost) return;
+    claiming = true;
+    const id = room.id;
+    fb.rtdb.ref('rooms/' + id + '/host').set(uid).catch(() => {}).finally(() => { claiming = false; });
   }
 
   function detachRoom() {
     for (const r of roomRefs) r.off();
     roomRefs = [];
+    discKey = '';
   }
 
   function closedRoom() {
@@ -431,11 +477,19 @@ G.Social = (() => {
   async function leaveRoom() {
     if (!room) return;
     const r = room;
+    const others = nextHost(r.members, uid);
     detachRoom();
     room = null;
-    const ref = r.isHost ? fb.rtdb.ref('rooms/' + r.id) : fb.rtdb.ref('rooms/' + r.id + '/m/' + uid);
-    ref.onDisconnect().cancel().catch(() => {});
-    await ref.remove().catch(() => {});
+    const roomRef = fb.rtdb.ref('rooms/' + r.id);
+    const mine = fb.rtdb.ref('rooms/' + r.id + '/m/' + uid);
+    roomRef.onDisconnect().cancel().catch(() => {});
+    mine.onDisconnect().cancel().catch(() => {});
+    if (r.isHost && !others) await roomRef.remove().catch(() => {});
+    else if (r.isHost) {
+      // Primero el relevo, luego tu plaza: la sala no se cierra.
+      await fb.rtdb.ref('rooms/' + r.id + '/host').set(others.uid).catch(() => {});
+      await mine.remove().catch(() => {});
+    } else await mine.remove().catch(() => {});
     retractInvites();
     writeStatus();
     rtOff();

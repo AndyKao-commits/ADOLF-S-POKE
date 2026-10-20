@@ -19,13 +19,14 @@
  *   diffRate    número                            enemigos que aparecen, si diffMode es 'custom'
  *   diffHp      número                            vida de los enemigos, si diffMode es 'custom'
  *   diffXp      número                            entre cuántos se reparte la experiencia, si es 'custom'
+ *   bossN       0..10                             cuántos jefes salen (5 es lo de siempre, uno cada 3 minutos)
  *
  *   G.Settings.get('quality')  ·  G.Settings.set('fps', true)  ·  G.Settings.on(fn)
  *   G.Settings.fx   nivel efectivo 0 (bajo) .. 2 (alto), ya resuelto el 'auto'
  */
 G.Settings = (() => {
   const KEY = 'ps.settings';
-  const DEF = { quality: 'auto', dmgNumbers: true, calm: false, fps: false, stick: 1, stickMode: 'float', pad: null, gamepad: true, padRumble: true, aimManual: false, partyCap: 10, diffMode: 'auto', diffN: 4, diffRate: 3.25, diffHp: 1.9, diffXp: 2.8 };
+  const DEF = { quality: 'auto', dmgNumbers: true, calm: false, fps: false, stick: 1, stickMode: 'float', pad: null, gamepad: true, padRumble: true, aimManual: false, partyCap: 10, diffMode: 'auto', diffN: 4, diffRate: 3.25, diffHp: 1.9, diffXp: 2.8, bossN: 5 };
   let s = Object.assign({}, DEF);
   try { Object.assign(s, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* nada */ }
   const fns = new Set();
