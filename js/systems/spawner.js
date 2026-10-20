@@ -150,6 +150,17 @@ G.Spawner = (() => {
     preloadT -= dt;
     if (preloadT <= 0) { preloadT = 10; G.Sprites.preload(G.Enemies.upcomingDex(t, 60)); }
 
+    // Asedio: sólo monstruos pequeños, y pocos. No hay jefes.
+    if (G.Modes && G.Modes.is('siege')) {
+      if (G.EnemyMgr.count < 12) {
+        acc += rate(t) * G.Coop.scaleRate(players.length) * 0.55 * dt;
+        let n = Math.floor(acc);
+        acc -= n;
+        while (n-- > 0 && G.EnemyMgr.count < 12) spawnOne(anchor(), t);
+      }
+      return;
+    }
+
     // Desafío de jefes: nada de hordas. Como mucho tres jefes vivos.
     if (G.Modes && G.Modes.is('boss')) {
       while (G.EnemyMgr.count < 3) {

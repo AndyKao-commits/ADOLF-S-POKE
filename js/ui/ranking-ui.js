@@ -55,8 +55,11 @@ G.RankingUI = (() => {
         box.appendChild(b);
       }
     };
-    mk($('rk-mode'), [['s', `<b>${G.Icons.html('user', 16)} Solo</b>`], ['g', `<b>${G.Icons.html('friends', 16)} Grupo</b>`]],
-       mode, k => { mode = k; }, 'gen-tab');
+    // El asedio guarda sólo al ganador, en la tabla de uno. No hay tabla de grupo.
+    if (runMode === 'siege') mode = 's';
+    const gens = [['s', `<b>${G.Icons.html('user', 16)} Solo</b>`]];
+    if (runMode !== 'siege') gens.push(['g', `<b>${G.Icons.html('friends', 16)} Grupo</b>`]);
+    mk($('rk-mode'), gens, mode, k => { mode = k; }, 'gen-tab');
     const runBox = $('rk-run');
     if (runBox && G.Modes) {
       runBox.innerHTML = '';

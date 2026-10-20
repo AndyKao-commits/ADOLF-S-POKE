@@ -17,7 +17,7 @@
 G.Game = (() => {
   let cv, ctx, dpr = 1, w = 0, h = 0;
   let state = 'ui';
-  let time = 0, last = 0, pendingLevels = 0, lostCastle = false;
+  let time = 0, last = 0, pendingLevels = 0, lostCastle = false, siegeResult = null;
   let pl = null;
   let caught = [];          // shinies conseguidos en esta run
   let biome = -1;
@@ -109,6 +109,9 @@ G.Game = (() => {
     const perks = G.Upgrades.perks(G.DB.upgradesOf(mon.dex));
 
     lostCastle = false;
+    siegeResult = null;
+    if (G.Castle) G.Castle.end();
+    if (G.Siege) G.Siege.end();
     G.Modes.lock(coop && coop.mode ? coop.mode : G.Settings.get('runMode'));
     G.UI.hideAll();
     G.UI.chrome(false);
@@ -158,12 +161,13 @@ G.Game = (() => {
       if (!G.Coop.active || G.Coop.isHost) pendingLevels = 19;
     }
     if (G.Modes.is('castle')) G.Castle.begin();
+    if (G.Modes.is('siege')) G.Siege.begin(coop ? coop.members : null);
     G.Camera.x = pl.x; G.Camera.y = pl.y; G.Camera.shake = 0;
     // Hojas de sprites locales: el compañero y los primeros enemigos.
     G.Sprites.preload([mon.dex], 8000, pl.shiny);
     G.Audio.music(G.BIOME_MUSIC[0]);
     // Para el ranking: el servidor apunta cuándo empieza la partida (anti-trampas).
-    if (!coop || G.Coop.isHost) G.Ranking.runStarted(coop ? 'g' : 's');
+    if (G.Modes.is('siege') || !coop || G.Coop.isHost) G.Ranking.runStarted(coop ? 'g' : 's', G.Modes.is('siege'));
     deathT = 0;
 
     state = 'playing';
@@ -251,6 +255,11 @@ G.Game = (() => {
       if (d) Object.assign(pl, { kills: d.ki, bosses: d.bo, coins: d.co, level: Math.max(pl.level, d.lv || 1), t1: d.t1 || pl.t1, t10: d.t10 || pl.t10 });
       if (d && d.t) time = d.t;
       if (d && d.why === 'castle') lostCastle = true;
+      if (d && d.why === 'siege') {
+        siegeResult = { win: d.win };
+        endRun(d.win !== ((pl && pl.uid) || 'me'));
+        return;
+      }
       if (d && d.why === 'host') G.UI.toast('El anfitrión ha terminado la partida', 3200);
       endRun(!(d && d.why === 'host'));
     },
@@ -316,6 +325,7 @@ G.Game = (() => {
   function endRun(dead = true) {
     if (state === 'over' || !pl) return;
     G.Castle.end();
+    if (G.Siege) G.Siege.end();
     const coop = !!pl.uid;                    // sólo las partidas en grupo le ponen uid
     const wasHost = !!pl.coopHost;
     const team = coop ? G.Coop.members.slice() : [];
@@ -333,7 +343,7 @@ G.Game = (() => {
       recogidas: pl.coins
     };
     const coins = Math.round((parts.tiempo + parts.derrotados + parts.jefes + parts.recogidas) * mul);
-    const record = time > save.stats.bestTime;
+    const record = !G.Modes.is('siege') && time > save.stats.bestTime;
 
     save.coins += coins;
     bankTickets(false);
@@ -341,8 +351,10 @@ G.Game = (() => {
     save.pused = save.pused || {};
     save.pused[pl.dex] = (+save.pused[pl.dex] || 0) + 1;     // para "más usados" en la colección
     save.stats.totalKills += pl.kills;
-    save.stats.bestTime = Math.max(save.stats.bestTime, Math.floor(time));
-    if (coop) save.stats.bestGroupTime = Math.max(save.stats.bestGroupTime || 0, Math.floor(time));
+    if (!G.Modes.is('siege')) {
+      save.stats.bestTime = Math.max(save.stats.bestTime, Math.floor(time));
+      if (coop) save.stats.bestGroupTime = Math.max(save.stats.bestGroupTime || 0, Math.floor(time));
+    }
     save.stats.bestLevel = Math.max(save.stats.bestLevel, pl.level);
     save.stats.coinsEarned += coins;
     const judge = G.Judgment.summary();
@@ -361,14 +373,16 @@ G.Game = (() => {
     const ok = clean();
     // Una sala con una sola persona cuenta como solo: si no, ni solo ni grupo la guardan.
     const group = coop && team.length >= 2;
+    const siegeWin = G.Modes.is('siege') && siegeResult && siegeResult.win === (pl.uid || 'me');
     const sent = !ok ? null
+               : G.Modes.is('siege') ? (siegeWin ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny, runMode: 'siege' })) : null)
                : !group ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny, runMode: G.Modes.id }))
                : wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team, runMode: G.Modes.id })) : null;
     if (sent) sent.then(b => { if (b && b.some(p => p !== 'a')) G.DB.commit(true); }).catch(() => {});
 
     G.Coop.unlockRun();
     G.RunUI.showOver({
-      dead, cause: lostCastle ? 'castle' : '', time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, judge,
+      dead, cause: lostCastle ? 'castle' : (G.Modes.is('siege') && siegeResult ? (siegeWin ? 'siege-win' : 'siege-lose') : ''), time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, judge,
       moves: pl.moves, caught,
       breakdown: Object.entries(parts).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(' · ') +
                  (mul > 1 ? ` · ×${mul.toFixed(2)} Fortuna` : '')
@@ -395,6 +409,13 @@ G.Game = (() => {
   }
 
   // ---------------- subida de nivel ----------------
+
+  function siegeOver(info) {
+    if (siegeResult || state === 'over' || state === 'ui' || !pl) return;
+    siegeResult = info || { win: '' };
+    if (G.Coop.active && G.Coop.isHost) G.Coop.over(Object.assign(summary(), { why: 'siege', win: siegeResult.win }));
+    endRun(siegeResult.win !== (pl.uid || 'me'));
+  }
 
   function castleDown() {
     if (lostCastle || state === 'over' || state === 'ui' || !pl) return;
@@ -676,7 +697,7 @@ G.Game = (() => {
     }
     // Tras caer, deja que se vea la animación de Faint antes del resumen.
     // (En la arena de la grieta no: allí caer sólo te echa de vuelta.)
-    if (pl.dead && !coop && !G.Rift.inArena) {
+    if (pl.dead && !coop && !G.Rift.inArena && !(G.Siege && G.Siege.up)) {
       deathT += dt;
       pl.update(dt);
       G.EnemyMgr.update(dt * 0.3, pl);
@@ -700,7 +721,7 @@ G.Game = (() => {
     pl.update(dt);
     if (coop) {
       for (const p of G.Coop.puppets()) { p.netUpdate(dt); G.Combat.ghostOrbit(p, dt, time); }
-      if (pl.dead) reviveTick(dt);
+      if (pl.dead && !(G.Siege && G.Siege.up)) reviveTick(dt);
     }
     G.Camera.follow(pl.x, pl.y, dt);
     G.World.update(dt, G.Camera);
@@ -715,9 +736,11 @@ G.Game = (() => {
     else G.Spawner.tickBanner(dt);
     G.EnemyMgr.update(dt, all);
     G.EnemyMgr.rebuildGrid();
+    if (G.Siege && G.Siege.up) G.Siege.contain();
     G.Combat.tick(dt, pl, time);
     G.Projectiles.update(dt, pl, G.EnemyMgr.all());
     G.Combat.resolve(dt, pl, time);
+    if (G.Siege && G.Siege.up) G.Siege.tick(dt, pl);
     G.Combat.updateFields(dt);
     G.Pickups.update(dt, all, onCollect);
     G.Hazards.update(dt);
@@ -731,7 +754,7 @@ G.Game = (() => {
     G.Audio.music(G.Judgment.active ? G.Judgment.music : G.Rift.inArena ? 'rift' : G.EnemyMgr.bossAlive() ? 'boss' : G.BIOME_MUSIC[biome % G.BIOME_MUSIC.length]);
     if (!coop || G.Coop.isHost) maybeLevelUp();
     if (pl.bonds > 0) offerBond(true);
-    if (G.Coop.isHost) checkAllDown(dt);
+    if (G.Coop.isHost && !(G.Siege && G.Siege.up)) checkAllDown(dt);
   }
 
   /** Caído en grupo: un compañero a tu lado te va levantando. */
@@ -757,6 +780,7 @@ G.Game = (() => {
   function drawScene(cam, extra) {
     const t = performance.now() / 1000;
     G.World.drawGround(ctx, cam);
+    if (G.Siege && G.Siege.up) G.Siege.drawBorder(ctx);
     G.World.drawLiquid(ctx, cam, t);
     G.Hazards.draw(ctx);
     G.Combat.drawGroundFields(ctx);
@@ -774,6 +798,7 @@ G.Game = (() => {
     if (arceus) items.push({ y: arceus.y, ent: arceus });
     if (pl && state !== 'ui') for (const d of G.Events.drawables()) items.push({ y: d.y, ent: d });
     if (G.Castle.up) items.push({ y: G.Castle.y, ent: G.Castle });
+    if (G.Siege && G.Siege.up) for (const d of G.Siege.drawables()) items.push(d);
     items.sort((a, b) => a.y - b.y);
     for (const it of items) {
       if (it.prop) G.World.drawProp(ctx, it.prop, t);
@@ -950,7 +975,7 @@ G.Game = (() => {
   })();
 
   return {
-    init, startRun, everyone, levelXp, flash, offerBond,
+    init, startRun, everyone, levelXp, flash, offerBond, siegeOver,
     /** Para pruebas: salta el reloj de la run. */
     debugTime(t) { tampered = true; time = t; },
     /** Para grabar vídeos: cámara lenta (0,5 = mitad de velocidad). */

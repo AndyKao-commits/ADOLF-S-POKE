@@ -391,9 +391,14 @@ G.Player = class Player {
     const ranged = !!m && (m.kind === 'projectile' || m.kind === 'beam');
     const threat = G.Projectiles.nearest(all, this.x, this.y, this.r + 24);
     const boss = all.find(e => e.boss && !e.dead && G.U.dist(this.x, this.y, e.x, e.y) < 330);
-    const tg = (ranged ? boss || threat : threat || boss)
+    let tg = (ranged ? boss || threat : threat || boss)
             || G.Projectiles.nearest(all, this.x, this.y, 520)
             || G.World.nearestBreakable(this.x, this.y, 200);
+    // Asedio: si nadie te está tocando, apuntas al castillo enemigo.
+    if (G.Siege && G.Siege.up && !threat) {
+      const castle = G.Siege.target(this.x, this.y, 720);
+      if (castle) tg = castle;
+    }
     // Apuntar a mano (Ajustes > Accesibilidad): hacia el ratón o el stick derecho.
     // El blanco (para la cadena) es el enemigo que hay en esa dirección; si no
     // hay ninguno, el de siempre.

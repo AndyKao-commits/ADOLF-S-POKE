@@ -4,14 +4,16 @@
  *   shiny    sólo Pokémon shiny; misma cantidad y misma experiencia
  *   boss     sólo jefes, tres a la vez, y empiezas en el nivel 20
  *   castle   proteges un castillo que no se mueve
+ *   siege    cada uno ataca el castillo de los demás
  */
 G.Modes = (() => {
-  const IDS = ['normal', 'shiny', 'boss', 'castle'];
+  const IDS = ['normal', 'shiny', 'boss', 'castle', 'siege'];
   const LIST = [
     ['normal', 'Mazmorra normal', 'Como siempre: hordas, jefes y experiencia.'],
     ['shiny', 'Sólo shinies', 'Sólo aparecen Pokémon shiny. La cantidad y la experiencia no cambian.'],
     ['boss', 'Desafío de jefes', 'Sólo aparecen jefes, tres a la vez. Empiezas en el nivel 20 para elegir ataques. La grieta sale antes, para poder fusionar.'],
-    ['castle', 'Protege al cachorro', 'Los monstruos atacan el castillo y tú los limpias. El castillo no se mueve.']
+    ['castle', 'Protege al cachorro', 'Los monstruos atacan el castillo y tú los limpias. El castillo no se mueve.'],
+    ['siege', 'Asedio', 'De 2 a 4 personas. Cada uno defiende su castillo y ataca el de los demás. Los monstruos se pueden derrotar, pero no dañan castillos. Si caes, vuelves al tuyo. El mapa tiene borde. Gana quien derriba un castillo. Solo, hay un castillo rival.']
   ];
   let cur = 'normal';
 

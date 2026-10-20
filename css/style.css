@@ -855,12 +855,13 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   .menu-modes { align-self: stretch; height: 100%; max-height: 100%; }
   .menu-modes .mode-pick { flex: 1; min-height: 0; }
   .menu-modes .chips { flex: 1; min-height: 0; }
-  .menu-modes .mode-row { flex: 1 1 0; }
+  .menu-modes .chips { gap: 3px; }
+  .menu-modes .mode-row { flex: 1 1 0; min-height: 0; }
   #scr-menu .logo .t1 { font-size: 22px; }
   #scr-menu .logo .t2, #scr-menu .brand-name { font-size: 12px; }
   .menu-play { min-width: 160px; font-size: 18px; padding: 6px 14px; }
-  .menu-play small { font-size: 10px; }
-  #mode-help { font-size: 11px; }
+  .menu-play small { display: none; }
+  #mode-help { font-size: 10px; line-height: 1.25; max-height: 3.8em; overflow: auto; margin: 0; }
   .menu-stats, .partner-card .lv { display: none; }
   #menu-partner { width: 132px; height: 102px; background: none; border: 0; box-shadow: none; }
   .partner-card { margin-top: 0; }

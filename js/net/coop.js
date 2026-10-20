@@ -74,7 +74,9 @@ G.Coop = (() => {
   function normalizeRules(r) {
     r = r || {};
     const mode = r.mode === 'count' || r.mode === 'custom' ? r.mode : 'auto';
-    const cap = clampCap(r.cap == null ? 4 : r.cap);
+    let cap = clampCap(r.cap == null ? 4 : r.cap);
+    const runMode = r.runMode === 'shiny' || r.runMode === 'boss' || r.runMode === 'castle' || r.runMode === 'siege' ? r.runMode : 'normal';
+    if (runMode === 'siege') cap = Math.min(cap, 4);
     const n = clampCap(r.n == null ? 4 : r.n);
     const bossRaw = Math.round(+r.bossN);
     return {
@@ -83,7 +85,7 @@ G.Coop = (() => {
       hp: clampMul(r.hp, 0.25, 8, autoHp(4)),
       xp: clampMul(r.xp, 0.25, 12, autoXp(4)),
       bossN: Math.min(10, Math.max(0, isFinite(bossRaw) ? bossRaw : 5)),
-      runMode: r.runMode === 'shiny' || r.runMode === 'boss' || r.runMode === 'castle' ? r.runMode : 'normal'
+      runMode
     };
   }
   function rulesFromSettings() {
@@ -275,6 +277,7 @@ G.Coop = (() => {
     const ja = G.Judgment.netState();       // Arceus en la Sentencia
     if (ja) f.ja = ja;
     if (G.Castle && G.Castle.up) f.ch = [Math.ceil(G.Castle.hp), Math.ceil(G.Castle.maxHp)];
+    if (G.Siege && G.Siege.up) f.sg = G.Siege.snapshot();
     // Siempre: quién está eligiendo y, si hay cartas de nivel, cuáles (ver arriba).
     f.ho = holdNames();
     if (waiting.size) f.lu = [levelSeq, levelNow];
@@ -375,6 +378,13 @@ G.Coop = (() => {
         case 'he': holdOff(from); break;
         case 're': G.Rift.enterRequest(); break;
         case 'bye': mateGone(from); break;
+        case 'sg':
+          if (G.Siege && G.Siege.up) G.Siege.applyHit(ev[1], ev[2], ev[3] || from);
+          break;
+        case 'ph':
+          if (ev[1] === me) { if (local && !local.dead) local.hurt(Math.max(1, Math.min(800, +ev[2] || 1))); }
+          else emit(['ph', ev[1], ev[2]], from);
+          break;
       }
     }
   }
@@ -406,6 +416,7 @@ G.Coop = (() => {
     for (const ev of msg.ev || []) applyHostEvent(ev);
     if (msg.ja) G.Judgment.netApply(msg.ja);
     if (msg.ch && G.Castle && G.Castle.up) G.Castle.net(msg.ch);
+    if (msg.sg && G.Siege && G.Siege.up) G.Siege.net(msg.sg);
     // Quién elige y las cartas de nivel, aunque se haya perdido algún aviso.
     if (msg.ho) {
       const k = msg.ho.join('|');
@@ -467,6 +478,9 @@ G.Coop = (() => {
       case 'ha': hostAway = !!ev[1]; updateAway(); break;
       case 'sh': api.shiny(ev[1]); break;
       case 'ov': { const cb = api.over; const d = ev[1]; end(); cb(d); break; }
+      case 'ph':
+        if (ev[1] === me && local && !local.dead) local.hurt(Math.max(1, Math.min(800, +ev[2] || 1)));
+        break;
       case 'rift': case 'riftx': case 'arena': case 'aw': case 'al': G.Rift.onEvent(ev); break;
       case 'jd': case 'jk': G.Judgment.onEvent(ev); break;
       case 'wx': G.Weather.onEvent(ev); break;

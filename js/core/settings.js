@@ -20,7 +20,7 @@
  *   diffHp      número                            vida de los enemigos, si diffMode es 'custom'
  *   diffXp      número                            entre cuántos se reparte la experiencia, si es 'custom'
  *   bossN       0..10                             cuántos jefes salen (5 es lo de siempre, uno cada 3 minutos)
- *   runMode     normal | shiny | boss | castle    modo de la próxima partida
+ *   runMode     normal | shiny | boss | castle | siege    modo de la próxima partida
  *
  *   G.Settings.get('quality')  ·  G.Settings.set('fps', true)  ·  G.Settings.on(fn)
  *   G.Settings.fx   nivel efectivo 0 (bajo) .. 2 (alto), ya resuelto el 'auto'

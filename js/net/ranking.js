@@ -88,7 +88,8 @@ G.Ranking = (() => {
   }
 
   /** Trozo del nombre de la tabla según el modo de partida. Vacío = mazmorra normal (las tablas de siempre). */
-  const RUN_TAG = { shiny: 'sh_', boss: 'bo_', castle: 'ca_' };
+  const RUN_TAG = { shiny: 'sh_', boss: 'bo_', castle: 'ca_', siege: 'sg_' };
+  const fastBoard = b => String(b).includes('_sg_');
   function runTag(rm) { return RUN_TAG[rm] || ''; }
 
   /** El filtro por Pokémon sólo existe en el histórico. */
@@ -136,8 +137,7 @@ G.Ranking = (() => {
   function bests() { try { return JSON.parse(localStorage.getItem(bestKey()) || '{}'); } catch (e) { return {}; } }
   function saveBests(b) {
     // Sólo se conservan las tablas de los periodos actuales y las históricas.
-    const cur = Object.values(boardIds());
-    for (const k of Object.keys(b)) if (!cur.some(p => k.split(':')[0].split('_')[1] === p)) delete b[k];
+    for (const k of Object.keys(b)) if (!boardNow(k)) delete b[k];
     try { localStorage.setItem(bestKey(), JSON.stringify(b)); } catch (e) { /* lleno */ }
   }
 
@@ -153,13 +153,14 @@ G.Ranking = (() => {
   function noteTop(b, top) {
     const vals = Object.values(top || {});
     if (vals.length < TOP) return;
-    const low = Math.min(...vals.map(v => v.t));
+    const fast = fastBoard(b);
+    const edge = fast ? Math.max(...vals.map(v => v.t)) : Math.min(...vals.map(v => v.t));
     const t = thresholds();
-    if ((t[b] || 0) >= low) return;
-    t[b] = low;
+    if (fast) { if (t[b] && t[b] <= edge) return; }
+    else if ((t[b] || 0) >= edge) return;
+    t[b] = edge;
     // Sólo las tablas de los periodos de ahora (y las históricas).
-    const cur = Object.values(boardIds());
-    for (const k of Object.keys(t)) if (!cur.some(p => k.split('_')[1] === p)) delete t[k];
+    for (const k of Object.keys(t)) if (!boardNow(k)) delete t[k];
     try { localStorage.setItem(THR, JSON.stringify(t)); } catch (e) { /* lleno */ }
   }
 
@@ -172,7 +173,8 @@ G.Ranking = (() => {
              names: U.list(v.names, 10).map(x => U.str(x, 24)), dex: U.list(v.dex, 10).map(x => U.int(x, 2000)),
              shiny: U.list(v.shiny, 10).map(x => x === true), lv: U.int(v.lv, 999) || 1, kills: U.int(v.kills, 1e9) };
   };
-  const sorted = top => Object.entries(top || {}).map(([id, v]) => rowOf(id, v)).sort((a, b) => b.t - a.t);
+  const sorted = (top, fast) => Object.entries(top || {}).map(([id, v]) => rowOf(id, v)).sort((a, b) => fast ? a.t - b.t : b.t - a.t);
+  const worse = (fast, oldT, neu) => fast ? neu >= oldT : neu <= oldT;
   const now = () => firebase.firestore.FieldValue.serverTimestamp();
 
   // ---------------- anti-trampas ----------------
@@ -186,9 +188,16 @@ G.Ranking = (() => {
    * Antes se espera a que acabe de subirse la marca de la partida anterior.
    */
   let busy = Promise.resolve(), runMarked = '';
-  function runStarted(mode) {
+  function boardNow(id) {
+    const parts = String(id).split(':')[0].split('_');
+    return Object.values(boardIds()).some(p => parts.includes(p));
+  }
+  function runStarted(mode, force) {
     const fb = fbx();
-    if (!fb || runMarked === fb.uid) return;
+    if (!fb) return;
+    // El asedio mide el tiempo de ESTA partida: una marca rápida no puede
+    // apoyarse en una sesión que empezó mucho antes.
+    if (runMarked === fb.uid && !force) return;
     runMarked = fb.uid;
     const go = n => fb.fs.collection('runs').doc(fb.uid).set({ startedAt: now(), mode })
       .catch(e => {
@@ -211,8 +220,9 @@ G.Ranking = (() => {
         const topOnly = TOP_ONLY.has(period);
         // Si no llegas a la 50.ª marca que conoce este navegador, no entras: en
         // diario, semanal, mensual y por Pokémon no hay nada que hacer (ni leer).
+        const fast = fastBoard(b);
         const thr = thresholds()[b] || 0;
-        if (topOnly && thr && entry.t <= thr) return;
+        if (topOnly && thr && worse(fast, thr, entry.t)) return;
         // ¿Ya tenías una marca mejor? En el histórico, si este navegador no lo
         // sabe, se mira una vez tu marca (pequeña). En las demás lo dice el
         // resumen, que se lee igualmente dentro de la transacción de abajo.
@@ -220,12 +230,12 @@ G.Ranking = (() => {
           const old = await col(b).doc(id).get();
           known[key] = old.exists ? old.data().t : 0;
         }
-        if ((known[key] || 0) >= entry.t) return;
+        if (known[key] && worse(fast, known[key], entry.t)) return;
         const data = Object.assign({}, entry, { at: firebase.firestore.FieldValue.serverTimestamp() });
         // Si la tabla ya está llena y no llegas al top 50, no hace falta tocar el resumen
         // (y en diario, semanal y mensual, ni siquiera se guarda la marca).
         const cached = cacheGet('s:' + b);
-        if (thr && entry.t <= thr && !(cached && id in cached)) {
+        if (thr && worse(fast, thr, entry.t) && !(cached && id in cached)) {
           if (!topOnly) await col(b).doc(id).set(data);
           else { known[key] = entry.t; return; }
         } else {
@@ -239,10 +249,10 @@ G.Ranking = (() => {
             if (entry.shiny.some(Boolean)) mine.shiny = entry.shiny;
             let ev = '';
             // Ya estabas con una marca mejor (otro ordenador): nada que escribir.
-            if (id in top && top[id].t >= entry.t) { entered = false; newTop = top; return; }
+            if (id in top && worse(fast, top[id].t, entry.t)) { entered = false; newTop = top; return; }
             if (!(id in top) && Object.keys(top).length >= TOP) {
-              const low = sorted(top).pop();
-              if (low.t >= entry.t) {                                // no entra en el top
+              const low = sorted(top, fast).pop();
+              if (worse(fast, low.t, entry.t)) {                     // no entra en el top
                 if (!topOnly) tx.set(col(b).doc(id), data);
                 entered = false; newTop = top; return;
               }
@@ -276,7 +286,8 @@ G.Ranking = (() => {
   function submitSolo(r) { return track(submitSoloNow(r)); }
   async function submitSoloNow(r) {
     const fb = fbx();
-    if (!fb || !G.Social.me || r.t < MIN_T) return [];
+    const rm0 = G.Modes ? G.Modes.idOf(r.runMode) : 'normal';
+    if (!fb || !G.Social.me || r.t < (rm0 === 'siege' ? 8 : MIN_T)) return [];
     const entry = { t: r.t, uids: [fb.uid], names: [G.Social.me.name], dex: [r.dex], shiny: [!!r.shiny], lv: r.lv, kills: r.kills };
     const rm = G.Modes ? G.Modes.idOf(r.runMode) : 'normal';
     const boards = PERIODS.map(([p]) => [board('s', p, null, rm), p]);
@@ -329,7 +340,8 @@ G.Ranking = (() => {
     const fb = fbx();
     if (!fb) return [];
     const b = board(mode, period, dex, rm);
-    const rows = sorted(await summary(b));
+    const fast = fastBoard(b);
+    const rows = sorted(await summary(b), fast);
     if (!friendsOnly) return rows.slice(0, TOP);
     const circle = [fb.uid, ...G.Social.friends.filter(f => f.status === 'ok').map(f => f.uid)].slice(0, 30);
     const inTop = rows.filter(r => r.uids.some(u => circle.includes(u)));
@@ -351,7 +363,7 @@ G.Ranking = (() => {
     }
     const all = new Map();
     for (const r of [...inTop, ...extra]) all.set(r.id, r);
-    return [...all.values()].sort((a, c) => c.t - a.t).slice(0, TOP);
+    return [...all.values()].sort((a, c) => fast ? a.t - c.t : c.t - a.t).slice(0, TOP);
   }
 
   /** Tu puesto en la tabla (aunque no salgas en el top). → { pos, t, row } | null */
@@ -359,8 +371,9 @@ G.Ranking = (() => {
     const fb = fbx();
     if (!fb) return null;
     const b = board(mode, period, dex, rm);
+    const fast = fastBoard(b);
     // ¿Estás en el top 50? Entonces el puesto sale del resumen, sin gastar nada.
-    const rows = sorted(await summary(b));
+    const rows = sorted(await summary(b), fast);
     const i = rows.findIndex(r => r.uids.includes(fb.uid));
     if (i >= 0) return { pos: i + 1, t: rows[i].t, row: rows[i] };
     if (TOP_ONLY.has(period) || dex) return { out: true };
@@ -381,7 +394,7 @@ G.Ranking = (() => {
     kb[mk] = mine ? mine.t : 0;
     saveBests(kb);
     let res = null;
-    if (mine) { const above = await countAbove(b, mine.t); res = { pos: above + 1, capped: above >= RANK_CAP, t: mine.t, row: mine }; }
+    if (mine) { const above = await countAbove(b, mine.t, fast); res = { pos: above + 1, capped: above >= RANK_CAP, t: mine.t, row: mine }; }
     cacheSet(ck, res);
     return res;
   }
@@ -394,7 +407,7 @@ G.Ranking = (() => {
    * count(), así que se usa la API REST de agregación (1 lectura por cada
    * 1.000 entradas, en vez de leerlas todas). Sólo se usa si no estás en el top 50.
    */
-  async function countAbove(b, t) {
+  async function countAbove(b, t, fast) {
     const fb = fbx();
     const cfg = G.FIREBASE_CONFIG;
     const base = fb.emulator ? 'http://127.0.0.1:8080/v1' : 'https://firestore.googleapis.com/v1';
@@ -402,7 +415,7 @@ G.Ranking = (() => {
     const token = await fb.auth.currentUser.getIdToken();
     const body = { structuredAggregationQuery: {
       structuredQuery: { from: [{ collectionId: 'e' }],
-        where: { fieldFilter: { field: { fieldPath: 't' }, op: 'GREATER_THAN', value: { integerValue: String(t) } } } },
+        where: { fieldFilter: { field: { fieldPath: 't' }, op: fast ? 'LESS_THAN' : 'GREATER_THAN', value: { integerValue: String(t) } } } },
       aggregations: [{ alias: 'n', count: { upTo: String(RANK_CAP) } }] } };
     try {
       const r = await fetch(url, { method: 'POST', headers: { Authorization: 'Bearer ' + token, 'content-type': 'application/json' }, body: JSON.stringify(body) });

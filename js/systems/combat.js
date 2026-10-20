@@ -154,6 +154,7 @@ G.Combat = (() => {
     for (const p of G.World.propsInCircle(pl.x, pl.y, m.radius)) {
       if (inArc(pl.x, pl.y, p.x, p.y, pl.aim, half)) G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
     }
+    if (G.Siege && G.Siege.up) G.Siege.smack(pl, m.radius, m.dmg * pl.atkFor(m));
   }
 
   function beam(pl, m) {
@@ -183,6 +184,7 @@ G.Combat = (() => {
     for (const p of G.World.propsInCircle(mx, my, len / 2 + w)) {
       if (onBeam(p.x, p.y, p.r)) G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
     }
+    if (G.Siege && G.Siege.up) G.Siege.smack(pl, len, m.dmg * pl.atkFor(m));
   }
 
   function aura(pl, m) {
@@ -208,6 +210,7 @@ G.Combat = (() => {
       if (m.drain) healed += m.drain;
     }
     for (const p of G.World.propsInCircle(pl.x, pl.y, m.radius)) G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
+    if (G.Siege && G.Siege.up) G.Siege.smack(pl, m.radius, m.dmg * pl.atkFor(m));
     if (healed > 0) pl.heal(Math.min(healed, 6));
   }
 
@@ -333,6 +336,7 @@ G.Combat = (() => {
     for (const p of G.World.propsInCircle(mx, my, len / 2 + w)) {
       if (segDist2(sx, sy, pl.x, pl.y, p.x, p.y) <= (w / 2 + p.r) ** 2) G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
     }
+    if (G.Siege && G.Siege.up) G.Siege.smack(pl, w, m.dmg * pl.atkFor(m));
     G.Camera.kick(0.12);
   }
 
@@ -478,6 +482,7 @@ G.Combat = (() => {
         const d = m.dmg * pl.atkFor(m);
         for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, m.radius)) hit(pl, e, d, f.col, e.x - pl.x, e.y - pl.y, 40, m);
         for (const p of G.World.propsInCircle(pl.x, pl.y, m.radius)) G.World.damageProp(p, d, f.col);
+        if (G.Siege && G.Siege.up) G.Siege.smack(pl, m.radius, d);
       }
       return --f.n <= 0;
     }
@@ -777,6 +782,7 @@ G.Combat = (() => {
       }
 
       // --- disparos de jugadores ---
+      if (G.Siege && G.Siege.up) G.Siege.strike(p);
       // Orbes de un compañero: sólo se ven.
       if (p.orb && p.ghost) continue;
       if (!p.orb) {

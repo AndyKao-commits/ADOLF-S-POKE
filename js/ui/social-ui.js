@@ -294,11 +294,16 @@
     function start() {
       const room = G.Social.room;
       if (!room || !room.isHost || room.members.length < 2) return;
+      const rm = G.Settings.get('runMode') || 'normal';
+      if (rm === 'siege' && room.members.length > 4) {
+        G.UI.toast('El asedio es de 2 a 4.');
+        return;
+      }
       const cfg = {
         k: 'start', seed: Math.floor(Math.random() * 1e6), host: room.host,
         members: room.members.map(m => ({ uid: m.uid, name: m.name, dex: m.dex, shiny: !!m.shiny })),
-        rules: G.Coop.publicRules(room.rules || G.Coop.rulesFromSettings()),
-        mode: (room.rules && room.rules.runMode) || G.Settings.get('runMode') || 'normal'
+        rules: G.Coop.publicRules(Object.assign({}, room.rules || G.Coop.rulesFromSettings(), { runMode: rm })),
+        mode: rm
       };
       G.Social.setOpen(false);
       G.Net.broadcast(cfg);

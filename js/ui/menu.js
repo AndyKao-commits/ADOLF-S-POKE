@@ -51,11 +51,11 @@ G.MenuUI = (() => {
 
   // ---------------- menú principal ----------------
 
-  const MODE_ART = { normal: [25, false], shiny: [6, true], boss: [150, false] };
+  const MODE_ART = { normal: [25, false], shiny: [6, true], boss: [150, false], siege: [68, false] };
   let modeArtReady = null;
   function ensureModeArt() {
     if (!modeArtReady) modeArtReady = Promise.all([
-      G.Sprites.preload([25, 6, 150], 8000, false),
+      G.Sprites.preload([25, 6, 150, 68], 8000, false),
       G.Sprites.preload([6], 8000, true)
     ]);
     return modeArtReady;
