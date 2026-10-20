@@ -3,6 +3,23 @@
  * Los monstruos salen de cada castillo: atacan a los demás, no a los suyos.
  * A los 3 minutos un jefe en el centro ataca sólo a jugadores.
  * Gana el último castillo en pie. El destruido deja de invocar y sus monstruos se van.
+ *
+ * PENDIENTE (los jugadores aún no se apuntan entre sí; no está hecho):
+ * - La mira trata a los otros jugadores vivos como a los monstruos enemigos:
+ *   el más cercano dentro de 720, y si no hay, el castillo enemigo dentro de 980.
+ *   La mira manual también puede caer sobre un jugador en esa dirección.
+ *   No se apunta a quien está muerto o cuyo castillo ya cayó.
+ * - Cada ataque que daña monstruos daña jugadores con la misma forma:
+ *   cuerpo a cuerpo sólo en el arco, el rayo sólo sobre el rayo,
+ *   la embestida en todo el recorrido, la cadena puede saltar a un jugador,
+ *   y también minas, meteoros, charcos, terremoto, remolino y zona de aturdir.
+ *   La torreta puede apuntar a un jugador.
+ * - El daño a jugadores sigue rebajado (proyectil cerca del 65 %,
+ *   cuerpo a cuerpo cerca del 55 %) para no matar de un golpe.
+ *   El castillo decide la partida. Quien muere reaparece a los ~2,4 s en el suyo.
+ * - Los monstruos propios siguen sin recibir tu ataque.
+ *   Si tu castillo ya cayó, lo que queda en el aire ya no hiere a otros jugadores.
+ * - En solitario no hay un jugador rival: sólo el castillo rival.
  */
 G.Siege = (() => {
   const HALF = 832;

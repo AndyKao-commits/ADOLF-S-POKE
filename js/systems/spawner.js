@@ -155,11 +155,14 @@ G.Spawner = (() => {
     if (G.Modes && (G.Modes.is('siege') || G.Modes.is('castle'))) return;
 
     // Desafío de jefes: nada de hordas. Como mucho tres jefes vivos.
+    // El tramo (en la mazmorra, uno cada 3 min) y la curva de vida y daño
+    // avanzan el doble de rápido. En el segundo 0 salen igual de fuertes.
     if (G.Modes && G.Modes.is('boss')) {
+      const clock = t * 2;
       while (G.EnemyMgr.count < 3) {
-        const mob = G.Enemies.bossMob(t);
+        const mob = G.Enemies.bossMob(clock);
         const [x, y] = ringPoint(anchor(), Math.random() * 6.2832);
-        const e = new G.Enemy(mob, x, y, scaled(G.Enemies.bossScale(t), G.Coop.scaleHp(players.length)), true);
+        const e = new G.Enemy(mob, x, y, scaled(G.Enemies.bossScale(clock), G.Coop.scaleHp(players.length)), true);
         const forced = shinyLook(mob);
         if (forced || rollShiny(mob.dex)) e.makeShiny(forced);
         G.EnemyMgr.add(e);

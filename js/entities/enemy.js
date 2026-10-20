@@ -221,8 +221,11 @@
       if (this.boss && !this.judge) {
         G.Camera.kick(0.9);
         for (let i = 0; i < 10; i++) G.Pickups.drop('coin', this.x + G.U.rand(-40, 40), this.y + G.U.rand(-30, 30), 5);
-        // Los jefes siempre sueltan un objeto equipable.
-        G.Pickups.drop('item', this.x - 26, this.y - 10, G.Items.roll());
+        // Mazmorra: el jefe de cada asalto sí suelta objeto.
+        // Desafío de jefes: cada baja es un jefe, y elegir objeto paraba la partida.
+        // Una de cada cinco suelta objeto.
+        const bossMode = G.Modes && G.Modes.is('boss');
+        if (!bossMode || Math.random() < 0.2) G.Pickups.drop('item', this.x - 26, this.y - 10, G.Items.roll());
       }
       G.Pickups.dropXp(this.x, this.y, this.xp, this.boss, !!this.legend, !!this.judge);
       if (this.golden && Math.random() < 0.35) G.Pickups.drop('coin', this.x + 6, this.y - 4, 3);

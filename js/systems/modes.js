@@ -11,7 +11,7 @@ G.Modes = (() => {
   const LIST = [
     ['normal', 'Mazmorra normal', 'Como siempre: hordas, jefes y experiencia.'],
     ['shiny', 'Sólo shinies', 'Sólo aparecen Pokémon shiny. La cantidad y la experiencia no cambian.'],
-    ['boss', 'Desafío de jefes', 'Sólo aparecen jefes, tres a la vez. Empiezas en el nivel 20 para elegir ataques. La grieta sale antes, para poder fusionar.'],
+    ['boss', 'Desafío de jefes', 'Sólo aparecen jefes, tres a la vez. Empiezas en el nivel 20 para elegir ataques. La grieta sale antes, para poder fusionar. El objeto sale a veces, no en cada jefe, para no parar todo el rato. Los jefes se fortalecen el doble de rápido.'],
     ['castle', 'Protege al cachorro', 'Oleadas del 1 al 50, cada vez más difíciles. Cada 10 oleadas sale un jefe: al vencerlo puedes fusionar ataques con un vínculo. Si el castillo cae, pierdes. Si limpias la 50, ganas.'],
     ['siege', 'Asedio', 'De 2 a 4 personas. Cada castillo invoca a sus monstruos, con un círculo de su color. Atacan a los otros castillos y jugadores, nunca a los suyos. Cada uno sube de nivel aparte. A los 3 minutos sale un jefe en el centro: sólo ataca jugadores, y la experiencia, las monedas y el objeto van según el daño. Quien no le pegue no recibe nada. Gana el último castillo en pie. Si el tuyo cae, dejas de invocar y quedas fuera. Solo, el castillo rival también invoca.']
   ];
