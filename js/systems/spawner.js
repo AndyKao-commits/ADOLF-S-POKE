@@ -62,8 +62,13 @@ G.Spawner = (() => {
 
   /** Jugador alrededor del que sale el siguiente enemigo (nunca uno que aún vuelve de la grieta). */
   function anchor() {
+    if (G.Castle && G.Castle.up) return G.Castle.aim;
     const alive = players.filter(o => !o.dead && !G.Rift.leftBehind(o));
     return alive.length ? G.U.pick(alive) : players[0];
+  }
+
+  function shinyLook(def) {
+    return !!(G.Modes && G.Modes.is('shiny') && G.Sprites.hasShiny(def.dex));
   }
 
   function scaled(sc, k) { return k === 1 ? sc : Object.assign({}, sc, { hp: sc.hp * k }); }
@@ -90,7 +95,11 @@ G.Spawner = (() => {
   }
 
   function spawnOne(pl, t, angle) {
-    const bag = G.Enemies.bagAt(t);
+    let bag = G.Enemies.bagAt(t);
+    if (G.Modes && G.Modes.is('shiny')) {
+      const only = bag.filter(d => G.Sprites.hasShiny(d.dex));
+      if (only.length) bag = only;
+    }
     let def = G.U.pick(bag);
     if (SUPPORT.has(def.behavior)) {
       const full = supportFull();
@@ -102,14 +111,15 @@ G.Spawner = (() => {
     }
     const pt = freePoint(pl, angle == null ? Math.random() * 6.2832 : angle, isFlyer(def));
     if (!pt) return null;
-    const shiny = rollShiny(def.dex);
+    const forced = shinyLook(def);
+    const shiny = forced || rollShiny(def.dex);
     const e = new G.Enemy(def, pt[0], pt[1], scaled(G.Enemies.scale(t), G.Coop.scaleHp(players.length) * hpK(t)));
     e.dmg *= DMG_K; e.xp = Math.round(e.xp * XP_K);
     if (G.EnemyMgr.count >= CAP * ELITE_FROM) { e.maxHp = e.hp = Math.round(e.maxHp * 1.6); e.dmg *= 1.25; e.xp = Math.round(e.xp * 1.6); }
-    if (shiny) e.makeShiny();
+    if (shiny) e.makeShiny(forced);
     if (G.Events.golden) e.makeGolden();
     G.EnemyMgr.add(e);
-    if (shiny) {
+    if (shiny && !forced) {
       say('¡Un ' + e.name + ' shiny anda cerca!', 3.4);
       G.Audio.sfx('shiny');
     }
@@ -119,7 +129,8 @@ G.Spawner = (() => {
   function spawnBoss(pl, t, b) {
     const [x, y] = ringPoint(pl, Math.random() * 6.2832);
     const e = new G.Enemy(b, x, y, scaled(G.Enemies.bossScale(t), G.Coop.scaleHp(players.length) * (players.length > 1 ? 1.4 : 1)), true);
-    if (rollShiny(b.dex)) e.makeShiny();
+    const forced = shinyLook(b);
+    if (forced || rollShiny(b.dex)) e.makeShiny(forced);
     G.EnemyMgr.add(e);
     say('¡' + e.name + (e.shiny ? ' shiny' : '') + ' salvaje apareció!', 3.2);
     G.Camera.kick(1.1);
@@ -138,6 +149,19 @@ G.Spawner = (() => {
     // Precarga lo que va a salir en el próximo minuto.
     preloadT -= dt;
     if (preloadT <= 0) { preloadT = 10; G.Sprites.preload(G.Enemies.upcomingDex(t, 60)); }
+
+    // Desafío de jefes: nada de hordas. Como mucho tres jefes vivos.
+    if (G.Modes && G.Modes.is('boss')) {
+      while (G.EnemyMgr.count < 3) {
+        const mob = G.Enemies.bossMob(t);
+        const [x, y] = ringPoint(anchor(), Math.random() * 6.2832);
+        const e = new G.Enemy(mob, x, y, scaled(G.Enemies.bossScale(t), G.Coop.scaleHp(players.length)), true);
+        const forced = shinyLook(mob);
+        if (forced || rollShiny(mob.dex)) e.makeShiny(forced);
+        G.EnemyMgr.add(e);
+      }
+      return;
+    }
 
     // --- jefes ---
     const b = G.Enemies.BOSSES[bossIdx];

@@ -109,6 +109,14 @@ G.HUD = (() => {
       ctx.fillStyle = '#20160a';
       ctx.fillText(boss.name.toUpperCase(), w / 2, 80);
     }
+    if (G.Castle.up) {
+      const bw = Math.min(420, w - 80);
+      const y = boss ? 88 : 70;
+      bar(ctx, (w - bw) / 2, y, bw, 12, G.Castle.hp / G.Castle.maxHp, '#5fe08a');
+      ctx.font = F(800, 10);
+      ctx.fillStyle = '#06210f';
+      ctx.fillText('Protege al cachorro', w / 2, y + 10);
+    }
 
     // ---------- aviso ----------
     // ---------- shinies fuera de pantalla: destello en el borde ----------

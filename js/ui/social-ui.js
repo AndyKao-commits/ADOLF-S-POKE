@@ -261,6 +261,24 @@
       const failed = ms.some(m => m.uid !== room.host && G.Net.mode(m.uid) === 'failed');
       btn.disabled = !room.isHost || ms.length < 2 || connecting || failed;
       btn.textContent = 'Empezar partida (' + ms.length + '/' + cap + ')';
+      const modeBox = $('lobby-mode');
+      if (modeBox) {
+        const picked = room.isHost ? (G.Settings.get('runMode') || 'normal') : ((room.rules && room.rules.runMode) || 'normal');
+        const key = (room.isHost ? 'h:' : 'g:') + picked;
+        if (modeBox.dataset.key !== key) {
+          modeBox.dataset.key = key;
+          modeBox.innerHTML = '<b>Modo</b><div class="chips"></div><p class="sub"></p>';
+          G.Modes.mount(modeBox.querySelector('.chips'), modeBox.querySelector('.sub'), {
+            mode: picked,
+            editable: room.isHost,
+            onPick(id) {
+              G.Settings.set('runMode', id);
+              modeBox.dataset.key = '';
+              G.Social.pushRules();
+            }
+          });
+        }
+      }
       const rulesBox = $('lobby-rules');
       if (rulesBox) G.PartyUI.sync(rulesBox, {
         editable: room.isHost,
@@ -279,7 +297,8 @@
       const cfg = {
         k: 'start', seed: Math.floor(Math.random() * 1e6), host: room.host,
         members: room.members.map(m => ({ uid: m.uid, name: m.name, dex: m.dex, shiny: !!m.shiny })),
-        rules: G.Coop.publicRules(room.rules || G.Coop.rulesFromSettings())
+        rules: G.Coop.publicRules(room.rules || G.Coop.rulesFromSettings()),
+        mode: (room.rules && room.rules.runMode) || G.Settings.get('runMode') || 'normal'
       };
       G.Social.setOpen(false);
       G.Net.broadcast(cfg);

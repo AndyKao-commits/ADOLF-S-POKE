@@ -82,7 +82,8 @@ G.Coop = (() => {
       rate: clampMul(r.rate, 0.25, 12, autoRate(4)),
       hp: clampMul(r.hp, 0.25, 8, autoHp(4)),
       xp: clampMul(r.xp, 0.25, 12, autoXp(4)),
-      bossN: Math.min(10, Math.max(0, isFinite(bossRaw) ? bossRaw : 5))
+      bossN: Math.min(10, Math.max(0, isFinite(bossRaw) ? bossRaw : 5)),
+      runMode: r.runMode === 'shiny' || r.runMode === 'boss' || r.runMode === 'castle' ? r.runMode : 'normal'
     };
   }
   function rulesFromSettings() {
@@ -93,12 +94,13 @@ G.Coop = (() => {
       rate: G.Settings.get('diffRate'),
       hp: G.Settings.get('diffHp'),
       xp: G.Settings.get('diffXp'),
-      bossN: G.Settings.get('bossN')
+      bossN: G.Settings.get('bossN'),
+      runMode: G.Settings.get('runMode')
     });
   }
   function publicRules(r) {
     const n = normalizeRules(r);
-    return { cap: n.cap, mode: n.mode, n: n.n, rate: n.rate, hp: n.hp, xp: n.xp, bossN: n.bossN };
+    return { cap: n.cap, mode: n.mode, n: n.n, rate: n.rate, hp: n.hp, xp: n.xp, bossN: n.bossN, runMode: n.runMode };
   }
   /** Fija la dificultad de esta partida. Sin rules y useSettings, la de este aparato. */
   function lockRun(rules, useSettings) {
@@ -272,6 +274,7 @@ G.Coop = (() => {
                 p, e: enemyList(m.pl), ev };
     const ja = G.Judgment.netState();       // Arceus en la Sentencia
     if (ja) f.ja = ja;
+    if (G.Castle && G.Castle.up) f.ch = [Math.ceil(G.Castle.hp), Math.ceil(G.Castle.maxHp)];
     // Siempre: quién está eligiendo y, si hay cartas de nivel, cuáles (ver arriba).
     f.ho = holdNames();
     if (waiting.size) f.lu = [levelSeq, levelNow];
@@ -402,6 +405,7 @@ G.Coop = (() => {
     if (stalled) { stalled = false; updateAway(); }
     for (const ev of msg.ev || []) applyHostEvent(ev);
     if (msg.ja) G.Judgment.netApply(msg.ja);
+    if (msg.ch && G.Castle && G.Castle.up) G.Castle.net(msg.ch);
     // Quién elige y las cartas de nivel, aunque se haya perdido algún aviso.
     if (msg.ho) {
       const k = msg.ho.join('|');

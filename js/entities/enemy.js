@@ -105,11 +105,11 @@
     cy() { return this.y; }
 
     /** Lo convierte en shiny: otro sprite, más aguante y mucha más XP. */
-    makeShiny() {
+    /** visual: sólo el aspecto shiny, sin más vida ni más experiencia. */
+    makeShiny(visual) {
       this.shiny = true;
       this.anim = new G.Sprites.Animator(this.dex, this.scale, true);
-      this.maxHp *= 2; this.hp = this.maxHp;
-      this.xp *= 5;
+      if (!visual) { this.maxHp *= 2; this.hp = this.maxHp; this.xp *= 5; }
       G.Sprites.preload([this.dex], 4000, true);
     }
 
@@ -953,7 +953,7 @@
       rebuildGrid();
       for (const e of list) {
         if (e.remote) e.netUpdate(dt);
-        else e.update(dt, nearestPlayer(players, e.x, e.y) || pl);
+        else e.update(dt, (G.Castle && G.Castle.up) ? G.Castle.aim : (nearestPlayer(players, e.x, e.y) || pl));
       }
       if (!G.Coop.active || G.Coop.isHost) separate(dt);
       for (let i = list.length - 1; i >= 0; i--) {
@@ -978,6 +978,8 @@
           if (G.Coop.isHost) G.Coop.enemyGone(e, false);
           continue;
         }
+        // En el castillo no se teletransportan detrás de quien corre: se quedan atacándolo.
+        if (G.Castle && G.Castle.up) continue;
         // Jefe lejísimos de todos (salió junto a un compañero que aún volvía de la
         // grieta, o se quedó atrás): a los 4 s vuelve a salir cerca, fuera de la vista.
         // Si no, no se le encontraba y, con un jefe vivo, no salen grietas.

@@ -221,6 +221,25 @@ G.Enemies = (() => {
     return G.U.pickN(pool, 4).map(p => defFor(p, TIERS[ti], ti));
   }
 
+  /** Un jefe suelto para el desafío (no legendario, stats del tramo de ese minuto). */
+  function bossMob(t) {
+    const slots = bossSlots();
+    const slot = slots.length ? slots[Math.min(slots.length - 1, Math.floor(Math.max(0, t) / 180))] : BOSS_SLOTS[0];
+    const ok = p => !p.leg && G.SPRITE_META[p.dex];
+    let pool = G.DEX.filter(p => ok(p) && p.bst >= slot.bst[0] && p.bst <= slot.bst[1]);
+    if (!pool.length) pool = G.DEX.filter(p => ok(p) && p.bst >= 580);
+    const p = G.U.pick(pool);
+    return {
+      at: 0, dex: p.dex, name: p.name,
+      hp: Math.round(slot.hp * 1.35),
+      spd: Math.round(G.U.clamp(40 + baseSpd(p) * 0.5, 40, 100)),
+      dmg: Math.round(slot.dmg * 1.2),
+      xp: slot.xp,
+      behavior: behaviorOf(p) === 'ranged' ? 'ranged' : (baseSpd(p) > 90 ? 'charger' : 'chase'),
+      shotDmg: Math.round(slot.dmg * 0.55), shotCd: 1.1, range: 260
+    };
+  }
+
   /** Bolsa de enemigos disponibles en el segundo `t`. */
   function bagAt(t) {
     // Durante una horda de un tipo sólo salen los de ese tipo (systems/events.js).
@@ -246,7 +265,7 @@ G.Enemies = (() => {
   }
 
   return {
-    TIERS, BOSS_SLOTS, rollRun, scale, bossScale, bagAt, upcomingDex, candidates, hordeTypes, hordeDefs,
+    TIERS, BOSS_SLOTS, rollRun, scale, bossScale, bagAt, bossMob, upcomingDex, candidates, hordeTypes, hordeDefs,
     get BOSSES() { if (!bosses) rollRun(); return bosses; },
     get cast() { if (!cast) rollRun(); return cast; }
   };

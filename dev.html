@@ -83,7 +83,7 @@
 }
 </script>
 <!-- seo:end -->
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=modes40db">
 <script src="js/core/locales.js"></script>
 </head>
 <body>
@@ -185,6 +185,7 @@
   </div>
   <div class="menu-right">
     <div class="box">
+      <div class="mode-pick" id="mode-pick"><b>Modo</b><div class="chips" id="mode-chips"></div><p class="sub" id="mode-help"></p></div>
       <div class="menu-list">
         <button class="menu-item play" data-go="play">Jugar<small>Entra en la mazmorra</small></button>
         <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
@@ -367,6 +368,7 @@
       <div class="row"><button id="lobby-menu" class="btn small ghost">Menú</button><button id="lobby-leave" class="btn small ghost">Salir de la sala</button></div></div>
     <p class="sub" id="lobby-sub"></p>
     <p class="room-code-line"><span>Código de la sala</span> <b id="lobby-code" translate="no"></b></p>
+    <div id="lobby-mode"></div>
     <div id="lobby-rules"></div>
     <div id="lobby-members" class="lobby-members"></div>
     <h3 id="lobby-inv-title" style="margin:14px 0 6px">Invitar amigos</h3>
@@ -604,6 +606,8 @@
 <script defer src="js/entities/player.js"></script>
 <!-- sistemas -->
 <script defer src="js/systems/stats.js"></script>
+<script defer src="js/systems/modes.js"></script>
+<script defer src="js/systems/castle.js"></script>
 <script defer src="js/systems/combat.js"></script>
 <script defer src="js/systems/spawner.js"></script>
 <script defer src="js/systems/levelup.js"></script>

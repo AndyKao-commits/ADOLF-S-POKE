@@ -88,6 +88,16 @@ G.MenuUI = (() => {
       (G.DB.guest ? '<br><span style="color:#ffb0b8">Modo invitado: no se guarda</span>' : '');
 
     socialLine();
+    const modeChips = $('mode-chips'), modeHelp = $('mode-help');
+    if (modeChips) G.Modes.mount(modeChips, modeHelp, {
+      mode: G.Settings.get('runMode') || 'normal',
+      editable: true,
+      onPick(id) {
+        G.Settings.set('runMode', id);
+        if (G.Social.room && G.Social.room.isHost) G.Social.pushRules();
+        open();
+      }
+    });
     // Premios de misiones por recoger.
     G.Progress.checkAch();
     const pend = G.Progress.pending();

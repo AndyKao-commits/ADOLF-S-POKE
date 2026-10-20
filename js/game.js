@@ -17,7 +17,7 @@
 G.Game = (() => {
   let cv, ctx, dpr = 1, w = 0, h = 0;
   let state = 'ui';
-  let time = 0, last = 0, pendingLevels = 0;
+  let time = 0, last = 0, pendingLevels = 0, lostCastle = false;
   let pl = null;
   let caught = [];          // shinies conseguidos en esta run
   let biome = -1;
@@ -108,6 +108,8 @@ G.Game = (() => {
     const mon = G.DEX_BY[save.partner];
     const perks = G.Upgrades.perks(G.DB.upgradesOf(mon.dex));
 
+    lostCastle = false;
+    G.Modes.lock(coop && coop.mode ? coop.mode : G.Settings.get('runMode'));
     G.UI.hideAll();
     G.UI.chrome(false);
     G.FX.clear();
@@ -150,6 +152,12 @@ G.Game = (() => {
       G.Coop.begin(coop, pl, coopApi);
       G.Social.setPlaying(true);
     } else G.Coop.lockRun(null, true);
+    if (G.Modes.is('boss')) {
+      // 19 elecciones: al terminarlas estás en el nivel 20, antes de que salga nadie.
+      pl._modePicks = 19;
+      if (!G.Coop.active || G.Coop.isHost) pendingLevels = 19;
+    }
+    if (G.Modes.is('castle')) G.Castle.begin();
     G.Camera.x = pl.x; G.Camera.y = pl.y; G.Camera.shake = 0;
     // Hojas de sprites locales: el compañero y los primeros enemigos.
     G.Sprites.preload([mon.dex], 8000, pl.shiny);
@@ -183,7 +191,9 @@ G.Game = (() => {
   function teamState() {
     return { time, level: pl.level, xp: pl.xp, xpNext: pl.xpNext, kills: pl.kills, bosses: pl.bosses, coins: pl.coins, t1: pl.t1, t10: pl.t10 };
   }
-  function summary() { return { t: time, ki: pl.kills, bo: pl.bosses, co: pl.coins, lv: pl.level, t1: pl.t1, t10: pl.t10 }; }
+  function summary() {
+    return { t: time, ki: pl.kills, bo: pl.bosses, co: pl.coins, lv: pl.level, t1: pl.t1, t10: pl.t10, why: lostCastle ? 'castle' : undefined };
+  }
 
   /** Lo que el cooperativo necesita del juego. */
   /**
@@ -240,6 +250,7 @@ G.Game = (() => {
     over(d) {
       if (d) Object.assign(pl, { kills: d.ki, bosses: d.bo, coins: d.co, level: Math.max(pl.level, d.lv || 1), t1: d.t1 || pl.t1, t10: d.t10 || pl.t10 });
       if (d && d.t) time = d.t;
+      if (d && d.why === 'castle') lostCastle = true;
       if (d && d.why === 'host') G.UI.toast('El anfitrión ha terminado la partida', 3200);
       endRun(!(d && d.why === 'host'));
     },
@@ -301,6 +312,7 @@ G.Game = (() => {
 
   function endRun(dead = true) {
     if (state === 'over' || !pl) return;
+    G.Castle.end();
     const coop = !!pl.uid;                    // sólo las partidas en grupo le ponen uid
     const wasHost = !!pl.coopHost;
     const team = coop ? G.Coop.members.slice() : [];
@@ -353,7 +365,7 @@ G.Game = (() => {
 
     G.Coop.unlockRun();
     G.RunUI.showOver({
-      dead, time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, judge,
+      dead, cause: lostCastle ? 'castle' : '', time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, judge,
       moves: pl.moves, caught,
       breakdown: Object.entries(parts).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(' · ') +
                  (mul > 1 ? ` · ×${mul.toFixed(2)} Fortuna` : '')
@@ -381,8 +393,20 @@ G.Game = (() => {
 
   // ---------------- subida de nivel ----------------
 
+  function castleDown() {
+    if (lostCastle || state === 'over' || state === 'ui' || !pl) return;
+    lostCastle = true;
+    if (G.Coop.isHost) G.Coop.over(summary());
+    endRun(true);
+  }
+
   function maybeLevelUp() {
     if (pendingLevels <= 0 || state !== 'playing') return;
+    if (pl._modePicks > 0) {
+      pl.level++;
+      pl.xpNext = G.Player.xpFor(pl.level);
+      pl._modePicks--;
+    }
     if (G.Coop.active) {
       // En grupo, las cartas salen a la vez para todos y se espera a que elijan.
       if (G.Coop.players().every(p => p.dead)) return;
@@ -679,7 +703,12 @@ G.Game = (() => {
     G.World.update(dt, G.Camera);
 
     const all = everyone();
-    if (!coop || G.Coop.isHost) { G.Path.update(dt, all); G.Spawner.update(dt, all, time); }
+    const aimers = G.Castle.up ? all.concat([G.Castle.aim]) : all;
+    if (!coop || G.Coop.isHost) {
+      G.Path.update(dt, aimers);
+      G.Spawner.update(dt, all, time);
+      if (G.Castle.up && G.Castle.touch(dt)) { castleDown(); return; }
+    }
     else G.Spawner.tickBanner(dt);
     G.EnemyMgr.update(dt, all);
     G.EnemyMgr.rebuildGrid();
@@ -741,6 +770,7 @@ G.Game = (() => {
     const arceus = pl && state !== 'ui' ? G.Judgment.drawable() : null;
     if (arceus) items.push({ y: arceus.y, ent: arceus });
     if (pl && state !== 'ui') for (const d of G.Events.drawables()) items.push({ y: d.y, ent: d });
+    if (G.Castle.up) items.push({ y: G.Castle.y, ent: G.Castle });
     items.sort((a, b) => a.y - b.y);
     for (const it of items) {
       if (it.prop) G.World.drawProp(ctx, it.prop, t);
