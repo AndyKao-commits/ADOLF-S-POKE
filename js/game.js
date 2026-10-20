@@ -17,7 +17,7 @@
 G.Game = (() => {
   let cv, ctx, dpr = 1, w = 0, h = 0;
   let state = 'ui';
-  let time = 0, last = 0, pendingLevels = 0, lostCastle = false, siegeResult = null;
+  let time = 0, last = 0, pendingLevels = 0, lostCastle = false, castleWon = false, siegeResult = null;
   let pl = null;
   let caught = [];          // shinies conseguidos en esta run
   let biome = -1;
@@ -109,6 +109,7 @@ G.Game = (() => {
     const perks = G.Upgrades.perks(G.DB.upgradesOf(mon.dex));
 
     lostCastle = false;
+    castleWon = false;
     siegeResult = null;
     if (G.Castle) G.Castle.end();
     if (G.Siege) G.Siege.end();
@@ -196,7 +197,7 @@ G.Game = (() => {
     return { time, level: pl.level, xp: pl.xp, xpNext: pl.xpNext, kills: pl.kills, bosses: pl.bosses, coins: pl.coins, t1: pl.t1, t10: pl.t10 };
   }
   function summary() {
-    return { t: time, ki: pl.kills, bo: pl.bosses, co: pl.coins, lv: pl.level, t1: pl.t1, t10: pl.t10, why: lostCastle ? 'castle' : undefined };
+    return { t: time, ki: pl.kills, bo: pl.bosses, co: pl.coins, lv: pl.level, t1: pl.t1, t10: pl.t10, why: castleWon ? 'castle-win' : lostCastle ? 'castle' : undefined };
   }
 
   /** Lo que el cooperativo necesita del juego. */
@@ -223,6 +224,7 @@ G.Game = (() => {
     // Invitado: el anfitrión manda el reloj y lo del equipo.
     syncTeam(t) {
       if (Math.abs(t.time - time) > 0.4) time = t.time;
+      if (G.Modes.is('siege')) return;
       if (t.level > pl.level) G.Audio.sfx('xp');
       pl.level = t.level; pl.xp = t.xp; pl.xpNext = t.xpNext;
       pl.kills = t.kills; pl.bosses = t.bosses; pl.coins = t.coins;
@@ -252,14 +254,16 @@ G.Game = (() => {
     inLevelUp() { return state === 'levelup'; },
     shiny(dex) { G.onShinyCaught({ dex, name: (G.DEX_BY[dex] || {}).name || '' }); },
     over(d) {
-      if (d) Object.assign(pl, { kills: d.ki, bosses: d.bo, coins: d.co, level: Math.max(pl.level, d.lv || 1), t1: d.t1 || pl.t1, t10: d.t10 || pl.t10 });
-      if (d && d.t) time = d.t;
-      if (d && d.why === 'castle') lostCastle = true;
       if (d && d.why === 'siege') {
         siegeResult = { win: d.win };
+        if (d.t) time = d.t;
         endRun(d.win !== ((pl && pl.uid) || 'me'));
         return;
       }
+      if (d && d.why === 'castle-win') { castleWon = true; if (d.t) time = d.t; endRun(false); return; }
+      if (d) Object.assign(pl, { kills: d.ki, bosses: d.bo, coins: d.co, level: Math.max(pl.level, d.lv || 1), t1: d.t1 || pl.t1, t10: d.t10 || pl.t10 });
+      if (d && d.t) time = d.t;
+      if (d && d.why === 'castle') lostCastle = true;
       if (d && d.why === 'host') G.UI.toast('El anfitrión ha terminado la partida', 3200);
       endRun(!(d && d.why === 'host'));
     },
@@ -324,6 +328,12 @@ G.Game = (() => {
 
   function endRun(dead = true) {
     if (state === 'over' || !pl) return;
+    let waveMark = 0;
+    if (G.Modes.is('castle') && G.Castle && G.Castle.up) {
+      const sec = Math.max(0, Math.min(9999, Math.floor(time)));
+      const w = castleWon ? 11 : (G.Castle.wave || 1);
+      waveMark = w * 10000 + (9999 - sec);
+    }
     G.Castle.end();
     if (G.Siege) G.Siege.end();
     const coop = !!pl.uid;                    // sólo las partidas en grupo le ponen uid
@@ -368,21 +378,23 @@ G.Game = (() => {
     if (G.Social.me) G.Social.publishProfile();
 
     // Ranking: en solitario cada uno lo suyo; en grupo lo sube el anfitrión.
-    const mark = { t: Math.floor(time), lv: pl.level, kills: pl.kills };
+    const mark = { t: waveMark || Math.floor(time), lv: pl.level, kills: pl.kills };
     // Si la partida se ha tocado (ver clean()), no sube al ranking (sin avisar); lo demás, sí.
     const ok = clean();
     // Una sala con una sola persona cuenta como solo: si no, ni solo ni grupo la guardan.
     const group = coop && team.length >= 2;
     const siegeWin = G.Modes.is('siege') && siegeResult && siegeResult.win === (pl.uid || 'me');
+    const castleRank = G.Modes.is('castle') && (lostCastle || castleWon);
     const sent = !ok ? null
                : G.Modes.is('siege') ? (siegeWin ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny, runMode: 'siege' })) : null)
+               : G.Modes.is('castle') && !castleRank ? null
                : !group ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny, runMode: G.Modes.id }))
                : wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team, runMode: G.Modes.id })) : null;
     if (sent) sent.then(b => { if (b && b.some(p => p !== 'a')) G.DB.commit(true); }).catch(() => {});
 
     G.Coop.unlockRun();
     G.RunUI.showOver({
-      dead, cause: lostCastle ? 'castle' : (G.Modes.is('siege') && siegeResult ? (siegeWin ? 'siege-win' : 'siege-lose') : ''), time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, judge,
+      dead, cause: castleWon ? 'castle-win' : lostCastle ? 'castle' : (G.Modes.is('siege') && siegeResult ? (siegeWin ? 'siege-win' : 'siege-lose') : ''), time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, judge,
       moves: pl.moves, caught,
       breakdown: Object.entries(parts).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(' · ') +
                  (mul > 1 ? ` · ×${mul.toFixed(2)} Fortuna` : '')
@@ -418,11 +430,20 @@ G.Game = (() => {
   }
 
   function castleDown() {
-    if (lostCastle || state === 'over' || state === 'ui' || !pl) return;
+    if (lostCastle || castleWon || state === 'over' || state === 'ui' || !pl) return;
     lostCastle = true;
     if (G.Coop.isHost) G.Coop.over(summary());
     endRun(true);
   }
+
+  function castleClear() {
+    if (castleWon || lostCastle || state === 'over' || state === 'ui' || !pl) return;
+    castleWon = true;
+    if (G.Coop.isHost) G.Coop.over(summary());
+    endRun(false);
+  }
+
+  function noteXp(n) { pendingLevels += n || 0; }
 
   function maybeLevelUp() {
     if (pendingLevels <= 0 || state !== 'playing') return;
@@ -430,6 +451,19 @@ G.Game = (() => {
       pl.level++;
       pl.xpNext = G.Player.xpFor(pl.level);
       pl._modePicks--;
+    }
+    if (G.Modes.is('siege')) {
+      if (pl.dead) return;
+      pendingLevels--;
+      state = 'levelup';
+      pl.frozen = true;
+      G.Audio.sfx('levelup');
+      G.RunUI.showLevelUp(pl.level, G.LevelUp.offer(pl), card => {
+        G.Audio.sfx('confirm');
+        card.apply(pl);
+        if (state === 'levelup') state = 'playing';
+      });
+      return;
     }
     if (G.Coop.active) {
       // En grupo, las cartas salen a la vez para todos y se espera a que elijan.
@@ -469,7 +503,7 @@ G.Game = (() => {
     }
     // Se para el juego; en grupo, para todos hasta que cada uno elige (G.Coop.holdStart).
     state = 'choice';
-    if (G.Coop.active) G.Coop.holdStart();
+    if (G.Coop.active && !G.Modes.is('siege')) G.Coop.holdStart();
     G.Audio.sfx('levelup');
     G.RunUI.showBond(opt, picked => {
       const group = pl.fuse(picked, opt.group);
@@ -478,7 +512,7 @@ G.Game = (() => {
       G.FX.burst(pl.x, pl.y - pl.bodyH * 0.5, '#ffb3e6', 40, 240);
       G.Spawner.say('¡Vínculo! ' + group.length + ' movimientos a la vez', 2.6, true);
       if (state === 'choice') state = holdBy.length ? 'held' : 'playing';
-      if (G.Coop.active) G.Coop.holdEnd();
+      if (G.Coop.active && !G.Modes.is('siege')) G.Coop.holdEnd();
     });
   }
 
@@ -499,7 +533,7 @@ G.Game = (() => {
     if (state !== 'playing' && state !== 'held') return;
     if (openItem && !G.UI.isOpen('scr-item')) {
       const o = openItem;
-      if (o.mine) { state = 'choice'; if (G.Coop.active) G.Coop.holdStart(); }
+      if (o.mine) { state = 'choice'; pl.frozen = true; if (G.Coop.active && !G.Modes.is('siege')) G.Coop.holdStart(); }
       G.RunUI.showItemChoice(o.cur, o.next, o.take);
       return;
     }
@@ -520,7 +554,7 @@ G.Game = (() => {
       }
       if (!mine) { afterLevelUp(); return; }
       if (state === 'choice') state = holdBy.length ? 'held' : 'playing';
-      if (G.Coop.active) G.Coop.holdEnd();
+      if (G.Coop.active && !G.Modes.is('siege')) G.Coop.holdEnd();
       afterLevelUp();
     };
     if (!pl.item) { take(id); return; }
@@ -530,7 +564,8 @@ G.Game = (() => {
     if (state === 'playing' || state === 'held') {
       mine = true;
       state = 'choice';
-      if (G.Coop.active) G.Coop.holdStart();
+      pl.frozen = true;
+      if (G.Coop.active && !G.Modes.is('siege')) G.Coop.holdStart();
     }
     openItem = { cur: pl.item, next: id, take, get mine() { return mine; } };
     G.RunUI.showItemChoice(pl.item, id, take);
@@ -671,7 +706,8 @@ G.Game = (() => {
     G.Pad.poll(real);
     handleKeys();
 
-    if (state === 'playing') update(dt);
+    const siegeLive = G.Siege && G.Siege.up && (state === 'levelup' || state === 'choice' || state === 'held');
+    if (state === 'playing' || siegeLive) update(dt);
     else if (pl && state !== 'ui') { G.FX.update(dt * 0.25); pl.anim.update(dt * 0.25); }
     // La red se atiende siempre (también con las cartas de nivel abiertas).
     if (G.Coop.active && pl && state !== 'ui' && state !== 'over') G.Coop.tick(dt);
@@ -709,7 +745,7 @@ G.Game = (() => {
     time += dt;
 
     const b = Math.floor(time / 240);
-    if (b !== biome && !G.Rift.inArena && !G.Judgment.active) {
+    if (b !== biome && !G.Rift.inArena && !G.Judgment.active && !(G.Siege && G.Siege.up) && !(G.Castle && G.Castle.up)) {
       biome = b;
       G.World.setBiome(b);
       G.Audio.sfx('biome');
@@ -717,7 +753,7 @@ G.Game = (() => {
       G.FX.ring(pl.x, pl.y, 10, G.Camera.outerRadius(), '#ffffff', 0.7, 6);
     }
 
-    pl.frozen = coop && (G.UI.isOpen('scr-pause') || G.UI.isOpen('scr-item'));
+    pl.frozen = state !== 'playing' || (coop && (G.UI.isOpen('scr-pause') || G.UI.isOpen('scr-item')));
     pl.update(dt);
     if (coop) {
       for (const p of G.Coop.puppets()) { p.netUpdate(dt); G.Combat.ghostOrbit(p, dt, time); }
@@ -731,17 +767,24 @@ G.Game = (() => {
     if (!coop || G.Coop.isHost) {
       G.Path.update(dt, aimers);
       G.Spawner.update(dt, all, time);
-      if (G.Castle.up && G.Castle.touch(dt)) { castleDown(); return; }
+      if (G.Castle.up) {
+        G.Castle.tick(dt);
+        if (state === 'over') return;
+        if (G.Castle.up && G.Castle.touch(dt)) { castleDown(); return; }
+      }
     }
     else G.Spawner.tickBanner(dt);
     G.EnemyMgr.update(dt, all);
     G.EnemyMgr.rebuildGrid();
     if (G.Siege && G.Siege.up) G.Siege.contain();
+    if (G.Enemy.setStriker) G.Enemy.setStriker(pl.uid || 'me');
     G.Combat.tick(dt, pl, time);
     G.Projectiles.update(dt, pl, G.EnemyMgr.all());
     G.Combat.resolve(dt, pl, time);
-    if (G.Siege && G.Siege.up) G.Siege.tick(dt, pl);
     G.Combat.updateFields(dt);
+    if (G.Enemy.setStriker) G.Enemy.setStriker(null);
+    if (G.Siege && G.Siege.up) G.Siege.tick(dt, pl, time);
+    if (state === 'over') return;
     G.Pickups.update(dt, all, onCollect);
     G.Hazards.update(dt);
     G.Interact.update(dt, pl);
@@ -752,7 +795,7 @@ G.Game = (() => {
     G.FX.update(dt);
 
     G.Audio.music(G.Judgment.active ? G.Judgment.music : G.Rift.inArena ? 'rift' : G.EnemyMgr.bossAlive() ? 'boss' : G.BIOME_MUSIC[biome % G.BIOME_MUSIC.length]);
-    if (!coop || G.Coop.isHost) maybeLevelUp();
+    if (!coop || G.Coop.isHost || (G.Siege && G.Siege.up)) maybeLevelUp();
     if (pl.bonds > 0) offerBond(true);
     if (G.Coop.isHost && !(G.Siege && G.Siege.up)) checkAllDown(dt);
   }
@@ -975,7 +1018,8 @@ G.Game = (() => {
   })();
 
   return {
-    init, startRun, everyone, levelXp, flash, offerBond, siegeOver,
+    init, startRun, everyone, levelXp, flash, offerBond, siegeOver, castleClear, noteXp,
+    giveItem: offerItem,
     /** Para pruebas: salta el reloj de la run. */
     debugTime(t) { tampered = true; time = t; },
     /** Para grabar vídeos: cámara lenta (0,5 = mitad de velocidad). */

@@ -19,7 +19,7 @@ G.Combat = (() => {
   // ---------------- ejecutar el movimiento activo ----------------
 
   function tick(dt, pl, now) {
-    if (pl.dead) return;
+    if (pl.dead || pl.frozen) return;
     // Vínculos: todos los movimientos del hueco activo, cada uno con su recarga.
     for (const m of pl.activeGroup()) tickMove(dt, pl, m, now);
   }
@@ -773,6 +773,7 @@ G.Combat = (() => {
           projectiles.splice(i, 1);
           continue;
         }
+        if (p.side && p.side === (pl.uid || 'me')) continue;
         if (G.U.dist2(p.x, p.y, pl.x, pl.y) < (p.r + pl.r) * (p.r + pl.r)) {
           pl.hurt(p.dmg, p.mtype, false, p.cat);
           G.FX.burst(p.x, p.y - G.LIFT, p.color, 7, 110);
@@ -876,6 +877,7 @@ G.Combat = (() => {
     // --- contacto enemigo <-> jugador ---
     if (pl.dead) return;
     for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, pl.r + 40)) {
+      if (e.owner && e.owner === (pl.uid || 'me')) continue;
       if (G.U.dist2(e.x, e.y, pl.x, pl.y) > (e.r + pl.r) * (e.r + pl.r)) continue;
       if (e.touchCd > 0 || e.behavior === 'thief' || e.stunT > 0) continue;
       e.touchCd = 0.55;

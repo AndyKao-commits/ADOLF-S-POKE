@@ -276,7 +276,7 @@ G.Coop = (() => {
                 p, e: enemyList(m.pl), ev };
     const ja = G.Judgment.netState();       // Arceus en la Sentencia
     if (ja) f.ja = ja;
-    if (G.Castle && G.Castle.up) f.ch = [Math.ceil(G.Castle.hp), Math.ceil(G.Castle.maxHp)];
+    if (G.Castle && G.Castle.up) f.ch = G.Castle.snapshot();
     if (G.Siege && G.Siege.up) f.sg = G.Siege.snapshot();
     // Siempre: quién está eligiendo y, si hay cartas de nivel, cuáles (ver arriba).
     f.ho = holdNames();
@@ -352,7 +352,9 @@ G.Coop = (() => {
           const e = G.EnemyMgr.get(ev[1]);
           if (!e || e.dead || e.remote) break;
           hitFrom = from;
+          if (G.Enemy.setStriker) G.Enemy.setStriker(from);
           e.hurt(ev[2], ev[3], ev[4], ev[5], ev[6]);
+          if (G.Enemy.setStriker) G.Enemy.setStriker(null);
           hitFrom = null;
           break;
         }
@@ -382,8 +384,15 @@ G.Coop = (() => {
           if (G.Siege && G.Siege.up) G.Siege.applyHit(ev[1], ev[2], ev[3] || from);
           break;
         case 'ph':
-          if (ev[1] === me) { if (local && !local.dead) local.hurt(Math.max(1, Math.min(800, +ev[2] || 1))); }
-          else emit(['ph', ev[1], ev[2]], from);
+          if (ev[1] === me) {
+            if (local && !local.dead) {
+              local.hurt(Math.max(1, Math.min(800, +ev[2] || 1)));
+              if (local.dead && G.Siege && G.Siege.up) G.Siege.playerDown(ev[3] || from, me);
+            }
+          } else emit(['ph', ev[1], ev[2], ev[3] || from], from);
+          break;
+        case 'pk':
+          if (G.Siege && G.Siege.up) G.Siege.playerDown(ev[1], ev[2] || from);
           break;
       }
     }
@@ -418,7 +427,7 @@ G.Coop = (() => {
     if (msg.ch && G.Castle && G.Castle.up) G.Castle.net(msg.ch);
     if (msg.sg && G.Siege && G.Siege.up) G.Siege.net(msg.sg);
     // Quién elige y las cartas de nivel, aunque se haya perdido algún aviso.
-    if (msg.ho) {
+    if (msg.ho && !(G.Siege && G.Siege.up)) {
       const k = msg.ho.join('|');
       if (k !== lastHo) { lastHo = k; api.hold && api.hold(msg.ho); }
       if (msg.lu && msg.lu[0] > seenSeq) { seenSeq = msg.lu[0]; api.levelStart(msg.lu[1]); }
@@ -449,14 +458,14 @@ G.Coop = (() => {
   function applyHostEvent(ev) {
     switch (ev[0]) {
       case 'ne':
-        G.EnemyMgr.addRemote({ id: ev[1], dex: ev[2], x: ev[3], y: ev[4], boss: !!ev[5], shiny: !!ev[6], hp: ev[7], dmg: ev[8], beh: ev[9] });
+        G.EnemyMgr.addRemote({ id: ev[1], dex: ev[2], x: ev[3], y: ev[4], boss: !!ev[5], shiny: !!ev[6], hp: ev[7], dmg: ev[8], beh: ev[9], owner: ev[10], ring: ev[11], siegeBoss: !!ev[12] });
         break;
       case 'ed': G.EnemyMgr.removeRemote(ev[1], true); break;
       case 'eg': G.EnemyMgr.removeRemote(ev[1], false); break;
       case 'hn': { const e = G.EnemyMgr.get(ev[1]); if (e && !e.dead) e.showHurt(ev[2], ev[3]); break; }
       case 'es':
         G.Projectiles.spawn({ x: ev[1], y: ev[2], vx: ev[3], vy: ev[4], dmg: ev[5], r: ev[6], life: ev[7],
-                              friendly: false, color: '#ff7a9e', vis: G.VFX.forType(ev[8]), mtype: ev[8], cat: ev[9] });
+                              friendly: false, color: '#ff7a9e', vis: G.VFX.forType(ev[8]), mtype: ev[8], cat: ev[9], side: ev[10] || '' });
         break;
       case 'c': { const m = mates.get(ev[1]); if (m) G.Combat.ghostCast(m.pl, ev[2], ev[3], ev[4], ev[5]); break; }
       case 'item': api.item(ev[1]); break;
@@ -471,7 +480,7 @@ G.Coop = (() => {
       case 'pb': G.World.breakAt(ev[1], ev[2]); break;
       case 'say': G.Spawner.say(ev[1], ev[2]); break;
       case 'heal': if (!local.dead) { local.heal(local.maxHp * ev[1]); G.FX.ring(local.x, local.y, 6, 60, '#5fe08a', 0.4, 3); } break;
-      case 'lu': if (!ev[2] || ev[2] > seenSeq) { seenSeq = ev[2] || seenSeq; api.levelStart(ev[1]); } break;
+      case 'lu': if (!(G.Siege && G.Siege.up) && (!ev[2] || ev[2] > seenSeq)) { seenSeq = ev[2] || seenSeq; api.levelStart(ev[1]); } break;
       case 'lw': api.waiting(ev[1]); break;
       case 'lr': api.resume(); break;
       case 'hp': lastHo = (ev[1] || []).join('|'); api.hold && api.hold(ev[1]); break;
@@ -479,7 +488,19 @@ G.Coop = (() => {
       case 'sh': api.shiny(ev[1]); break;
       case 'ov': { const cb = api.over; const d = ev[1]; end(); cb(d); break; }
       case 'ph':
-        if (ev[1] === me && local && !local.dead) local.hurt(Math.max(1, Math.min(800, +ev[2] || 1)));
+        if (ev[1] === me && local && !local.dead) {
+          local.hurt(Math.max(1, Math.min(800, +ev[2] || 1)));
+          if (local.dead && G.Siege && G.Siege.up) G.Siege.playerDown(ev[3], me);
+        }
+        break;
+      case 'rw':
+        if (ev[1] === me && local) {
+          if (ev[2] && G.Game.noteXp) G.Game.noteXp(local.gainXp(ev[2]));
+          if (ev[3]) local.coins += ev[3];
+        }
+        break;
+      case 'it':
+        if (ev[1] === me && api.item) api.item(ev[2]);
         break;
       case 'rift': case 'riftx': case 'arena': case 'aw': case 'al': G.Rift.onEvent(ev); break;
       case 'jd': case 'jk': G.Judgment.onEvent(ev); break;
@@ -506,10 +527,10 @@ G.Coop = (() => {
   // anfitrión
   function hurtShown(e, d, color) { emitNear(['hn', e.id, d, color], e.x, e.y, hitFrom); }
   function enemyAdded(e) {
-    emit(['ne', e.id, e.dex, r1(e.x), r1(e.y), e.boss ? 1 : 0, e.shiny ? 1 : 0, Math.ceil(e.maxHp), r2(e.dmg), e.behavior]);
+    emit(['ne', e.id, e.dex, r1(e.x), r1(e.y), e.boss ? 1 : 0, e.shiny ? 1 : 0, Math.ceil(e.maxHp), r2(e.dmg), e.behavior || '', e.owner || '', e.ring || '', e.siegeBoss ? 1 : 0]);
   }
   function enemyGone(e, died) { emit([died ? 'ed' : 'eg', e.id]); }
-  function enemyShot(p, type) { emit(['es', r1(p.x), r1(p.y), r1(p.vx), r1(p.vy), r2(p.dmg), p.r, p.life, type, p.cat]); }
+  function enemyShot(p, type) { emit(['es', r1(p.x), r1(p.y), r1(p.vx), r1(p.vy), r2(p.dmg), p.r, p.life, type, p.cat, p.side || '']); }
   function pickupAdded(o) { emit(['pk', o.id, o.kind, r1(o.x), r1(o.y), o.value]); }
   function pickupGone(id) { emit(['pc', id]); }
   function say(text, secs) { emit(['say', text, secs]); }

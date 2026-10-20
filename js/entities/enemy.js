@@ -12,6 +12,7 @@
  */
 (() => {
   let nextId = 1;
+  let striker = null;
   /** Los jefes se agrandan hasta ~110 de alto, según lo grande que ya sea su sprite. */
   function bossScale(dex) {
     const m = G.Sprites.animMeta(dex, 'Idle');
@@ -123,7 +124,10 @@
     /** @param eff  'super' | 'weak' | null (tabla de tipos, sólo para enseñarlo) */
     hurt(amount, color = '#fff', dirX = 0, dirY = 0, knock = 0, eff = null) {
       if (this.dead) return;
+      if (this.siegeCreep && this.owner && striker && striker === this.owner) return;
+      if (striker) this.lastUid = striker;
       const d = Math.max(1, Math.round(amount));
+      if (!this.remote && this.siegeBoss && striker && G.Siege) G.Siege.noteBoss(striker, d);
       // Copia de un enemigo del anfitrión: el golpe se le manda a él, que es
       // quien decide si cae. Aquí sólo se ve (número, destello y animación).
       if (this.remote) {
@@ -197,6 +201,15 @@
         if (this.boss) G.Camera.kick(0.9);
         G.Audio.sfx(this.boss ? 'bossDown' : 'faint');
         if (this.shiny && !(G.Modes && G.Modes.is('shiny'))) { G.FX.burst(this.x, cy, '#ffe9a0', 30, 220); G.FX.ring(this.x, this.y, this.r, this.r * 7, '#9ae6ff', 0.7, 5); }
+        return;
+      }
+      if (this.siegeCreep || this.siegeBoss) {
+        if (this.siegeBoss) G.Camera.kick(0.9);
+        G.Audio.sfx(this.siegeBoss ? 'bossDown' : 'faint');
+        if (G.Siege) {
+          if (this.siegeBoss) G.Siege.onBossDown(this);
+          else G.Siege.onCreepDown(this);
+        }
         return;
       }
       // (Los legendarios de la Sentencia de Arceus sólo dan experiencia.)
@@ -592,7 +605,7 @@
         const shot = G.Projectiles.spawn({
           x: this.x, y: this.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
           dmg: this.shotDmg() * k, r: 7, life: 2.4, friendly: false, color: '#ff7a9e', mtype: type, cat: this.cat,
-          vis: G.VFX.forType(type)
+          vis: G.VFX.forType(type), side: this.owner || ''
         });
         if (G.Coop.isHost) G.Coop.enemyShot(shot, type);
       }
@@ -727,6 +740,14 @@
       const alpha = this.dead ? G.U.clamp(this.fade / 0.5, 0, 1) : 1;
       if (alpha <= 0) return;
 
+      if (this.ring && !this.dead) {
+        ctx.save();
+        ctx.globalAlpha = 0.72;
+        ctx.fillStyle = this.ring;
+        ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r * 1.45, this.r * 0.58, 0, 0, 6.2832); ctx.fill();
+        ctx.restore();
+      }
+
       const gold = this.golden || this.behavior === 'thief' || (this.remote && !this.boss && G.Events.golden);
       if ((this.boss || this.shiny || gold) && !this.dead) {
         ctx.save();
@@ -792,6 +813,7 @@
   // ---------------- gestor ----------------
 
   G.Enemy = Enemy;
+  G.Enemy.setStriker = uid => { striker = uid || null; };
 
   G.EnemyMgr = (() => {
     let list = [];            // vivos
@@ -819,6 +841,9 @@
       e.remote = true;
       if (o.shiny) e.makeShiny();
       e.maxHp = o.hp; e.hp = o.hp;
+      if (o.owner) { e.owner = o.owner; e.siegeCreep = !o.siegeBoss; }
+      if (o.ring) e.ring = o.ring;
+      if (o.siegeBoss) e.siegeBoss = true;
       e.net = { x: o.x, y: o.y, vx: 0, vy: 0, age: 0, dir: 0, anim: 0, st: 0 };
       list.push(e);
       byId.set(e.id, e);
@@ -957,7 +982,7 @@
       rebuildGrid();
       for (const e of list) {
         if (e.remote) e.netUpdate(dt);
-        else e.update(dt, (G.Castle && G.Castle.up) ? G.Castle.aim : (nearestPlayer(players, e.x, e.y) || pl));
+        else e.update(dt, aimOf(e, players, pl));
       }
       if (!G.Coop.active || G.Coop.isHost) separate(dt);
       for (let i = list.length - 1; i >= 0; i--) {
@@ -982,8 +1007,8 @@
           if (G.Coop.isHost) G.Coop.enemyGone(e, false);
           continue;
         }
-        // En el castillo no se teletransportan detrás de quien corre: se quedan atacándolo.
-        if (G.Castle && G.Castle.up) continue;
+        // En el castillo y en el asedio no se teletransportan: se quedan en la pelea.
+        if ((G.Castle && G.Castle.up) || (G.Siege && G.Siege.up) || e.siegeCreep || e.siegeBoss || e.castleWave) continue;
         // Jefe lejísimos de todos (salió junto a un compañero que aún volvía de la
         // grieta, o se quedó atrás): a los 4 s vuelve a salir cerca, fuera de la vista.
         // Si no, no se le encontraba y, con un jefe vivo, no salen grietas.
@@ -1024,6 +1049,15 @@
 
     function bossAlive() { return list.some(e => e.boss && !e.dead); }
     function shinies() { return list.filter(e => e.shiny && !e.dead); }
+
+    function aimOf(e, players, pl) {
+      if (G.Siege && G.Siege.up && (e.siegeCreep || e.siegeBoss)) {
+        const t = G.Siege.aimFor(e, players);
+        if (t) return t;
+      }
+      if (G.Castle && G.Castle.up) return G.Castle.aim;
+      return nearestPlayer(players, e.x, e.y) || pl;
+    }
 
     return { clear, all, add, get, addRemote, removeRemote, stash, restore, clearRemote, update, drawables, queryCircle, rebuildGrid, bossAlive, shinies, nearestPlayer,
              get count() { return list.length; } };

@@ -387,17 +387,20 @@ G.Player = class Player {
     // los ataques a distancia no le darían nunca al jefe.
     // Sin enemigos, apunta a la roca o cofre más cercano.
     const all = G.EnemyMgr.all();
+    const mine = this.uid || 'me';
+    const foes = (G.Siege && G.Siege.up) ? all.filter(e => !(e.owner && e.owner === mine)) : all;
     const m = this.activeMove();
     const ranged = !!m && (m.kind === 'projectile' || m.kind === 'beam');
-    const threat = G.Projectiles.nearest(all, this.x, this.y, this.r + 24);
-    const boss = all.find(e => e.boss && !e.dead && G.U.dist(this.x, this.y, e.x, e.y) < 330);
+    const threat = G.Projectiles.nearest(foes, this.x, this.y, this.r + 24);
+    const boss = foes.find(e => e.boss && !e.dead && G.U.dist(this.x, this.y, e.x, e.y) < 330);
     let tg = (ranged ? boss || threat : threat || boss)
-            || G.Projectiles.nearest(all, this.x, this.y, 520)
+            || G.Projectiles.nearest(foes, this.x, this.y, 520)
             || G.World.nearestBreakable(this.x, this.y, 200);
-    // Asedio: si nadie te está tocando, apuntas al castillo enemigo.
-    if (G.Siege && G.Siege.up && !threat) {
-      const castle = G.Siege.target(this.x, this.y, 720);
-      if (castle) tg = castle;
+    // Asedio: los monstruos enemigos que tengas a tiro, y si no el castillo.
+    if (G.Siege && G.Siege.up) {
+      const near = G.Projectiles.nearest(foes, this.x, this.y, 720);
+      const castle = G.Siege.target(this.x, this.y, 980);
+      if (near || castle) tg = near || castle;
     }
     // Apuntar a mano (Ajustes > Accesibilidad): hacia el ratón o el stick derecho.
     // El blanco (para la cadena) es el enemigo que hay en esa dirección; si no
@@ -406,7 +409,7 @@ G.Player = class Player {
     this.manualAim = hand != null;
     if (hand != null) {
       this.aim = hand;
-      this.target = this.enemyAlong(all, hand) || tg;
+      this.target = this.enemyAlong(foes, hand) || tg;
     } else {
       this.target = tg;
       if (tg) this.aim = Math.atan2(tg.y - this.y, tg.x - this.x);

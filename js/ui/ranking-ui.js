@@ -74,7 +74,16 @@ G.RankingUI = (() => {
     }
   }
 
-  const fmt = t => t >= 3600 ? Math.floor(t / 3600) + ':' + G.U.mmss(t % 3600).padStart(5, '0') : G.U.mmss(t);
+  function clock(t) { return t >= 3600 ? Math.floor(t / 3600) + ':' + G.U.mmss(t % 3600).padStart(5, '0') : G.U.mmss(t); }
+  function fmt(t) {
+    if (runMode === 'castle' && t >= 10000) {
+      const waveN = Math.floor(t / 10000);
+      const sec = Math.max(0, 9999 - (t % 10000));
+      const label = waveN >= 11 ? 'Oleada 10 superada' : ('Oleada ' + waveN);
+      return '<span>' + label + '</span> · ' + clock(sec);
+    }
+    return clock(t);
+  }
 
   async function load() {
     const my = ++token;

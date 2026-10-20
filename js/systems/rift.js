@@ -52,7 +52,7 @@ G.Rift = (() => {
   // ---------------- grieta en el mapa ----------------
 
   function update(dt, pl, time) {
-    if (G.Modes && G.Modes.is('siege')) return;
+    if (G.Modes && (G.Modes.is('siege') || G.Modes.is('castle'))) return;
     if (rift) {
       rift.t += dt;
       rift.ttl -= dt;

@@ -133,14 +133,24 @@ service cloud.firestore {
     //     minuto 40; antes era 1 h y se llegaba huyendo)
     //   - nivel y derrotados con margen de sobra (un grupo de 4 muy bueno)
     //   - la cuenta no puede estar baneada por el admin (saves/{uid}.ban)
+    function castleBoard(board) {
+      return board.matches('.*_ca_.*');
+    }
+    // Protege al cachorro guarda la oleada en el tiempo: oleada * 10000 + (9999 - segundos).
+    // Limpiar la 10 cuenta como 11, para que quede por encima de morir en la 10.
+    function shownSecs(board, t) {
+      return castleBoard(board) && t >= 10000 ? 9999 - (t % 10000) : t;
+    }
     function validEntry(board, id) {
       let d = request.resource.data;
       let run = get(/databases/$(database)/documents/runs/$(me())).data;
+      let secs = shownSecs(board, d.t);
       return d.keys().hasOnly(['t', 'uids', 'names', 'dex', 'shiny', 'lv', 'kills', 'at'])
-        && d.t is int && d.t > 0 && d.t <= 2700
-        && d.t <= (request.time - run.startedAt).seconds() + 30
-        && d.lv is int && d.lv >= 1 && d.lv <= 20 + d.t / 3
-        && d.kills is int && d.kills >= 0 && d.kills <= 100 + d.t * 12
+        && d.t is int && d.t > 0
+        && (castleBoard(board) ? (d.t >= 10000 && d.t <= 120000) : d.t <= 2700)
+        && secs <= (request.time - run.startedAt).seconds() + 30
+        && d.lv is int && d.lv >= 1 && d.lv <= 20 + secs / 3
+        && d.kills is int && d.kills >= 0 && d.kills <= 100 + secs * 12
         && get(/databases/$(database)/documents/saves/$(me())).data.get('ban', false) == false
         && d.uids is list && me() in d.uids
         && d.names is list && d.names.size() == d.uids.size()

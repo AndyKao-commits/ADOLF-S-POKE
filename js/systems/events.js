@@ -35,6 +35,7 @@ G.Events = (() => {
   // ---------------- ciclo ----------------
 
   function update(dt, players, time) {
+    if (G.Modes && (G.Modes.is('siege') || G.Modes.is('castle'))) return;
     if (cur) {
       cur.t += dt;
       if (cur.id !== 'lost' && cur.t >= cur.dur && authority()) end();
