@@ -78,7 +78,7 @@
   ]
 }
 </script>
-<link rel="stylesheet" href="css/style.css?v=rankmodes">
+<link rel="stylesheet" href="css/style.css?v=menulayout">
 <script src="js/core/locales.js?v=b8a3ce7ae9"></script>
 </head>
 <body>
@@ -159,43 +159,46 @@
 
 <!-- ====== Menú principal ====== -->
 <section id="scr-menu" class="scr hidden">
-  <div class="menu-left">
+  <aside class="menu-modes box">
+    <b>Modo</b>
+    <div class="mode-pick" id="mode-pick"><div class="chips" id="mode-chips"></div></div>
+  </aside>
+  <div class="menu-stage">
     <div class="logo">
-      <div class="t1">PokéSurvivor<span class="splash">Folagor, Sekiam, PokeAlex: ¿un hueco?</span></div>
-      <div class="t2">Mundo Misterioso</div>
+      <div class="t1" translate="no">小柯<span>Survivor</span></div>
+      <div class="t2" translate="no">小柯與他的朋友</div>
       <div class="brand-name" translate="no">AULF's friends GAME</div>
     </div>
+    <div class="partner-card">
+      <canvas id="menu-partner" class="stage" width="320" height="248"></canvas>
+      <div class="nm" id="menu-partner-name"></div>
+      <div class="lv" id="menu-partner-info"></div>
+      <div class="seg hidden" id="menu-shiny"><button data-v="0">Normal</button><button data-v="1"></button></div>
+    </div>
+    <div class="menu-go">
+      <button class="btn gold menu-play" data-go="play" type="button">Jugar<small>Entra en la mazmorra</small></button>
+      <p class="sub" id="mode-help"></p>
+      <div id="menu-stats" class="menu-stats"></div>
+    </div>
+  </div>
+  <aside class="menu-room box">
+    <b>Código de la sala</b>
     <form id="menu-code" class="code-join" autocomplete="off">
       <input id="menu-code-in" class="field" maxlength="6" spellcheck="false" autocapitalize="characters" placeholder="Código de la sala">
       <button class="btn gold" type="submit">Unirse</button>
       <button id="menu-code-new" class="btn" type="button">Crear sala</button>
     </form>
     <p id="menu-code-msg" class="err"></p>
-    <div class="partner-card">
-      <canvas id="menu-partner" class="stage" width="260" height="200"></canvas>
-      <div class="nm" id="menu-partner-name"></div>
-      <div class="lv" id="menu-partner-info"></div>
-      <div class="seg hidden" id="menu-shiny"><button data-v="0">Normal</button><button data-v="1"></button></div>
-    </div>
-  </div>
-  <div class="menu-right">
-    <div class="box">
-      <div class="mode-pick" id="mode-pick"><b>Modo</b><div class="chips" id="mode-chips"></div><p class="sub" id="mode-help"></p></div>
-      <div class="menu-list">
-        <button class="menu-item play" data-go="play">Jugar<small>Entra en la mazmorra</small></button>
-        <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
-        <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
-        <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
-        <button class="menu-item" data-go="goals">Misiones<small id="menu-goals-sub">Misiones, logros y perfil</small></button>
-        <button class="menu-item" data-go="friends">Amigos<small id="menu-friends-sub">Juega en grupo, de 1 a 10</small></button>
-        <button class="menu-item" data-go="rank">Ranking<small>Quién aguanta más</small></button>
-        <button class="menu-item" data-go="settings">Ajustes<small>Sonido, gráficos, controles y cuenta</small></button>
-      </div>
-    </div>
-    <div class="box" style="padding:14px 18px">
-      <div id="menu-stats" style="font-size:14px;color:var(--muted)"></div>
-    </div>
-  </div>
+  </aside>
+  <nav class="menu-dock box">
+    <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
+    <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
+    <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
+    <button class="menu-item" data-go="goals">Misiones<small id="menu-goals-sub">Misiones, logros y perfil</small></button>
+    <button class="menu-item" data-go="friends">Amigos<small id="menu-friends-sub">Juega en grupo, de 1 a 10</small></button>
+    <button class="menu-item" data-go="rank">Ranking<small>Quién aguanta más</small></button>
+    <button class="menu-item" data-go="settings">Ajustes<small>Sonido, gráficos, controles y cuenta</small></button>
+  </nav>
 </section>
 
 <div id="topbar" class="topbar hidden">

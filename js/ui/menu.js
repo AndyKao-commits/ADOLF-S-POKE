@@ -12,7 +12,7 @@ G.MenuUI = (() => {
   function init() {
     const ICON = { play: 'ball', dex: 'book', upgrades: 'up', gacha: 'ball4', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
     document.querySelectorAll('#scr-menu [data-go]').forEach(b => {
-      b.insertAdjacentHTML('afterbegin', `<span class="mi-ico">${G.Icons.html(ICON[b.dataset.go], 26)}</span>`);
+      if (b.dataset.go !== 'play') b.insertAdjacentHTML('afterbegin', `<span class="mi-ico">${G.Icons.html(ICON[b.dataset.go], 22)}</span>`);
       b.dataset.sfx = b.dataset.go === 'play' ? 'confirm' : 'click';
       b.onclick = () => {
         const go = b.dataset.go;
@@ -50,6 +50,45 @@ G.MenuUI = (() => {
   }
 
   // ---------------- menú principal ----------------
+
+  const MODE_ART = { normal: [25, false], shiny: [6, true], boss: [150, false] };
+  let modeArtReady = null;
+  function ensureModeArt() {
+    if (!modeArtReady) modeArtReady = Promise.all([
+      G.Sprites.preload([25, 6, 150], 8000, false),
+      G.Sprites.preload([6], 8000, true)
+    ]);
+    return modeArtReady;
+  }
+  /** Iconos del modo: sprites reales, y el cachorro es el dibujo de 小柯. */
+  function paintModeIcons(root) {
+    if (!root) return;
+    root.querySelectorAll('[data-mode-ico]').forEach(slot => {
+      const id = slot.dataset.modeIco;
+      slot.replaceChildren();
+      if (id === 'castle') {
+        const img = document.createElement('img');
+        img.className = 'pix';
+        img.alt = '';
+        img.src = 'assets/mode-castle.png';
+        slot.appendChild(img);
+        return;
+      }
+      const art = MODE_ART[id];
+      if (!art) return;
+      const cv = document.createElement('canvas');
+      cv.width = 88; cv.height = 80;
+      slot.appendChild(cv);
+      const [dex, shiny] = art;
+      const meta = G.Sprites.animMeta(dex, 'Idle', shiny);
+      const ay = meta ? meta.ay : 24;
+      const a = new G.Sprites.Animator(dex, (cv.height * 0.86) / (ay * G.Sprites.PX), shiny);
+      a.loop('Idle');
+      const ctx = cv.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      a.draw(ctx, cv.width / 2, cv.height * 0.94);
+    });
+  }
 
   function open() {
     const s = G.DB.save;
@@ -92,12 +131,15 @@ G.MenuUI = (() => {
     if (modeChips) G.Modes.mount(modeChips, modeHelp, {
       mode: G.Settings.get('runMode') || 'normal',
       editable: true,
+      icons: true,
       onPick(id) {
         G.Settings.set('runMode', id);
         if (G.Social.room && G.Social.room.isHost) G.Social.pushRules();
         open();
       }
     });
+    paintModeIcons(modeChips);
+    ensureModeArt().then(() => { if (G.UI.isOpen('scr-menu')) paintModeIcons($('mode-chips')); });
     // Premios de misiones por recoger.
     G.Progress.checkAch();
     const pend = G.Progress.pending();

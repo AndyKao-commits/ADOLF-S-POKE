@@ -27,8 +27,11 @@ G.Modes = (() => {
     for (const [id, label] of LIST) {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'chip' + (id === mode ? ' on' : '');
-      b.textContent = label;
+      b.className = (opt.icons ? 'mode-row' : 'chip') + (id === mode ? ' on' : '');
+      if (opt.icons) {
+        b.innerHTML = `<span class="mode-ico" data-mode-ico="${id}"></span><span class="mode-lab"></span>`;
+        b.querySelector('.mode-lab').textContent = label;
+      } else b.textContent = label;
       b.disabled = !opt.editable;
       b.onclick = () => {
         if (!opt.editable || id === mode) return;
