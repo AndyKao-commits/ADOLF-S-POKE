@@ -141,6 +141,10 @@ service cloud.firestore {
     function shownSecs(board, t) {
       return castleBoard(board) && t >= 10000 ? 9999 - (t % 10000) : t;
     }
+    // Asedio solo (s_sg_) y asedio entre jugadores (s_sgp_): gana el que acaba antes.
+    function siegeFast(board) {
+      return board.matches('s_sg_.*') || board.matches('s_sgp_.*');
+    }
     function validEntry(board, id) {
       let d = request.resource.data;
       let run = get(/databases/$(database)/documents/runs/$(me())).data;
@@ -162,7 +166,7 @@ service cloud.firestore {
               : (d.uids.size() >= 2 && d.uids.size() <= 10 && id == d.uids.join('_')))
         // Asedio (s_sg_): gana quien acaba antes, así que una marca mejor tiene MENOS tiempo,
         // y no puede ser mucho más corta que la partida real.
-        && (board.matches('s_sg_.*')
+        && (siegeFast(board)
               ? (d.t + 45 >= (request.time - run.startedAt).seconds()
                  && (resource == null || d.t < resource.data.t))
               : (resource == null || d.t > resource.data.t));
@@ -207,7 +211,7 @@ service cloud.firestore {
         && row.lv == e.lv && row.kills == e.kills
         && (!('shiny' in row) || row.shiny == e.shiny)
         && (d.ev == '' || (!(d.ev in d.top) && d.ev in old
-             && (board.matches('s_sg_.*') ? old[d.ev].t >= e.t : old[d.ev].t <= e.t)));
+             && (siegeFast(board) ? old[d.ev].t >= e.t : old[d.ev].t <= e.t)));
     }
     function removeMine(d, old, changed) {
       return d.ev in old && me() in old[d.ev].uids && !(d.ev in d.top) && changed.hasOnly([d.ev]);

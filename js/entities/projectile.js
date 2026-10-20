@@ -70,7 +70,8 @@ G.Projectiles = (() => {
 
       // Teledirigido: curva la velocidad hacia el enemigo más cercano.
       if (p.homing > 0 && p.friendly) {
-        const pool = (G.Siege && G.Siege.ally && p.owner) ? enemies.filter(e => !G.Siege.ally(e, p.owner)) : enemies;
+        let pool = (G.Siege && G.Siege.ally && p.owner) ? enemies.filter(e => !G.Siege.ally(e, p.owner)) : enemies;
+        if (G.Siege && G.Siege.up && G.Siege.marks) pool = pool.concat(G.Siege.marks());
         const tg = nearest(pool, p.x, p.y, 340);
         if (tg) {
           const [dx, dy] = G.U.norm(tg.x - p.x, tg.cy() - p.y);

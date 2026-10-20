@@ -386,7 +386,7 @@ G.Game = (() => {
     const siegeWin = G.Modes.is('siege') && siegeResult && siegeResult.win === (pl.uid || 'me');
     const castleRank = G.Modes.is('castle') && (lostCastle || castleWon);
     const sent = !ok ? null
-               : G.Modes.is('siege') ? (siegeWin ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny, runMode: 'siege' })) : null)
+               : G.Modes.is('siege') ? (siegeWin ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny, runMode: group ? 'siegeParty' : 'siege' })) : null)
                : G.Modes.is('castle') && !castleRank ? null
                : !group ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny, runMode: G.Modes.id }))
                : wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team, runMode: G.Modes.id })) : null;

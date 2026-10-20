@@ -396,9 +396,10 @@ G.Player = class Player {
     let tg = (ranged ? boss || threat : threat || boss)
             || G.Projectiles.nearest(foes, this.x, this.y, 520)
             || G.World.nearestBreakable(this.x, this.y, 200);
-    // Asedio: los monstruos enemigos que tengas a tiro, y si no el castillo.
+    // Asedio: jugadores y monstruos enemigos a tiro; si no hay, el castillo.
+    const siegePool = (G.Siege && G.Siege.up && G.Siege.marks) ? foes.concat(G.Siege.marks()) : foes;
     if (G.Siege && G.Siege.up) {
-      const near = G.Projectiles.nearest(foes, this.x, this.y, 720);
+      const near = G.Projectiles.nearest(siegePool, this.x, this.y, 720);
       const castle = G.Siege.target(this.x, this.y, 980);
       if (near || castle) tg = near || castle;
     }
@@ -409,7 +410,7 @@ G.Player = class Player {
     this.manualAim = hand != null;
     if (hand != null) {
       this.aim = hand;
-      this.target = this.enemyAlong(foes, hand) || tg;
+      this.target = this.enemyAlong(siegePool, hand) || tg;
     } else {
       this.target = tg;
       if (tg) this.aim = Math.atan2(tg.y - this.y, tg.x - this.x);

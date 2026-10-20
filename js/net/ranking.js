@@ -88,9 +88,14 @@ G.Ranking = (() => {
   }
 
   /** Trozo del nombre de la tabla según el modo de partida. Vacío = mazmorra normal (las tablas de siempre). */
-  const RUN_TAG = { shiny: 'sh_', boss: 'bo_', castle: 'ca_', siege: 'sg_' };
-  const fastBoard = b => String(b).includes('_sg_');
+  const RUN_TAG = { shiny: 'sh_', boss: 'bo_', castle: 'ca_', siege: 'sg_', siegeParty: 'sgp_' };
+  const fastBoard = b => { const s = String(b); return s.includes('_sg_') || s.includes('_sgp_'); };
   function runTag(rm) { return RUN_TAG[rm] || ''; }
+  /** siegeParty no está en Modes.IDS: idOf() lo convertiría en mazmorra normal. */
+  function rankRm(v) {
+    if (v === 'siegeParty') return 'siegeParty';
+    return G.Modes ? G.Modes.idOf(v) : 'normal';
+  }
 
   /** El filtro por Pokémon sólo existe en el histórico. */
   function board(mode, period, dex, rm) {
@@ -286,10 +291,10 @@ G.Ranking = (() => {
   function submitSolo(r) { return track(submitSoloNow(r)); }
   async function submitSoloNow(r) {
     const fb = fbx();
-    const rm0 = G.Modes ? G.Modes.idOf(r.runMode) : 'normal';
-    if (!fb || !G.Social.me || r.t < (rm0 === 'siege' ? 8 : MIN_T)) return [];
+    const rm0 = rankRm(r.runMode);
+    if (!fb || !G.Social.me || r.t < (rm0 === 'siege' || rm0 === 'siegeParty' ? 8 : MIN_T)) return [];
     const entry = { t: r.t, uids: [fb.uid], names: [G.Social.me.name], dex: [r.dex], shiny: [!!r.shiny], lv: r.lv, kills: r.kills };
-    const rm = G.Modes ? G.Modes.idOf(r.runMode) : 'normal';
+    const rm = rm0;
     const boards = PERIODS.map(([p]) => [board('s', p, null, rm), p]);
     boards.push([board('s', 'a', r.dex, rm), 'p']);
     const better = await store(boards, fb.uid, entry);
@@ -306,7 +311,7 @@ G.Ranking = (() => {
     const id = ms.map(m => m.uid).join('_');
     const entry = { t: r.t, uids: ms.map(m => m.uid), names: ms.map(m => m.name), dex: ms.map(m => m.dex),
                     shiny: ms.map(m => !!m.shiny), lv: r.lv, kills: r.kills };
-    const rm = G.Modes ? G.Modes.idOf(r.runMode) : 'normal';
+    const rm = rankRm(r.runMode);
     const boards = PERIODS.map(([p]) => [board('g', p, null, rm), p]);
     for (const d of new Set(entry.dex)) boards.push([board('g', 'a', d, rm), 'p']);
     const better = await store(boards, id, entry);

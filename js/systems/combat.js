@@ -154,7 +154,11 @@ G.Combat = (() => {
     for (const p of G.World.propsInCircle(pl.x, pl.y, m.radius)) {
       if (inArc(pl.x, pl.y, p.x, p.y, pl.aim, half)) G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
     }
-    if (G.Siege && G.Siege.up) G.Siege.smack(pl, m.radius, m.dmg * pl.atkFor(m));
+    if (G.Siege && G.Siege.up) {
+      const d = m.dmg * pl.atkFor(m);
+      G.Siege.smack(pl, m.radius, d);
+      G.Siege.strikePlayers(o => inArc(pl.x, pl.y, o.x, o.y, pl.aim, half), d * 0.55);
+    }
   }
 
   function beam(pl, m) {
@@ -184,7 +188,11 @@ G.Combat = (() => {
     for (const p of G.World.propsInCircle(mx, my, len / 2 + w)) {
       if (onBeam(p.x, p.y, p.r)) G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
     }
-    if (G.Siege && G.Siege.up) G.Siege.smack(pl, len, m.dmg * pl.atkFor(m));
+    if (G.Siege && G.Siege.up) {
+      const d = m.dmg * pl.atkFor(m);
+      G.Siege.smack(pl, len, d);
+      G.Siege.strikePlayers(o => onBeam(o.x, o.y, o.r || 14), d * 0.55);
+    }
   }
 
   function aura(pl, m) {
@@ -210,7 +218,11 @@ G.Combat = (() => {
       if (m.drain) healed += m.drain;
     }
     for (const p of G.World.propsInCircle(pl.x, pl.y, m.radius)) G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
-    if (G.Siege && G.Siege.up) G.Siege.smack(pl, m.radius, m.dmg * pl.atkFor(m));
+    if (G.Siege && G.Siege.up) {
+      const d = m.dmg * pl.atkFor(m);
+      G.Siege.smack(pl, m.radius, d);
+      G.Siege.strikePlayers(o => G.U.dist2(pl.x, pl.y, o.x, o.y) <= (m.radius + (o.r || 14)) ** 2, d * 0.55);
+    }
     if (healed > 0) pl.heal(Math.min(healed, 6));
   }
 
@@ -242,28 +254,35 @@ G.Combat = (() => {
     }
   }
 
-  /** Cadena: golpea a un enemigo y salta a los siguientes más cercanos (cada salto, algo menos). */
+  /** Cadena: golpea a un enemigo y salta a los siguientes más cercanos (cada salto, algo menos). En asedio también salta a jugadores. */
   function chain(pl, m) {
     const col = G.U.TYPE_COLOR[m.type], vis = G.VFX.forMove(m);
-    let cur = pl.target && !pl.target.dead && pl.target.hurt && !isAlly(pl.target, pl) ? pl.target : G.Projectiles.nearest(foesOf(pl), pl.x, pl.y, reach(m));
+    const pool = aimPool(pl);
+    let cur = pl.target && !pl.target.dead && (pl.target.hurt || pl.target._pl) && !isAlly(pl.target, pl)
+      ? pl.target : G.Projectiles.nearest(pool, pl.x, pl.y, reach(m));
     if (!cur) return;
     let fx = pl.x, fy = pl.y - G.LIFT, k = 1;
     const done = new Set();
     const n = Math.max(1, m.count | 0);
     for (let i = 0; i < n && cur; i++) {
       done.add(cur.id);
-      const tx = cur.x, ty = cur.y - cur.bodyH * 0.5;
+      const tx = cur.x, ty = cur.y - (cur.bodyH || 28) * 0.5;
       G.FX.beam(fx, fy, Math.atan2(ty - fy, tx - fx), Math.hypot(tx - fx, ty - fy), 10, col, vis);
       if (!ghost) {
-        // Infortunio: más daño a quien ya sufre un estado.
-        const hex = m.hex && (cur.burn > 0 || cur.poison > 0 || cur.slow > 0) ? m.hex : 1;
-        hit(pl, cur, m.dmg * pl.atkFor(m) * k * hex, col, tx - fx, ty - fy, 0, m);
+        if (cur._pl && G.Siege && G.Siege.strikePlayers) {
+          const uid = cur.uid;
+          G.Siege.strikePlayers(o => o.uid === uid, m.dmg * pl.atkFor(m) * k * 0.65);
+        } else if (cur.hurt) {
+          // Infortunio: más daño a quien ya sufre un estado.
+          const hex = m.hex && (cur.burn > 0 || cur.poison > 0 || cur.slow > 0) ? m.hex : 1;
+          hit(pl, cur, m.dmg * pl.atkFor(m) * k * hex, col, tx - fx, ty - fy, 0, m);
+        }
       }
       k *= 0.85;
       fx = tx; fy = ty;
       let best = null, bd = m.radius * m.radius;
-      for (const e of G.EnemyMgr.queryCircle(cur.x, cur.y, m.radius)) {
-        if (done.has(e.id) || isAlly(e, pl)) continue;
+      for (const e of pool) {
+        if (!e || e.dead || done.has(e.id) || isAlly(e, pl)) continue;
         const d = G.U.dist2(cur.x, cur.y, e.x, e.y);
         if (d < bd) { bd = d; best = e; }
       }
@@ -290,7 +309,7 @@ G.Combat = (() => {
   function meteors(pl, m) {
     const col = G.U.TYPE_COLOR[m.type], vis = G.VFX.forMove(m);
     const n = Math.max(1, m.count | 0);
-    const near = G.EnemyMgr.queryCircle(pl.x, pl.y, reach(m)).filter(e => !e.dead && !isAlly(e, pl));
+    const near = aimPool(pl).filter(e => !e.dead && !isAlly(e, pl));
     G.U.shuffle ? G.U.shuffle(near) : near.sort(() => Math.random() - 0.5);
     for (let i = 0; i < n; i++) {
       const e = near[i];
@@ -336,7 +355,11 @@ G.Combat = (() => {
     for (const p of G.World.propsInCircle(mx, my, len / 2 + w)) {
       if (segDist2(sx, sy, pl.x, pl.y, p.x, p.y) <= (w / 2 + p.r) ** 2) G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
     }
-    if (G.Siege && G.Siege.up) G.Siege.smack(pl, w, m.dmg * pl.atkFor(m));
+    if (G.Siege && G.Siege.up) {
+      const d = m.dmg * pl.atkFor(m);
+      G.Siege.smack(pl, w, d);
+      G.Siege.strikePlayers(o => segDist2(sx, sy, pl.x, pl.y, o.x, o.y) <= (w / 2 + (o.r || 14)) ** 2, d * 0.55);
+    }
     G.Camera.kick(0.12);
   }
 
@@ -377,8 +400,8 @@ G.Combat = (() => {
   /** El blanco de un ataque que va a un sitio (remolino, zona): el de siempre si llega; si no, el más cercano. */
   function spotFor(pl, m) {
     const t = pl.target;
-    if (t && !t.dead && t.hurt && !isAlly(t, pl) && G.U.dist(pl.x, pl.y, t.x, t.y) <= reach(m)) return t;
-    return G.Projectiles.nearest(foesOf(pl), pl.x, pl.y, reach(m));
+    if (t && !t.dead && (t.hurt || t._pl) && !isAlly(t, pl) && G.U.dist(pl.x, pl.y, t.x, t.y) <= reach(m)) return t;
+    return G.Projectiles.nearest(aimPool(pl), pl.x, pl.y, reach(m));
   }
 
   /** Carga: brilla un momento y sale un rayo enorme (el de beam, con su grosor). */
@@ -427,6 +450,7 @@ G.Combat = (() => {
     G.Camera.kick(0.1);
     for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, m.radius)) hit(pl, e, m.dmg * pl.atkFor(m), col, e.x - pl.x, e.y - pl.y, m.knock || 300, m);
     for (const p of G.World.propsInCircle(pl.x, pl.y, m.radius)) G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
+    if (G.Siege && G.Siege.up) G.Siege.strikePlayers(o => G.U.dist2(pl.x, pl.y, o.x, o.y) <= (m.radius + (o.r || 14)) ** 2, m.dmg * pl.atkFor(m) * 0.55);
   }
 
   /** Aturdir: una zona avisa en el suelo y al momento daña y deja quietos a los que pilla. */
@@ -482,7 +506,10 @@ G.Combat = (() => {
         const d = m.dmg * pl.atkFor(m);
         for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, m.radius)) hit(pl, e, d, f.col, e.x - pl.x, e.y - pl.y, 40, m);
         for (const p of G.World.propsInCircle(pl.x, pl.y, m.radius)) G.World.damageProp(p, d, f.col);
-        if (G.Siege && G.Siege.up) G.Siege.smack(pl, m.radius, d);
+        if (G.Siege && G.Siege.up) {
+          G.Siege.smack(pl, m.radius, d);
+          G.Siege.strikePlayers(o => G.U.dist2(pl.x, pl.y, o.x, o.y) <= (m.radius + (o.r || 14)) ** 2, d * 0.55);
+        }
       }
       return --f.n <= 0;
     }
@@ -534,6 +561,7 @@ G.Combat = (() => {
           if (!e.dead) e.applyStun((m.stun || 1) * (e.boss || e.judge ? 0.35 : 1));
         }
         for (const p of G.World.propsInCircle(f.x, f.y, f.r)) G.World.damageProp(p, f.dmg, f.col);
+        if (G.Siege && G.Siege.up) G.Siege.strikePlayers(o => G.U.dist2(f.x, f.y, o.x, o.y) <= (f.r + (o.r || 14)) ** 2, f.dmg * 0.55);
       }
       return true;
     }
@@ -546,6 +574,7 @@ G.Combat = (() => {
     const pl = f.owner, m = f.m;
     for (const e of G.EnemyMgr.queryCircle(f.x, f.y, r)) hit(pl, e, f.dmg * k, f.col, e.x - f.x, e.y - f.y, m.knock || 0, m);
     for (const p of G.World.propsInCircle(f.x, f.y, r)) G.World.damageProp(p, f.dmg * k, f.col);
+    if (G.Siege && G.Siege.up) G.Siege.strikePlayers(o => G.U.dist2(f.x, f.y, o.x, o.y) <= (r + (o.r || 14)) ** 2, f.dmg * k * 0.55);
   }
 
   const NEW_FIELDS = new Set(['charge', 'spin', 'quake', 'vortex', 'stunzone']);
@@ -557,7 +586,8 @@ G.Combat = (() => {
       if (NEW_FIELDS.has(f.kind)) { if (tickNewField(f, dt)) fields.splice(i, 1); continue; }
       if (f.kind === 'mine') {
         const armed = f.t >= f.arm;
-        const trig = armed && G.EnemyMgr.queryCircle(f.x, f.y, 14).some(e => !isAlly(e, f.owner));
+        const playerNear = !!(G.Siege && G.Siege.up && G.Siege.marks && G.Siege.marks().some(o => G.U.dist2(f.x, f.y, o.x, o.y) <= 14 * 14));
+        const trig = armed && (G.EnemyMgr.queryCircle(f.x, f.y, 14).some(e => !isAlly(e, f.owner)) || playerNear);
         if (trig || f.t >= f.life) {
           G.FX.ring(f.x, f.y, 4, f.r, f.col, 0.3, 4);
           G.FX.burst(f.x, f.y - 6, f.col, 10, 150);
@@ -577,7 +607,7 @@ G.Combat = (() => {
         f.shotT -= dt;
         if (f.shotT <= 0) {
           const m = f.m;
-          const tg = G.Projectiles.nearest(foesOf(f.owner), f.x, f.y, m.range || 300);
+          const tg = G.Projectiles.nearest(aimPool(f.owner), f.x, f.y, m.range || 300);
           f.shotT = tg ? m.rate || 0.6 : 0.15;
           if (tg) {
             const a = Math.atan2(tg.y - f.y, tg.x - f.x);
@@ -743,6 +773,12 @@ G.Combat = (() => {
     const all = G.EnemyMgr.all();
     if (!(G.Siege && G.Siege.ally)) return all;
     return all.filter(e => !G.Siege.ally(e, who));
+  }
+  /** Enemigos y, en asedio, los otros jugadores vivos. */
+  function aimPool(who) {
+    const foes = foesOf(who);
+    if (!(G.Siege && G.Siege.up && G.Siege.marks)) return foes;
+    return foes.concat(G.Siege.marks());
   }
 
   function hit(pl, e, dmg, col, dx, dy, knock, m) {

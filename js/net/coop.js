@@ -386,7 +386,7 @@ G.Coop = (() => {
         case 'ph':
           if (ev[1] === me) {
             if (local && !local.dead) {
-              local.hurt(Math.max(1, Math.min(800, +ev[2] || 1)));
+              local.hurt(Math.max(1, Math.min(160, +ev[2] || 1)));
               if (local.dead && G.Siege && G.Siege.up) G.Siege.playerDown(ev[3] || from, me);
             }
           } else emit(['ph', ev[1], ev[2], ev[3] || from], from);
@@ -489,7 +489,7 @@ G.Coop = (() => {
       case 'ov': { const cb = api.over; const d = ev[1]; end(); cb(d); break; }
       case 'ph':
         if (ev[1] === me && local && !local.dead) {
-          local.hurt(Math.max(1, Math.min(800, +ev[2] || 1)));
+          local.hurt(Math.max(1, Math.min(160, +ev[2] || 1)));
           if (local.dead && G.Siege && G.Siege.up) G.Siege.playerDown(ev[3], me);
         }
         break;

@@ -6,7 +6,7 @@
 G.RankingUI = (() => {
   const $ = G.UI.$;
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  let mode = 's', period = 'w', scope = 'all', dex = null, runMode = 'normal';
+  let mode = 's', period = 'w', scope = 'all', dex = null, runMode = 'normal', siegeSide = 'solo';
   let token = 0;
 
   function init() {
@@ -55,11 +55,17 @@ G.RankingUI = (() => {
         box.appendChild(b);
       }
     };
-    // El asedio guarda sólo al ganador, en la tabla de uno. No hay tabla de grupo.
-    if (runMode === 'siege') mode = 's';
-    const gens = [['s', `<b>${G.Icons.html('user', 16)} Solo</b>`]];
-    if (runMode !== 'siege') gens.push(['g', `<b>${G.Icons.html('friends', 16)} Grupo</b>`]);
-    mk($('rk-mode'), gens, mode, k => { mode = k; }, 'gen-tab');
+    // El asedio no tiene tabla de grupo: solo contra el ordenador, o entre jugadores.
+    if (runMode === 'siege') {
+      mode = 's';
+      mk($('rk-mode'), [
+        ['solo', `<b>${G.Icons.html('user', 16)} Contra el ordenador</b>`],
+        ['party', `<b>${G.Icons.html('friends', 16)} Entre jugadores</b>`]
+      ], siegeSide, k => { siegeSide = k; }, 'gen-tab');
+    } else {
+      const gens = [['s', `<b>${G.Icons.html('user', 16)} Solo</b>`], ['g', `<b>${G.Icons.html('friends', 16)} Grupo</b>`]];
+      mk($('rk-mode'), gens, mode, k => { mode = k; }, 'gen-tab');
+    }
     const runBox = $('rk-run');
     if (runBox && G.Modes) {
       runBox.innerHTML = '';
@@ -74,6 +80,7 @@ G.RankingUI = (() => {
     }
   }
 
+  function shownRm() { return runMode === 'siege' && siegeSide === 'party' ? 'siegeParty' : runMode; }
   function clock(t) { return t >= 3600 ? Math.floor(t / 3600) + ':' + G.U.mmss(t % 3600).padStart(5, '0') : G.U.mmss(t); }
   function fmt(t) {
     if (runMode === 'castle' && t >= 10000) {
@@ -93,8 +100,8 @@ G.RankingUI = (() => {
     let rows = [], me = null;
     try {
       [rows, me] = await Promise.all([
-        G.Ranking.top(mode, period, dex, scope === 'friends', runMode),
-        G.Social.me ? G.Ranking.myRank(mode, period, dex, runMode) : Promise.resolve(null)
+        G.Ranking.top(mode, period, dex, scope === 'friends', shownRm()),
+        G.Social.me ? G.Ranking.myRank(mode, period, dex, shownRm()) : Promise.resolve(null)
       ]);
     } catch (e) {
       if (my !== token) return;
@@ -107,7 +114,7 @@ G.RankingUI = (() => {
       list.innerHTML = '<p class="sub">Todavía no hay marcas aquí. ¡Sé el primero!</p>';
     }
     const uid = G.Social.uid;
-    const b = G.Ranking.board(mode, period, dex, runMode), done = G.Ranking.reported();
+    const b = G.Ranking.board(mode, period, dex, shownRm()), done = G.Ranking.reported();
     rows.forEach((r, i) => list.appendChild(rowEl(r, i + 1, r.uids.includes(uid), b, done)));
 
     // La frase se monta en cada idioma (traducirla por trozos sale rara).

@@ -36,7 +36,8 @@ G.Rift = (() => {
     rift = null; arena = null; zone = null; asked = false; downT = 0; misses = 0;
     // En el desafío de jefes ya estás al 20 y quieres fusionar: la grieta no espera al minuto 1:15.
     firstSure = !!(G.Modes && G.Modes.is('boss'));
-    checkT = firstSure ? BOSS_FROM : CHECK;
+    // Asedio: la primera tirada es en cuanto pasa el segundo 40.
+    checkT = firstSure ? BOSS_FROM : (G.Modes && G.Modes.is('siege') ? 0 : CHECK);
   }
 
   /**
@@ -52,19 +53,20 @@ G.Rift = (() => {
   // ---------------- grieta en el mapa ----------------
 
   function update(dt, pl, time) {
-    if (G.Modes && (G.Modes.is('siege') || G.Modes.is('castle'))) return;
+    if (G.Modes && G.Modes.is('castle')) return;
+    const siege = G.Modes && G.Modes.is('siege');
     if (rift) {
       rift.t += dt;
       rift.ttl -= dt;
       if (rift.ttl <= 0) { rift = null; return; }
       if (!arena && !pl.dead && G.U.dist2(pl.x, pl.y, rift.x, rift.y - 10) < 30 * 30) enter();
-    } else if (!arena && authority() && time > (firstSure ? 0 : FROM) && time < G.Judgment.AT - 120) {
+    } else if (!arena && authority() && time > (firstSure ? 0 : (siege ? 40 : FROM)) && time < G.Judgment.AT - 120) {
       checkT -= dt;
       if (checkT <= 0) {
         checkT = CHECK;
-        // El desafío de jefes siempre tiene jefes vivos: si eso bloqueara la grieta, no saldría nunca.
+        // El desafío de jefes y el asedio tienen un jefe vivo casi siempre: si eso bloqueara la grieta, no saldría.
         const bossMode = G.Modes && G.Modes.is('boss');
-        if (G.EnemyMgr.bossAlive() && !bossMode) return;           // con un jefe vivo no cuenta como intento
+        if (G.EnemyMgr.bossAlive() && !bossMode && !siege) return;
         if (firstSure || Math.random() < CHANCE * (1 + misses)) { misses = 0; open(); }
         else misses++;
       }
@@ -75,6 +77,16 @@ G.Rift = (() => {
   function open() {
     const alive = G.Game.everyone().filter(p => !p.dead);
     const near = G.U.pick(alive.length ? alive : [G.Game.player]);
+    // En el asedio el suelo del mapa no está libre: la grieta sale junto al jugador, dentro del campo.
+    if (G.Modes && G.Modes.is('siege')) {
+      const a = Math.random() * 6.2832, d = G.U.rand(160, 200);
+      const x = G.U.clamp(near.x + Math.cos(a) * d, -700, 700);
+      const y = G.U.clamp(near.y + Math.sin(a) * d, -700, 700);
+      show(x, y, TTL);
+      firstSure = false;
+      if (G.Coop.isHost) G.Coop.broadcast(['rift', Math.round(x), Math.round(y), TTL]);
+      return;
+    }
     for (let i = 0; i < 24; i++) {
       const a = Math.random() * 6.2832, d = G.U.rand(380, 560);
       const x = near.x + Math.cos(a) * d, y = near.y + Math.sin(a) * d * 0.85;
