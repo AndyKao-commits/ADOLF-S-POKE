@@ -15,7 +15,7 @@ G.Castle = (() => {
     hp = maxHp;
     if (!img) {
       img = new Image();
-      img.src = 'assets/castle-puppy.png?v=lie';
+      img.src = 'assets/castle-puppy.png?v=char';
     }
   }
 
@@ -39,7 +39,7 @@ G.Castle = (() => {
       e.castleCd = 0.55;
       const dmg = Math.max(1, e.dmg || 1);
       hp = Math.max(0, hp - dmg);
-      G.FX.dmgText(aim.x + G.U.rand(-10, 10), aim.y - 70, Math.ceil(dmg), '#ff8b8b');
+      G.FX.dmgText(aim.x + G.U.rand(-10, 10), aim.y - 62, Math.ceil(dmg), '#ff8b8b');
       if (hp <= 0) return true;
     }
     return false;
@@ -47,33 +47,35 @@ G.Castle = (() => {
 
   function draw(ctx) {
     if (!on) return;
-    const H = 96;
-    const W = img && img.complete && img.naturalWidth ? Math.round(H * img.naturalWidth / img.naturalHeight) : 104;
+    // Personaje tumbado, del tamaño de los demás, no un cuadro.
+    const H = 58;
+    const ready = img && img.complete && img.naturalWidth;
+    const W = ready ? Math.round(H * img.naturalWidth / img.naturalHeight) : 120;
     ctx.save();
     ctx.translate(aim.x, aim.y);
-    // Sombra y marco, para que se lea como el sitio que hay que proteger.
-    ctx.fillStyle = 'rgba(0,0,0,.35)';
+    ctx.fillStyle = 'rgba(0,0,0,.34)';
     ctx.beginPath();
-    ctx.ellipse(0, -4, W * 0.42, 10, 0, 0, 6.2832);
+    ctx.ellipse(0, -1, Math.min(46, W * 0.38), 6, 0, 0, 6.2832);
     ctx.fill();
-    ctx.strokeStyle = '#e2b657';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(-W / 2 - 2, -H - 2, W + 4, H + 4);
-    if (img && img.complete && img.naturalWidth) ctx.drawImage(img, -W / 2, -H, W, H);
-    else {
-      ctx.fillStyle = '#1a2744';
-      ctx.fillRect(-W / 2, -H, W, H);
+    if (ready) {
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(img, -W / 2, -H, W, H);
+      ctx.imageSmoothingEnabled = false;
     }
+    const bw = 64;
+    const by = -H - 7;
     const frac = maxHp > 0 ? hp / maxHp : 0;
-    const bw = W + 8;
-    ctx.fillStyle = 'rgba(0,0,0,.55)';
-    ctx.fillRect(-bw / 2, 8, bw, 8);
+    ctx.fillStyle = 'rgba(0,0,0,.6)';
+    ctx.fillRect(-bw / 2, by, bw, 3.4);
     ctx.fillStyle = frac > 0.35 ? '#5fe08a' : '#ff5f6d';
-    ctx.fillRect(-bw / 2, 8, bw * frac, 8);
-    ctx.font = '700 11px Pixelify,"Segoe UI",system-ui,sans-serif';
+    ctx.fillRect(-bw / 2, by, bw * frac, 3.4);
+    ctx.font = '700 8px Pixelify,"Segoe UI",system-ui,sans-serif';
     ctx.textAlign = 'center';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(0,0,0,.8)';
+    ctx.strokeText('Protege al cachorro', 0, by - 2);
     ctx.fillStyle = '#ffe9a8';
-    ctx.fillText('Protege al cachorro', 0, 28);
+    ctx.fillText('Protege al cachorro', 0, by - 2);
     ctx.restore();
   }
 
