@@ -15,7 +15,7 @@ G.Castle = (() => {
     hp = maxHp;
     if (!img) {
       img = new Image();
-      img.src = 'assets/castle-puppy.png';
+      img.src = 'assets/castle-puppy.png?v=lie';
     }
   }
 
