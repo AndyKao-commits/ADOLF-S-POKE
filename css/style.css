@@ -293,7 +293,7 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
   grid-template-rows: minmax(0, 1fr) auto;
   grid-template-areas: "modes stage room" "dock dock dock";
   gap: 8px;
-  padding: 58px 10px 10px;
+  padding: 58px max(10px, env(safe-area-inset-right, 0px)) 10px max(18px, env(safe-area-inset-left, 0px));
   align-items: stretch;
   justify-content: stretch;
 }
@@ -358,7 +358,7 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
 .partner-card .nm { font-size: 20px; font-weight: 700; text-shadow: 3px 3px 0 var(--shadow); }
 .partner-card .lv { color: var(--muted); font-size: 14px; text-shadow: 2px 2px 0 var(--shadow); }
 body:has(#scr-menu:not(.hidden)) .topbar {
-  left: 10px; right: 10px; top: 8px; height: 40px;
+  left: max(18px, env(safe-area-inset-left, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); top: 8px; height: 40px;
   justify-content: flex-start; gap: 6px; padding: 0 8px; flex-wrap: nowrap;
   background: linear-gradient(180deg, var(--box1), var(--box2));
   border: 3px solid var(--edge); border-radius: 12px;
@@ -848,7 +848,14 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   .credits-line { display: none !important; }
   .sound-panel { top: 40px; }
 
-  #scr-menu { padding: 50px 6px 6px; gap: 6px; overflow: hidden; }
+  #scr-menu {
+    padding: 50px max(6px, env(safe-area-inset-right, 0px)) 6px max(36px, env(safe-area-inset-left, 0px));
+    gap: 6px; overflow: hidden;
+  }
+  .menu-modes { align-self: stretch; height: 100%; max-height: 100%; }
+  .menu-modes .mode-pick { flex: 1; min-height: 0; }
+  .menu-modes .chips { flex: 1; min-height: 0; }
+  .menu-modes .mode-row { flex: 1 1 0; }
   #scr-menu .logo .t1 { font-size: 22px; }
   #scr-menu .logo .t2, #scr-menu .brand-name { font-size: 12px; }
   .menu-play { min-width: 160px; font-size: 18px; padding: 6px 14px; }
