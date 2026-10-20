@@ -6,7 +6,7 @@
 G.RankingUI = (() => {
   const $ = G.UI.$;
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  let mode = 's', period = 'w', scope = 'all', dex = null;
+  let mode = 's', period = 'w', scope = 'all', dex = null, runMode = 'normal';
   let token = 0;
 
   function init() {
@@ -57,6 +57,18 @@ G.RankingUI = (() => {
     };
     mk($('rk-mode'), [['s', `<b>${G.Icons.html('user', 16)} Solo</b>`], ['g', `<b>${G.Icons.html('friends', 16)} Grupo</b>`]],
        mode, k => { mode = k; }, 'gen-tab');
+    const runBox = $('rk-run');
+    if (runBox && G.Modes) {
+      runBox.innerHTML = '';
+      for (const [id, label] of G.Modes.LIST) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'chip' + (id === runMode ? ' on' : '');
+        b.textContent = label;
+        b.onclick = () => { if (runMode === id) return; runMode = id; G.Audio.sfx('click'); tabs(); load(); };
+        runBox.appendChild(b);
+      }
+    }
   }
 
   const fmt = t => t >= 3600 ? Math.floor(t / 3600) + ':' + G.U.mmss(t % 3600).padStart(5, '0') : G.U.mmss(t);
@@ -69,8 +81,8 @@ G.RankingUI = (() => {
     let rows = [], me = null;
     try {
       [rows, me] = await Promise.all([
-        G.Ranking.top(mode, period, dex, scope === 'friends'),
-        G.Social.me ? G.Ranking.myRank(mode, period, dex) : Promise.resolve(null)
+        G.Ranking.top(mode, period, dex, scope === 'friends', runMode),
+        G.Social.me ? G.Ranking.myRank(mode, period, dex, runMode) : Promise.resolve(null)
       ]);
     } catch (e) {
       if (my !== token) return;
@@ -83,7 +95,7 @@ G.RankingUI = (() => {
       list.innerHTML = '<p class="sub">Todavía no hay marcas aquí. ¡Sé el primero!</p>';
     }
     const uid = G.Social.uid;
-    const b = G.Ranking.board(mode, period, dex), done = G.Ranking.reported();
+    const b = G.Ranking.board(mode, period, dex, runMode), done = G.Ranking.reported();
     rows.forEach((r, i) => list.appendChild(rowEl(r, i + 1, r.uids.includes(uid), b, done)));
 
     // La frase se monta en cada idioma (traducirla por trozos sale rara).

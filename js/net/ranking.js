@@ -87,9 +87,13 @@ G.Ranking = (() => {
     return Object.assign({}, p, { d: p.d + GEN, w: p.w + GEN, m: p.m + GEN, y: p.y + GEN });
   }
 
+  /** Trozo del nombre de la tabla según el modo de partida. Vacío = mazmorra normal (las tablas de siempre). */
+  const RUN_TAG = { shiny: 'sh_', boss: 'bo_', castle: 'ca_' };
+  function runTag(rm) { return RUN_TAG[rm] || ''; }
+
   /** El filtro por Pokémon sólo existe en el histórico. */
-  function board(mode, period, dex) {
-    return mode + '_' + boardIds()[period] + (dex && period === 'a' ? '_p' + dex : '');
+  function board(mode, period, dex, rm) {
+    return mode + '_' + runTag(rm) + boardIds()[period] + (dex && period === 'a' ? '_p' + dex : '');
   }
 
   const col = b => fbx().fs.collection('lb').doc(b).collection('e');
@@ -273,10 +277,10 @@ G.Ranking = (() => {
   async function submitSoloNow(r) {
     const fb = fbx();
     if (!fb || !G.Social.me || r.t < MIN_T) return [];
-    const ids = boardIds();
     const entry = { t: r.t, uids: [fb.uid], names: [G.Social.me.name], dex: [r.dex], shiny: [!!r.shiny], lv: r.lv, kills: r.kills };
-    const boards = PERIODS.map(([p]) => ['s_' + ids[p], p]);
-    boards.push(['s_' + ALL + '_p' + r.dex, 'p']);
+    const rm = G.Modes ? G.Modes.idOf(r.runMode) : 'normal';
+    const boards = PERIODS.map(([p]) => [board('s', p, null, rm), p]);
+    boards.push([board('s', 'a', r.dex, rm), 'p']);
     const better = await store(boards, fb.uid, entry);
     announce(better);
     return better;
@@ -291,9 +295,9 @@ G.Ranking = (() => {
     const id = ms.map(m => m.uid).join('_');
     const entry = { t: r.t, uids: ms.map(m => m.uid), names: ms.map(m => m.name), dex: ms.map(m => m.dex),
                     shiny: ms.map(m => !!m.shiny), lv: r.lv, kills: r.kills };
-    const ids = boardIds();
-    const boards = PERIODS.map(([p]) => ['g_' + ids[p], p]);
-    for (const d of new Set(entry.dex)) boards.push(['g_' + ALL + '_p' + d, 'p']);
+    const rm = G.Modes ? G.Modes.idOf(r.runMode) : 'normal';
+    const boards = PERIODS.map(([p]) => [board('g', p, null, rm), p]);
+    for (const d of new Set(entry.dex)) boards.push([board('g', 'a', d, rm), 'p']);
     const better = await store(boards, id, entry);
     announce(better);
     return better;
@@ -321,10 +325,10 @@ G.Ranking = (() => {
    * Mejores marcas de una tabla.
    * @param friendsOnly  sólo tú y tus amigos
    */
-  async function top(mode, period, dex, friendsOnly) {
+  async function top(mode, period, dex, friendsOnly, rm) {
     const fb = fbx();
     if (!fb) return [];
-    const b = board(mode, period, dex);
+    const b = board(mode, period, dex, rm);
     const rows = sorted(await summary(b));
     if (!friendsOnly) return rows.slice(0, TOP);
     const circle = [fb.uid, ...G.Social.friends.filter(f => f.status === 'ok').map(f => f.uid)].slice(0, 30);
@@ -351,10 +355,10 @@ G.Ranking = (() => {
   }
 
   /** Tu puesto en la tabla (aunque no salgas en el top). → { pos, t, row } | null */
-  async function myRank(mode, period, dex) {
+  async function myRank(mode, period, dex, rm) {
     const fb = fbx();
     if (!fb) return null;
-    const b = board(mode, period, dex);
+    const b = board(mode, period, dex, rm);
     // ¿Estás en el top 50? Entonces el puesto sale del resumen, sin gastar nada.
     const rows = sorted(await summary(b));
     const i = rows.findIndex(r => r.uids.includes(fb.uid));
@@ -417,7 +421,7 @@ G.Ranking = (() => {
     if (!fb) return;
     const ids = boardIds();
     const boards = new Set();
-    for (const m of ['s', 'g']) for (const [p] of PERIODS) boards.add(m + '_' + ids[p]);
+    for (const m of ['s', 'g']) for (const tag of ['', ...Object.values(RUN_TAG)]) for (const [p] of PERIODS) boards.add(m + '_' + tag + ids[p]);
     for (const k of Object.keys(bests())) boards.add(k.split(':')[0]);
     await Promise.all([...boards].map(b => fb.fs.runTransaction(async tx => {
       const s = await tx.get(sumRef(b));
@@ -494,8 +498,11 @@ G.Ranking = (() => {
   /** Admin: quita la marca de un jugador o equipo de todas las tablas de ahora (y de `also`). */
   async function removeEverywhere(e, mode, dexes = [], also = null) {
     const ids = boardIds();
-    const boards = new Set(PERIODS.map(([p]) => mode + '_' + ids[p]));
-    for (const d of dexes) boards.add(mode + '_' + ALL + '_p' + d);
+    const boards = new Set();
+    for (const tag of ['', ...Object.values(RUN_TAG)]) {
+      for (const [p] of PERIODS) boards.add(mode + '_' + tag + ids[p]);
+      for (const d of dexes) boards.add(mode + '_' + tag + ALL + '_p' + d);
+    }
     if (also) boards.add(also);
     await Promise.all([...boards].map(b => removeEntry(b, e)));
   }

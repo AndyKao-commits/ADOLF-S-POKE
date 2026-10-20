@@ -300,8 +300,11 @@ G.Game = (() => {
   /** Un shiny salvaje cae: te lo quedas (y la versión normal si no la tenías). */
   G.onShinyCaught = e => {
     if (!G.DB.save || !pl) return;
-    if (G.Coop.isHost) G.Coop.shinyCaught(e);
+    const parade = !!(G.Modes && G.Modes.is('shiny'));
     const isNew = G.DB.grantShiny(e.dex, 'wild');
+    // En el modo shiny todos lo son: el repetido no avisa ni da monedas.
+    if (parade && !isNew) return;
+    if (G.Coop.isHost) G.Coop.shinyCaught(e);
     G.DB.save.stats.shinies++;
     G.DB.commit(true);
     caught.push({ dex: e.dex, isNew });
@@ -359,8 +362,8 @@ G.Game = (() => {
     // Una sala con una sola persona cuenta como solo: si no, ni solo ni grupo la guardan.
     const group = coop && team.length >= 2;
     const sent = !ok ? null
-               : !group ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny }))
-               : wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team })) : null;
+               : !group ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny, runMode: G.Modes.id }))
+               : wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team, runMode: G.Modes.id })) : null;
     if (sent) sent.then(b => { if (b && b.some(p => p !== 'a')) G.DB.commit(true); }).catch(() => {});
 
     G.Coop.unlockRun();

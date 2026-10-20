@@ -262,7 +262,7 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
   text-shadow: 1px 1px 0 var(--shadow);
 }
 .chip.on { border-color: var(--gold); color: var(--gold); }
-.mode-pick, #lobby-mode { margin: 0 0 10px; }
+.mode-pick, #lobby-mode, #rk-run { margin: 0 0 10px; }
 .mode-pick > b, #lobby-mode > b { display: block; font-size: 13px; margin-bottom: 6px; }
 .mode-pick .sub, #lobby-mode .sub { margin: 6px 0 0; }
 

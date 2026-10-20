@@ -326,7 +326,7 @@ G.I18n.add({
   'Sólo shinies': 'Shinies only',
   'Sólo aparecen Pokémon shiny. La cantidad y la experiencia no cambian.': 'Only shiny Pokémon appear. The amount and the experience stay the same.',
   'Desafío de jefes': 'Boss challenge',
-  'Sólo aparecen jefes, tres a la vez. Empiezas en el nivel 20 para elegir ataques.': 'Only bosses appear, three at a time. You start at level 20 so you can pick moves.',
+  'Sólo aparecen jefes, tres a la vez. Empiezas en el nivel 20 para elegir ataques. La grieta sale antes, para poder fusionar.': 'Only bosses appear, three at a time. You start at level 20 so you can pick moves. The rift opens sooner, so you can fuse moves.',
   'Protege al cachorro': 'Protect the puppy',
   'Los monstruos atacan el castillo y tú los limpias. El castillo no se mueve.': 'Monsters attack the castle and you clear them. The castle stays still.',
   'El cachorro ha caído…': 'The puppy has fallen…',

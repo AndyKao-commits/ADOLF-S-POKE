@@ -10,7 +10,7 @@ G.Modes = (() => {
   const LIST = [
     ['normal', 'Mazmorra normal', 'Como siempre: hordas, jefes y experiencia.'],
     ['shiny', 'Sólo shinies', 'Sólo aparecen Pokémon shiny. La cantidad y la experiencia no cambian.'],
-    ['boss', 'Desafío de jefes', 'Sólo aparecen jefes, tres a la vez. Empiezas en el nivel 20 para elegir ataques.'],
+    ['boss', 'Desafío de jefes', 'Sólo aparecen jefes, tres a la vez. Empiezas en el nivel 20 para elegir ataques. La grieta sale antes, para poder fusionar.'],
     ['castle', 'Protege al cachorro', 'Los monstruos atacan el castillo y tú los limpias. El castillo no se mueve.']
   ];
   let cur = 'normal';

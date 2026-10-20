@@ -196,7 +196,7 @@
       if (this.remote) {
         if (this.boss) G.Camera.kick(0.9);
         G.Audio.sfx(this.boss ? 'bossDown' : 'faint');
-        if (this.shiny) { G.FX.burst(this.x, cy, '#ffe9a0', 30, 220); G.FX.ring(this.x, this.y, this.r, this.r * 7, '#9ae6ff', 0.7, 5); }
+        if (this.shiny && !(G.Modes && G.Modes.is('shiny'))) { G.FX.burst(this.x, cy, '#ffe9a0', 30, 220); G.FX.ring(this.x, this.y, this.r, this.r * 7, '#9ae6ff', 0.7, 5); }
         return;
       }
       // (Los legendarios de la Sentencia de Arceus sólo dan experiencia.)
@@ -223,8 +223,12 @@
       }
       G.Audio.sfx(this.boss ? 'bossDown' : 'faint');
       if (this.shiny) {
-        G.FX.burst(this.x, cy, '#ffe9a0', 30, 220);
-        G.FX.ring(this.x, this.y, this.r, this.r * 7, '#9ae6ff', 0.7, 5);
+        // Modo shiny: no hay destello ni aviso de "está por ahí" en cada uno.
+        const parade = G.Modes && G.Modes.is('shiny');
+        if (!parade) {
+          G.FX.burst(this.x, cy, '#ffe9a0', 30, 220);
+          G.FX.ring(this.x, this.y, this.r, this.r * 7, '#9ae6ff', 0.7, 5);
+        }
         if (G.onShinyCaught) G.onShinyCaught(this);
       }
     }

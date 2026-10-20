@@ -120,8 +120,10 @@ G.HUD = (() => {
 
     // ---------- aviso ----------
     // ---------- shinies fuera de pantalla: destello en el borde ----------
+    // En el modo shiny todos lo son: marcarlos sólo tapa la pantalla.
     const cam = G.Camera, pulse = 0.6 + Math.sin(performance.now() / 160) * 0.4;
-    for (const e of G.EnemyMgr.shinies()) {
+    const parade = G.Modes && G.Modes.is('shiny');
+    for (const e of (parade ? [] : G.EnemyMgr.shinies())) {
       const sx = (e.x - cam.left()) * cam.scale, sy = (e.y - cam.top()) * cam.scale;
       if (sx > 0 && sx < w && sy > 0 && sy < h) continue;
       const M = 34;

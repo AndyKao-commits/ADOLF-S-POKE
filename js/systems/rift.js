@@ -23,15 +23,21 @@ G.Rift = (() => {
   // probable (20 %, 40 %, 60 %, 80 %, 100 %): como mucho 2,5 min sin grieta.
   // Desde 2 min antes de la Sentencia de Arceus (minuto 30) ya no se abren.
   const CHECK = 30, CHANCE = 0.2, TTL = 45;
-  const ARENA_R = 11, ARENA_TIME = 120, FROM = 75;
+  const ARENA_R = 11, ARENA_TIME = 120, FROM = 75, BOSS_FROM = 20;
   let rift = null;          // { x, y, ttl, t }
   let arena = null;         // { tx, ty, r, dex, shiny, x, y, back, biome, t, phase, endT, bossId }
   let zone = null;          // dónde estaba la última arena { x, y, r } (ver leftBehind)
   let checkT = CHECK, asked = false, downT = 0, misses = 0;
+  let firstSure = false;    // desafío de jefes: la primera grieta sale seguro, y pronto
   const authority = () => !G.Coop.active || G.Coop.isHost;
   const TS = () => G.Tiles.T * G.Sprites.PX;
 
-  function reset() { rift = null; arena = null; zone = null; checkT = CHECK; asked = false; downT = 0; misses = 0; }
+  function reset() {
+    rift = null; arena = null; zone = null; asked = false; downT = 0; misses = 0;
+    // En el desafío de jefes ya estás al 20 y quieres fusionar: la grieta no espera al minuto 1:15.
+    firstSure = !!(G.Modes && G.Modes.is('boss'));
+    checkT = firstSure ? BOSS_FROM : CHECK;
+  }
 
   /**
    * ¿Sigue este jugador en la arena aunque aquí ya se haya vuelto al mapa?
@@ -51,12 +57,14 @@ G.Rift = (() => {
       rift.ttl -= dt;
       if (rift.ttl <= 0) { rift = null; return; }
       if (!arena && !pl.dead && G.U.dist2(pl.x, pl.y, rift.x, rift.y - 10) < 30 * 30) enter();
-    } else if (!arena && authority() && time > FROM && time < G.Judgment.AT - 120) {
+    } else if (!arena && authority() && time > (firstSure ? 0 : FROM) && time < G.Judgment.AT - 120) {
       checkT -= dt;
       if (checkT <= 0) {
         checkT = CHECK;
-        if (G.EnemyMgr.bossAlive()) return;           // con un jefe vivo no cuenta como intento
-        if (Math.random() < CHANCE * (1 + misses)) { misses = 0; open(); }
+        // El desafío de jefes siempre tiene jefes vivos: si eso bloqueara la grieta, no saldría nunca.
+        const bossMode = G.Modes && G.Modes.is('boss');
+        if (G.EnemyMgr.bossAlive() && !bossMode) return;           // con un jefe vivo no cuenta como intento
+        if (firstSure || Math.random() < CHANCE * (1 + misses)) { misses = 0; open(); }
         else misses++;
       }
     }
@@ -71,6 +79,7 @@ G.Rift = (() => {
       const x = near.x + Math.cos(a) * d, y = near.y + Math.sin(a) * d * 0.85;
       if (!G.World.isFree(x, y, 22)) continue;
       show(x, y, TTL);
+      firstSure = false;
       if (G.Coop.isHost) G.Coop.broadcast(['rift', Math.round(x), Math.round(y), TTL]);
       return;
     }
