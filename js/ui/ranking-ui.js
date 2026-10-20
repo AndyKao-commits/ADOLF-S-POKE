@@ -79,7 +79,7 @@ G.RankingUI = (() => {
     if (runMode === 'castle' && t >= 10000) {
       const waveN = Math.floor(t / 10000);
       const sec = Math.max(0, 9999 - (t % 10000));
-      const label = waveN >= 11 ? 'Oleada 10 superada' : ('Oleada ' + waveN);
+      const label = waveN >= 51 ? 'Oleada 50 superada' : ('Oleada ' + waveN);
       return '<span>' + label + '</span> · ' + clock(sec);
     }
     return clock(t);

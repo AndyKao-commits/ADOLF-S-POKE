@@ -169,20 +169,24 @@
 
     /** Aturdido: se queda quieto y no ataca `dur` s (Onda Trueno, Tumba Rocas...). */
     applyStun(dur) {
+      if (this.siegeCreep && this.owner && striker === this.owner) return;
       if (this.remote) { G.Coop.status(this, 't', dur); return; }
       this.stunT = Math.max(this.stunT || 0, dur);
     }
 
     applySlow(factor, dur = 1.2) {
+      if (this.siegeCreep && this.owner && striker === this.owner) return;
       if (this.remote) { G.Coop.status(this, 's', factor); return; }
       this.slow = Math.max(this.slow, factor);
       this.slowT = Math.max(this.slowT, dur);
     }
     applyBurn(stacks = 1) {
+      if (this.siegeCreep && this.owner && striker === this.owner) return;
       if (this.remote) { G.Coop.status(this, 'b', stacks); return; }
       this.burn = Math.min(8, this.burn + stacks); this.burnT = 3;
     }
     applyPoison(stacks = 1) {
+      if (this.siegeCreep && this.owner && striker === this.owner) return;
       if (this.remote) { G.Coop.status(this, 'p', stacks); return; }
       this.poison = Math.min(8, this.poison + stacks); this.poisonT = 4;
     }
@@ -203,6 +207,7 @@
         if (this.shiny && !(G.Modes && G.Modes.is('shiny'))) { G.FX.burst(this.x, cy, '#ffe9a0', 30, 220); G.FX.ring(this.x, this.y, this.r, this.r * 7, '#9ae6ff', 0.7, 5); }
         return;
       }
+      if (this.castleBoss && G.Castle && G.Castle.onBossDown) G.Castle.onBossDown();
       if (this.siegeCreep || this.siegeBoss) {
         if (this.siegeBoss) G.Camera.kick(0.9);
         G.Audio.sfx(this.siegeBoss ? 'bossDown' : 'faint');

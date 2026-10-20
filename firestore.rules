@@ -137,7 +137,7 @@ service cloud.firestore {
       return board.matches('.*_ca_.*');
     }
     // Protege al cachorro guarda la oleada en el tiempo: oleada * 10000 + (9999 - segundos).
-    // Limpiar la 10 cuenta como 11, para que quede por encima de morir en la 10.
+    // Limpiar la 50 cuenta como 51, para que quede por encima de morir en la 50.
     function shownSecs(board, t) {
       return castleBoard(board) && t >= 10000 ? 9999 - (t % 10000) : t;
     }
@@ -147,7 +147,7 @@ service cloud.firestore {
       let secs = shownSecs(board, d.t);
       return d.keys().hasOnly(['t', 'uids', 'names', 'dex', 'shiny', 'lv', 'kills', 'at'])
         && d.t is int && d.t > 0
-        && (castleBoard(board) ? (d.t >= 10000 && d.t <= 120000) : d.t <= 2700)
+        && (castleBoard(board) ? (d.t >= 10000 && d.t <= 520000) : d.t <= 2700)
         && secs <= (request.time - run.startedAt).seconds() + 30
         && d.lv is int && d.lv >= 1 && d.lv <= 20 + secs / 3
         && d.kills is int && d.kills >= 0 && d.kills <= 100 + secs * 12

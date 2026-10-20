@@ -1,21 +1,22 @@
 /* ============ castle.js — Protege al cachorro ============
- * El castillo se queda quieto. Las oleadas 1 a 10 van a por él.
- * Limpiar la oleada abre la siguiente. La 10 ganada acaba la partida.
+ * El castillo se queda quieto. Las oleadas 1 a 50 van a por él.
+ * Cada 10 (10, 20, 30, 40 y 50) sale un jefe: al caer, un vínculo para fusionar.
+ * Limpiar la oleada abre la siguiente. La 50 ganada acaba la partida.
  * Si su vida llega a cero, se pierde.
  */
 G.Castle = (() => {
   const aim = { x: 0, y: 80, r: 34, _vx: 0, _vy: 0, level: 1, dead: false };
-  const WAVES = 10, CAP = 12;
+  const WAVES = 50, CAP = 12;
   let on = false, hp = 1, maxHp = 1, img = null;
-  let wave = 1, queued = 0, acc = 0, won = false;
+  let wave = 1, queued = 0, acc = 0, won = false, bondWave = 0;
 
   function spec(w) {
     return {
-      n: 8 + w * 2,
-      hp: 22 + w * 16,
-      dmg: 4 + w * 1.6,
-      spd: 52 + w * 3,
-      gap: Math.max(0.32, 0.78 - w * 0.04)
+      n: 6 + Math.round(w * 0.62),
+      hp: Math.round(22 + w * 13 + Math.pow(w, 1.32) * 0.9),
+      dmg: Math.round((3.6 + w * 0.72) * 10) / 10,
+      spd: Math.min(104, Math.round(48 + w * 1.05)),
+      gap: Math.max(0.26, 0.8 - w * 0.01)
     };
   }
 
@@ -30,6 +31,7 @@ G.Castle = (() => {
     queued = 0;
     acc = 0;
     won = false;
+    bondWave = 0;
     if (!img) {
       img = new Image();
       img.src = 'assets/castle-puppy.png?v=char';
@@ -42,9 +44,28 @@ G.Castle = (() => {
   function openWave(w) {
     wave = w;
     const s = spec(w);
-    queued = s.n;
-    acc = s.gap;
-    if (G.Spawner) G.Spawner.say('Oleada ' + w + ' de 10', 2.4);
+    const boss = w % 10 === 0;
+    queued = boss ? Math.max(4, Math.round(s.n * 0.4)) : s.n;
+    acc = boss ? 0.35 : s.gap;
+    if (boss) spawnBoss(s, w);
+    if (G.Spawner) G.Spawner.say(boss ? ('Oleada ' + w + ' de 50 · ¡Jefe!') : ('Oleada ' + w + ' de 50'), 2.6);
+  }
+
+  /** Un vínculo en este ordenador (el anfitrión avisa a los demás). */
+  function giveBond() {
+    const pl = G.Game && G.Game.player;
+    if (!pl || pl.dead) return;
+    pl.bonds++;
+    G.FX.dmgText(pl.x, pl.y - pl.bodyH - 10, '¡Vínculo!', '#ff8ad8', true);
+    G.FX.ring(pl.x, pl.y, 8, 90, '#ff8ad8', 0.7, 5);
+    if (G.Game.offerBond) G.Game.offerBond();
+  }
+
+  function onBossDown() {
+    if (!on || bondWave === wave) return;
+    bondWave = wave;
+    giveBond();
+    if (G.Coop.active && G.Coop.isHost) G.Coop.broadcast(['cb']);
   }
 
   function living() {
@@ -79,6 +100,22 @@ G.Castle = (() => {
     e.xp = 4 + wave;
     e.castleWave = wave;
     G.EnemyMgr.add(e);
+  }
+
+  function spawnBoss(s, w) {
+    const tier = w / 10;
+    const def = G.Enemies.bossMob(w * 12);
+    const pt = spot();
+    const e = new G.Enemy(def, pt[0], pt[1], { hp: 1, dmg: 1, spd: 1 }, true);
+    e.maxHp = e.hp = Math.round(s.hp * (8 + tier));
+    e.dmg = s.dmg * 1.35;
+    e.spd = Math.min(92, Math.round(s.spd * 0.82));
+    e.xp = 16 + w;
+    e.castleWave = w;
+    e.castleBoss = true;
+    G.EnemyMgr.add(e);
+    G.Audio.sfx('boss');
+    G.Camera.kick(0.8);
   }
 
   /** Sólo el anfitrión (o el solo) saca la oleada y decide cuándo se ha limpiado. */
@@ -167,7 +204,7 @@ G.Castle = (() => {
   }
 
   return {
-    begin, end, net, snapshot, touch, tick, draw, aim,
+    begin, end, net, snapshot, touch, tick, draw, aim, onBossDown, giveBond,
     get up() { return on; },
     get hp() { return hp; },
     get maxHp() { return maxHp; },

@@ -23,6 +23,13 @@ G.Siege = (() => {
   function meId() { return G.Coop.active ? G.Net.uid : 'me'; }
   function authority() { return !G.Coop.active || G.Coop.isHost; }
 
+  /** Monstruo de este jugador: sus ataques lo atraviesan y no le hacen nada. */
+  function ally(e, who) {
+    if (!on || !e || !e.siegeCreep || !e.owner) return false;
+    const uid = !who ? meId() : (typeof who === 'string' ? who : (who.uid || 'me'));
+    return e.owner === uid;
+  }
+
   function placeAt(pl, c) {
     const d = Math.hypot(c.x, c.y) || 1;
     pl.x = c.x - c.x / d * 70;
@@ -444,7 +451,7 @@ G.Siege = (() => {
 
   return {
     begin, end, clamp, contain, smack, strike, tick, net, snapshot, target, aimFor, drawBorder, drawables, applyHit,
-    onCreepDown, onBossDown, noteBoss, playerDown,
+    onCreepDown, onBossDown, noteBoss, playerDown, ally,
     get up() { return on; },
     get half() { return HALF; }
   };

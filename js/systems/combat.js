@@ -245,7 +245,7 @@ G.Combat = (() => {
   /** Cadena: golpea a un enemigo y salta a los siguientes más cercanos (cada salto, algo menos). */
   function chain(pl, m) {
     const col = G.U.TYPE_COLOR[m.type], vis = G.VFX.forMove(m);
-    let cur = pl.target && !pl.target.dead && pl.target.hurt ? pl.target : G.Projectiles.nearest(G.EnemyMgr.all(), pl.x, pl.y, reach(m));
+    let cur = pl.target && !pl.target.dead && pl.target.hurt && !isAlly(pl.target, pl) ? pl.target : G.Projectiles.nearest(foesOf(pl), pl.x, pl.y, reach(m));
     if (!cur) return;
     let fx = pl.x, fy = pl.y - G.LIFT, k = 1;
     const done = new Set();
@@ -263,7 +263,7 @@ G.Combat = (() => {
       fx = tx; fy = ty;
       let best = null, bd = m.radius * m.radius;
       for (const e of G.EnemyMgr.queryCircle(cur.x, cur.y, m.radius)) {
-        if (done.has(e.id)) continue;
+        if (done.has(e.id) || isAlly(e, pl)) continue;
         const d = G.U.dist2(cur.x, cur.y, e.x, e.y);
         if (d < bd) { bd = d; best = e; }
       }
@@ -290,7 +290,7 @@ G.Combat = (() => {
   function meteors(pl, m) {
     const col = G.U.TYPE_COLOR[m.type], vis = G.VFX.forMove(m);
     const n = Math.max(1, m.count | 0);
-    const near = G.EnemyMgr.queryCircle(pl.x, pl.y, reach(m)).filter(e => !e.dead);
+    const near = G.EnemyMgr.queryCircle(pl.x, pl.y, reach(m)).filter(e => !e.dead && !isAlly(e, pl));
     G.U.shuffle ? G.U.shuffle(near) : near.sort(() => Math.random() - 0.5);
     for (let i = 0; i < n; i++) {
       const e = near[i];
@@ -377,8 +377,8 @@ G.Combat = (() => {
   /** El blanco de un ataque que va a un sitio (remolino, zona): el de siempre si llega; si no, el más cercano. */
   function spotFor(pl, m) {
     const t = pl.target;
-    if (t && !t.dead && t.hurt && G.U.dist(pl.x, pl.y, t.x, t.y) <= reach(m)) return t;
-    return G.Projectiles.nearest(G.EnemyMgr.all(), pl.x, pl.y, reach(m));
+    if (t && !t.dead && t.hurt && !isAlly(t, pl) && G.U.dist(pl.x, pl.y, t.x, t.y) <= reach(m)) return t;
+    return G.Projectiles.nearest(foesOf(pl), pl.x, pl.y, reach(m));
   }
 
   /** Carga: brilla un momento y sale un rayo enorme (el de beam, con su grosor). */
@@ -441,7 +441,7 @@ G.Combat = (() => {
     if (!(p.bounce > 0)) return false;
     let best = null, bd = 220 * 220;
     for (const e of G.EnemyMgr.queryCircle(from.x, from.y, 220)) {
-      if (e.dead || p.hits.has(e.id)) continue;
+      if (e.dead || p.hits.has(e.id) || isAlly(e, p.owner)) continue;
       const d = G.U.dist2(from.x, from.y, e.x, e.y);
       if (d < bd) { bd = d; best = e; }
     }
@@ -505,7 +505,7 @@ G.Combat = (() => {
       // Atrae (en quien manda: los enemigos de un invitado se mueven en el anfitrión).
       if (!f.ghost) {
         for (const e of G.EnemyMgr.queryCircle(f.x, f.y, f.r * 1.4)) {
-          if (e.dead || e.remote) continue;
+          if (e.dead || e.remote || isAlly(e, pl)) continue;
           const dx = f.x - e.x, dy = f.y - e.y, d = Math.hypot(dx, dy);
           if (d < 4) continue;
           const k = Math.min(d, f.pull * dt * (e.boss || e.judge ? 0.25 : 1));
@@ -529,6 +529,7 @@ G.Combat = (() => {
       if (G.Camera.sees(f.x, f.y, 40)) G.Audio.sfx('break');
       if (!f.ghost) {
         for (const e of G.EnemyMgr.queryCircle(f.x, f.y, f.r)) {
+          if (isAlly(e, pl)) continue;
           hit(pl, e, f.dmg, f.col, e.x - f.x, e.y - f.y, 0, m);
           if (!e.dead) e.applyStun((m.stun || 1) * (e.boss || e.judge ? 0.35 : 1));
         }
@@ -556,7 +557,7 @@ G.Combat = (() => {
       if (NEW_FIELDS.has(f.kind)) { if (tickNewField(f, dt)) fields.splice(i, 1); continue; }
       if (f.kind === 'mine') {
         const armed = f.t >= f.arm;
-        const trig = armed && G.EnemyMgr.queryCircle(f.x, f.y, 14).length > 0;
+        const trig = armed && G.EnemyMgr.queryCircle(f.x, f.y, 14).some(e => !isAlly(e, f.owner));
         if (trig || f.t >= f.life) {
           G.FX.ring(f.x, f.y, 4, f.r, f.col, 0.3, 4);
           G.FX.burst(f.x, f.y - 6, f.col, 10, 150);
@@ -576,7 +577,7 @@ G.Combat = (() => {
         f.shotT -= dt;
         if (f.shotT <= 0) {
           const m = f.m;
-          const tg = G.Projectiles.nearest(G.EnemyMgr.all(), f.x, f.y, m.range || 300);
+          const tg = G.Projectiles.nearest(foesOf(f.owner), f.x, f.y, m.range || 300);
           f.shotT = tg ? m.rate || 0.6 : 0.15;
           if (tg) {
             const a = Math.atan2(tg.y - f.y, tg.x - f.x);
@@ -736,7 +737,16 @@ G.Combat = (() => {
   const CRIT_MUL = 1.5;
   const isCrit = pl => !ghost && pl.critChance > 0 && Math.random() < pl.critChance;
 
+  /** En asedio, los monstruos de este jugador no reciben su ataque (ni lo paran). */
+  function isAlly(e, who) { return !!(G.Siege && G.Siege.ally && G.Siege.ally(e, who)); }
+  function foesOf(who) {
+    const all = G.EnemyMgr.all();
+    if (!(G.Siege && G.Siege.ally)) return all;
+    return all.filter(e => !G.Siege.ally(e, who));
+  }
+
   function hit(pl, e, dmg, col, dx, dy, knock, m) {
+    if (isAlly(e, pl)) return;
     const k = typeK(m.type, e) * G.Stats.taken(e.mon, m.cat);
     const crit = isCrit(pl);
     dmg *= k * (crit ? CRIT_MUL : 1);
@@ -828,6 +838,7 @@ G.Combat = (() => {
       const half = Math.hypot(p.x - sx, p.y - sy) / 2;
       for (const e of G.EnemyMgr.queryCircle((sx + p.x) / 2, (sy + p.y) / 2, half + p.r)) {
         if (segDist2(sx, sy, p.x, p.y, e.x, e.y) > (p.r + e.r) * (p.r + e.r)) continue;
+        if (isAlly(e, p.owner)) continue;
         if (p.orb) {
           const last = p.hitLog.get(e.id) || -99;
           if (now - last < p.rehit) continue;

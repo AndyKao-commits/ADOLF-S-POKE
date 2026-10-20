@@ -331,7 +331,7 @@ G.Game = (() => {
     let waveMark = 0;
     if (G.Modes.is('castle') && G.Castle && G.Castle.up) {
       const sec = Math.max(0, Math.min(9999, Math.floor(time)));
-      const w = castleWon ? 11 : (G.Castle.wave || 1);
+      const w = castleWon ? 51 : (G.Castle.wave || 1);
       waveMark = w * 10000 + (9999 - sec);
     }
     G.Castle.end();
@@ -617,6 +617,7 @@ G.Game = (() => {
       G.FX.ring(who.x, who.y, 20, R, '#ff7b3d', 0.5, 6);
       for (const e of G.EnemyMgr.all()) {
         if (mine ? !G.Camera.sees(e.x, e.y, 0) : G.U.dist2(e.x, e.y, who.x, who.y) > R * R) continue;
+        if (G.Siege && G.Siege.ally && G.Siege.ally(e, who)) continue;
         e.hurt(60 + pl.level * 14, '#ff7b3d', e.x - who.x, e.y - who.y, 160);
       }
     }
