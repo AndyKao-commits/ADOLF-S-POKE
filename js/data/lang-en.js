@@ -328,6 +328,7 @@ G.I18n.add({
   'Desafío de jefes': 'Boss challenge',
   'Sólo aparecen jefes, tres a la vez. Empiezas en el nivel 20 para elegir ataques. La grieta sale antes, para poder fusionar.': 'Only bosses appear, three at a time. You start at level 20 so you can pick moves. The rift opens sooner, so you can fuse moves.',
   'Sólo aparecen jefes, tres a la vez. Empiezas en el nivel 20 para elegir ataques. La grieta sale antes, para poder fusionar. El objeto sale a veces, no en cada jefe, para no parar todo el rato. Los jefes se fortalecen el doble de rápido.': 'Only bosses appear, three at a time. You start at level 20 so you can pick moves. The rift opens sooner, so you can fuse moves. An item drops sometimes, not on every boss, so the game does not stop all the time. Bosses get stronger twice as fast.',
+  'Te quedan {x} s': '{x} s left',
   'Protege al cachorro': 'Protect the puppy',
   'Los monstruos atacan el castillo y tú los limpias. El castillo no se mueve.': 'Monsters attack the castle and you clear them. The castle stays still.',
   'Oleadas del 1 al 10, cada vez más difíciles. Limpia la oleada para pasar a la siguiente. Si el castillo cae, pierdes. Si limpias la 10, ganas.': 'Waves 1 to 10, each harder. Clear the wave to advance. If the castle falls, you lose. Clear wave 10 and you win.',

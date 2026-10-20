@@ -11,7 +11,9 @@ G.RunUI = (() => {
    * estás eligiendo a propósito.
    */
   const GUARD = 0.6;
+  const PICK_MS = 20000;
   let guardUntil = 0, guardT = 0;
+  let pickUntil = 0, pickTimer = 0;
   function guard(box) {
     guardUntil = performance.now() + GUARD * 1000;
     box.classList.add('guard');
@@ -31,6 +33,40 @@ G.RunUI = (() => {
     $('lvl-reroll').onclick = reroll;
     G.UI.show('scr-levelup');
     guard($('cards'));
+    armClock();
+  }
+
+  /** 20 s para elegir. Si se acaba, se queda la primera carta. Cambiar opciones lo reinicia. */
+  function armClock() {
+    stopClock();
+    pickUntil = performance.now() + PICK_MS;
+    paintClock();
+    pickTimer = setInterval(() => {
+      if (!offers) { stopClock(); return; }
+      paintClock();
+      if (performance.now() >= pickUntil) {
+        stopClock();
+        pick(0, true);
+      }
+    }, 100);
+  }
+
+  function stopClock() {
+    if (pickTimer) clearInterval(pickTimer);
+    pickTimer = 0;
+  }
+
+  function paintClock() {
+    const el = $('lvl-clock');
+    const left = Math.max(0, pickUntil - performance.now());
+    const secs = Math.ceil(left / 1000);
+    if (el) {
+      el.textContent = G.I18n.f('Te quedan {x} s', secs);
+      el.classList.toggle('urgent', secs <= 5);
+    }
+    const bar = $('lvl-bar');
+    const fill = bar && bar.querySelector('i');
+    if (fill) fill.style.transform = 'scaleX(' + (left / PICK_MS) + ')';
   }
 
   /**
@@ -49,6 +85,7 @@ G.RunUI = (() => {
     p.rerolls = (p.rerolls || 0) + 1;
     G.Audio.sfx('select');
     renderCards(G.LevelUp.offer(p));
+    armClock();
   }
 
   function renderCards(list) {
@@ -77,8 +114,9 @@ G.RunUI = (() => {
     });
   }
 
-  function pick(i) {
-    if (!offers || !offers[i] || guarded()) return;
+  function pick(i, force) {
+    if (!offers || !offers[i] || (!force && guarded())) return;
+    stopClock();
     const c = offers[i], cb = offerCb;
     offers = null; offerCb = null;
     $('lvl-reroll').classList.add('hidden');
@@ -103,6 +141,7 @@ G.RunUI = (() => {
   }
 
   function closeLevelUp() {
+    stopClock();
     offers = null; offerCb = null;
     $('cards').classList.remove('done');
     G.UI.hide('scr-levelup');
