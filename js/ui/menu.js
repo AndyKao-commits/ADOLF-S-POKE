@@ -99,6 +99,21 @@ G.MenuUI = (() => {
     G.UI.chrome(true);
     G.UI.show('scr-menu');
     bagLine();
+    const regionSelect = $('menu-region');
+    regionSelect.replaceChildren();
+    for (const p of [{ id: '', name: '原有場景 / Original' }, ...G.Regions.list]) {
+      const option = document.createElement('option');
+      option.value = p.id; option.textContent = p.name; regionSelect.appendChild(option);
+    }
+    regionSelect.value = G.Regions.get(G.Settings.get('region')) ? G.Settings.get('region') : '';
+    regionSelect.disabled = !!G.Social.room;
+    const regionHelp = () => {
+      const p = G.Regions.get(regionSelect.value);
+      $('menu-region-help').textContent = G.Social.room ? '多人模式使用原有場景 / Co-op uses original terrain' : p ? p.subtitle : '原有場景輪替 / Original biome rotation';
+    };
+    regionSelect.onchange = () => { G.Settings.set('region', regionSelect.value); regionHelp(); };
+    regionHelp();
+
     G.UI.sprite($('menu-partner'), mon.dex, { lively: true, scale: 4, hero: true, shiny });
     $('menu-partner').style.setProperty('--stage-c', shiny ? '#9ae6ff' : G.U.TYPE_COLOR[mon.types[0]]);
     $('menu-partner').classList.toggle('shiny', shiny);

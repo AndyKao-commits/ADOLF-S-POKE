@@ -131,8 +131,8 @@ G.Game = (() => {
     G.Weather.reset();
     G.Path.clear();
     G.Hazards.clear();
-    G.World.reset(coop ? coop.seed : Math.floor(Math.random() * 1e6));
-    G.World.setBiome(0, true);
+    G.World.reset(coop ? coop.seed : Math.floor(Math.random() * 1e6), coop ? null : G.Settings.get('region'));
+    G.World.setBiome(G.World.runBiome(0), true);
     biome = 0;
     time = 0; pendingLevels = 0;
     runReal = performance.now(); tampered = false;
@@ -774,7 +774,7 @@ G.Game = (() => {
     const b = Math.floor(time / 240);
     if (b !== biome && !G.Rift.inArena && !G.Judgment.active && !(G.Siege && G.Siege.up) && !(G.Castle && G.Castle.up)) {
       biome = b;
-      G.World.setBiome(b);
+      G.World.setBiome(G.World.runBiome(b));
       G.Audio.sfx('biome');
       G.Spawner.say('— ' + G.World.biomeName() + ' —', 3);
       G.FX.ring(pl.x, pl.y, 10, G.Camera.outerRadius(), '#ffffff', 0.7, 6);
