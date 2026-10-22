@@ -4,11 +4,12 @@
  *
  *   directo  WebRTC (canal de datos entre navegadores). La negociación
  *            (señalización) va por la base de datos, con STUN gratuito de Google.
- *            Esta versión no usa un servidor TURN ni manda la sesión de Firebase
- *            a ningún otro sitio. Si la red no deja conectar directo, esa pareja
- *            no puede jugar junta y el anfitrión lo reintenta.
- *   relé     (APAGADO) los mensajes irían por la Realtime Database:
- *            rooms/{sala}/q/{destinatario}/{id}, a 1 $ el GB.
+ *            Esta versión no pide un TURN de pago ni manda la sesión de Firebase
+ *            a ningún otro sitio. Si la red no deja conectar directo, se sigue
+ *            por el relé.
+ *   relé     los mensajes van por la Realtime Database
+ *            (rooms/{sala}/q/{destinatario}/{id}), más despacio, para que la
+ *            sala se pueda empezar igual.
  *
  * Se envía por el canal directo si está abierto; si no, por el relé. El que
  * recibe escucha los dos, así que no hace falta ponerse de acuerdo.
@@ -18,16 +19,14 @@
  *       peers() · mode(uid) -> 'connecting' | 'direct' | 'relay' | 'closed'
  */
 G.Net = (() => {
-  const ICE = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }];
+  const ICE = [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302', 'stun:stun.cloudflare.com:3478'] }];
   // Primero se intenta sin TURN (lo normal es conectar directo) y sólo si falla se
   // reintenta al momento con él: el navegador reserva un hueco en el TURN por cada
   // conexión que lo lleve, aunque luego vaya directa, y así los huecos llegan para todos.
   const DIRECT_TIMEOUT = 9000, TURN_TIMEOUT = 15000;   // ms para conseguir canal
-  // Relé por la Realtime Database APAGADO (12-10-2026): a 1 $ el GB era lo que más
-  // costaba del cooperativo. Sin conexión directa, esa pareja no puede jugar
-  // junta ('failed') y el anfitrión lo reintenta cada RETRY_MS. Por la base de datos
-  // sólo pasa la señalización (unos pocos mensajes pequeños para conectarse).
-  const ALLOW_RELAY = false, RETRY_MS = 15000;
+  // Si el directo no entra (redes de móvil, sobre todo), la sala sigue por la
+  // base de datos a 3 mensajes por segundo. Este grupo es pequeño.
+  const ALLOW_RELAY = true, RETRY_MS = 15000;
 
 
   let rtdb = null, uid = null, roomId = null, isHost = false, hostUid = null;
@@ -116,7 +115,7 @@ G.Net = (() => {
     // oferta). Así, si no llega nunca, se sigue por el relé y se sabe cuándo se va.
     if (!isHost) {
       const p = { pc: null, dc: null, mode: 'connecting', timer: 0 };
-      p.timer = setTimeout(() => { if (p.mode === 'connecting') { p.mode = ALLOW_RELAY ? 'relay' : 'failed'; emitPeer(hostId); } }, DIRECT_TIMEOUT + TURN_TIMEOUT + 3000);
+      p.timer = setTimeout(() => { if (p.mode === 'connecting') { p.mode = ALLOW_RELAY ? 'relay' : 'failed'; emitPeer(hostId); } }, ALLOW_RELAY ? DIRECT_TIMEOUT : DIRECT_TIMEOUT + TURN_TIMEOUT + 3000);
       peers.set(hostId, p);
     }
   }
@@ -196,7 +195,7 @@ G.Net = (() => {
   function useRelay(u) {
     const p = peers.get(u);
     if (!p || p.mode === 'direct' || p.mode === 'closed' || p.mode === 'failed') return;
-    if (ALLOW_RELAY) { p.mode = 'relay'; emitPeer(u); return; }
+    if (ALLOW_RELAY) { clearTimeout(p.timer); p.mode = 'relay'; emitPeer(u); return; }
     // Sin relé: no se puede jugar con esa persona por ahora. El anfitrión reintenta.
     clearTimeout(p.timer);
     p.mode = 'failed';
@@ -207,6 +206,16 @@ G.Net = (() => {
     const withTurn = !p.turn && !needTurn.has(u) && !!turnUser();
     if (withTurn) needTurn.add(u);
     p.timer = setTimeout(() => { if (peers.get(u) === p && p.mode === 'failed' && roomId) { drop(u, true); connect(u); } }, withTurn ? 0 : RETRY_MS);
+  }
+
+  function waitIce(pc) {
+    if (!pc || pc.iceGatheringState === 'complete') return Promise.resolve();
+    return new Promise(resolve => {
+      const done = () => { pc.removeEventListener('icegatheringstatechange', on); clearTimeout(t); resolve(); };
+      const on = () => { if (pc.iceGatheringState === 'complete') done(); };
+      pc.addEventListener('icegatheringstatechange', on);
+      const t = setTimeout(done, 1500);
+    });
   }
 
   /** Anfitrión: abre conexión con un invitado. */
@@ -223,6 +232,7 @@ G.Net = (() => {
     try {
       const offer = await p.pc.createOffer();
       await p.pc.setLocalDescription(offer);
+      await waitIce(p.pc);
       // t: el invitado también usa el TURN en este intento (las versiones viejas lo ignoran).
       signal(u, p.turn ? { sdp: p.pc.localDescription.toJSON(), t: 1 } : { sdp: p.pc.localDescription.toJSON() });
     } catch (e) { useRelay(u); }
@@ -248,6 +258,7 @@ G.Net = (() => {
         await p.pc.setRemoteDescription(sig.sdp);
         const ans = await p.pc.createAnswer();
         await p.pc.setLocalDescription(ans);
+        await waitIce(p.pc);
         signal(from, { sdp: p.pc.localDescription.toJSON() });
         for (const c of pendingIce.get(from) || []) await p.pc.addIceCandidate(c).catch(() => {});
         pendingIce.delete(from);

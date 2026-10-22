@@ -23,7 +23,9 @@ G.CHANGELOG = [
      'In Friends, the green dot is no longer on everyone. Green means the game is open; grey means they are not.']
   ], fix: [
     ['En la leyenda del mapa, las marcas de las Poké Balls tapaban la palabra. Cada cosa queda ahora en su sitio, y en el mapa se ven más grandes.',
-     'In the map legend, the Poké Ball marks covered the words. Each mark now stays in its place, and the marks on the map are larger.']
+     'In the map legend, the Poké Ball marks covered the words. Each mark now stays in its place, and the marks on the map are larger.'],
+    ['Si dos redes no se ven directamente, la sala ya no se queda en «conectando». A los pocos segundos sigue por el servidor y se puede empezar.',
+     'If two networks cannot see each other directly, the room no longer stays on "connecting". After a few seconds it continues through the server and you can start.']
   ] },
   { d: '2026-10-22', title: ['Elige la región', 'Choose the region'], new: [
     ['Antes de una partida en solitario eliges una de las nueve regiones. El mapa cambia y los Pokémon salvajes de esa partida son los de esa región. En una sala se sigue usando el mapa de siempre.',

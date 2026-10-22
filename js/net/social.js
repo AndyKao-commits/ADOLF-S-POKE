@@ -327,6 +327,17 @@ G.Social = (() => {
    */
   function rtOn() { if (fb.rtdb) fb.rtdb.goOnline(); }
   function rtOff() { if (fb && fb.rtdb && !room) fb.rtdb.goOffline(); }
+  function waitDb(ms = 8000) {
+    return new Promise(resolve => {
+      if (!fb || !fb.rtdb) { resolve(false); return; }
+      const ref = fb.rtdb.ref('.info/connected');
+      let done = false;
+      const finish = ok => { if (done) return; done = true; clearTimeout(t); ref.off('value', on); resolve(ok); };
+      const on = s => { if (s.val() === true) finish(true); };
+      const t = setTimeout(() => finish(false), ms);
+      ref.on('value', on);
+    });
+  }
 
   function randomCode() {
     const buf = new Uint8Array(6);
@@ -343,6 +354,7 @@ G.Social = (() => {
   async function createRoom() {
     if (room) return room;
     rtOn();
+    if (!await waitDb()) { rtOff(); throw new Error('No se pudo crear la sala.'); }
     const rules = G.Coop.publicRules(G.Coop.rulesFromSettings());
     const base = memberInfo();
     // set(), no transacción: las reglas no dejan LEER una sala hasta ser miembro,
@@ -356,7 +368,11 @@ G.Social = (() => {
           host: uid, open: true, at: Date.now(), cap: rules.cap, rules, code,
           m: { [uid]: Object.assign({}, base, { at: Date.now() }) }
         });
-      } catch (e) { continue; }
+      } catch (e) {
+        if (e && e.code === 'PERMISSION_DENIED') continue;
+        rtOff();
+        throw e;
+      }
       enterRoom(code, uid);
       return room;
     }
@@ -370,6 +386,7 @@ G.Social = (() => {
     if (room && room.id === id) return { ok: true };
     if (room) await leaveRoom();
     rtOn();
+    if (!await waitDb()) { rtOff(); return { ok: false, error: 'No se pudo entrar en la sala.' }; }
     let open = null, host = null;
     try {
       open = (await fb.rtdb.ref('rooms/' + id + '/open').get()).val();

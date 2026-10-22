@@ -30,8 +30,7 @@ G.Coop = (() => {
   const autoRate = n => 1 + 0.75 * (n - 1);
   const autoHp = n => 1 + 0.3 * (n - 1);
   const autoXp = n => 1 + 0.6 * (n - 1);
-  // Mensajes por segundo: 15 por la conexión directa y 3 por el relé de la
-  // Realtime Database (apagado: 1 $ el GB).
+  // Mensajes por segundo: 15 por la conexión directa y 3 si hace falta el relé.
   const RATE_FAST = 1 / 15, RATE_SLOW = 1 / 3;
   const rateFor = u => (G.Net.slow(u) ? RATE_SLOW : RATE_FAST);
   const NEAR = 950;                     // radio de enemigos que se mandan a cada uno
