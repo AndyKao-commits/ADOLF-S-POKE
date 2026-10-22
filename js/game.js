@@ -147,7 +147,6 @@ G.Game = (() => {
     G.Weather.reset();
     G.Path.clear();
     G.Hazards.clear();
-    G.World.setBiome(0, true);
     biome = 0;
     time = 0; pendingLevels = 0;
     runReal = performance.now(); tampered = false;
@@ -819,6 +818,7 @@ G.Game = (() => {
 
     const b = Math.floor(time / 240);
     if (b !== biome && !G.Rift.inArena && !G.Judgment.active && !(G.Siege && G.Siege.up) && !(G.Castle && G.Castle.up)) {
+      biome = b;
       G.World.setBiome(G.World.runBiome(b));
       G.Audio.sfx('biome');
       G.Spawner.say('— ' + G.World.biomeName() + ' —', 3);

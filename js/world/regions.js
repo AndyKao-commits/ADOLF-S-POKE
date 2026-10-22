@@ -34,7 +34,7 @@ G.Regions = (() => {
       flowers: layout === 'garden' ? ['#f6a1cb', '#e3b6ff', '#fff1b5'] : base.flowers.slice()
     });
     const biome = G.Tiles.BIOMES.push(palette) - 1;
-    return { id, name, subtitle, layout, biome, trees };
+    return { id, name, subtitle, layout, biome, trees, gen: i + 1 };
   });
   const byId = Object.fromEntries(list.map(p => [p.id, p]));
   const get = id => byId[id] || null;
