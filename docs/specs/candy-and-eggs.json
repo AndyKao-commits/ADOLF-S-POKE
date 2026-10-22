@@ -1,23 +1,33 @@
 {
   "status": "specification-and-preview-only; not runtime integrated",
   "candy": {
-    "name": "Rare Candy",
+    "id": "candy_token",
+    "name": "糖果代幣",
+    "type": "in-run-currency",
     "asset": {
-      "path": "assets/future-use/candy/rare-candy-design.png",
+      "path": "assets/future-use/candy/candy-token.png",
       "width": 1536,
       "height": 1024,
       "mode": "RGBA",
       "sha256": "03029a3167e3178027848d292a6d35db691e5d5c604660705de220442e9f7f56"
     },
-    "small_icon_alternative": "assets/future-use/item-icons/rare-candy.png",
-    "effect_zh_TW": "立即升級 +2，傷害 +5%。",
-    "rarity": "mythic",
-    "rarity_zh_TW": "神話",
-    "max_per_run": 10,
-    "rule_source": "assets/future-use/item-icons/manifest.json",
-    "activation_mode": "pending; not specified by screenshot",
-    "stacking_formula": "pending; do not infer multiplicative vs additive",
-    "notes": "數量上限為每局持有上限；消耗後是否補回可取得名額未定。"
+    "rule_source": "使用者明確指定：遊戲中掉落的代幣，用於局內商店購買道具。",
+    "acquisition": "遊戲中掉落後由玩家拾取取得。",
+    "usage": "於同一局遊戲中的商店支付糖果代幣購買道具。",
+    "drop_rate": null,
+    "value_per_pickup": null,
+    "balance_cap": null,
+    "carry_over_between_runs": null,
+    "shop_prices": null,
+    "pending_rules": "掉落來源與機率、每次拾取面額、餘額上限、跨局是否保留及商品價格尚未指定。",
+    "distinct_from": "assets/future-use/item-icons/rare-candy.png 是 70 道具之一的 Rare Candy，仍保留其原能力、神話級與持有上限 10；此處糖果代幣不套用該設定。",
+    "implementation_requirements": [
+      "以獨立糖果代幣餘額保存，與永久強化金幣及 Rare Candy 道具數量分開。",
+      "拾取同一個掉落物只入帳一次，入帳成功後移除該掉落物。",
+      "商店顯示商品所需糖果代幣及玩家餘額；確認購買時重新檢查餘額與道具每局持有上限。",
+      "只有購買成功才扣款並發放道具；不足額、超出持有上限或失敗時不扣款。"
+    ],
+    "implementation_status": "規格記錄，尚未接入遊戲程式。"
   },
   "egg": {
     "name": "精靈蛋",

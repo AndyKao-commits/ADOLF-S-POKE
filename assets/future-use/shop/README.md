@@ -22,3 +22,7 @@ python3 -m http.server 8000
 ```
 
 建議顯示為 128×112、256×224 或 512×448，維持比例。Canvas 請設定 `ctx.imageSmoothingEnabled = false`，圖片載入後用 `ctx.drawImage(image, x, y, 128, 112)` 繪製。PNG 只負責外觀，碰撞範圍、互動距離、開啟商店介面及購買邏輯由遊戲程式另行設定。
+
+## 局內交易貨幣
+
+本次商店購買道具使用遊戲中掉落的糖果代幣，圖案為 `assets/future-use/candy/candy-token.png`。規則與預覽見 [糖果代幣說明](../candy/README.md)。此代幣與永久強化金幣、升級道具 Rare Candy 分開記錄。實際商品代幣價格尚未設定；不得直接套用永久強化價格。
