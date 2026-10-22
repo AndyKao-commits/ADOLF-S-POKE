@@ -99,6 +99,20 @@ G.Game = (() => {
     else if (state === 'paused') { state = 'playing'; G.UI.hideAll(); }
   }
 
+  /** Mapa de la zona (M). En solitario la partida se queda parada. */
+  function toggleMap() {
+    if (G.UI.isOpen('scr-map')) { closeMap(); return; }
+    if (state !== 'playing' || !pl) return;
+    if (!G.Coop.active) state = 'paused';
+    G.RunUI.showMap();
+    G.Audio.sfx('pause');
+  }
+  function closeMap() {
+    if (!G.UI.isOpen('scr-map')) return;
+    G.UI.hide('scr-map');
+    if (!G.Coop.active && state === 'paused') state = 'playing';
+  }
+
   // ---------------- run ----------------
 
   /** @param coop  { seed, host, members } para una partida en grupo */
@@ -124,6 +138,8 @@ G.Game = (() => {
     G.Pickups.clear();
     if (coop) G.Coop.lockRun(coop.rules, false);
     else G.Coop.lockRun(null, true);
+    G.World.reset(coop ? coop.seed : Math.floor(Math.random() * 1e6), coop ? null : G.Settings.get('region'));
+    G.World.setBiome(G.World.runBiome(0), true);
     G.Spawner.reset();
     G.Rift.reset();
     G.Judgment.reset();
@@ -131,7 +147,6 @@ G.Game = (() => {
     G.Weather.reset();
     G.Path.clear();
     G.Hazards.clear();
-    G.World.reset(coop ? coop.seed : Math.floor(Math.random() * 1e6));
     G.World.setBiome(0, true);
     biome = 0;
     time = 0; pendingLevels = 0;
@@ -275,7 +290,9 @@ G.Game = (() => {
       endRun(!(d && d.why === 'host'));
     },
     lost(msg) { G.UI.toast(msg, 3600); endRun(false); },
-    item(id) { offerItem(id); },
+    ball(tier) { offerBall(tier); },
+    egg() { if (pl) { pl.eggs++; G.FX.dmgText(pl.x, pl.y - pl.bodyH - 8, '+蛋', '#ffe08a'); } },
+    coin(n) { if (pl) { pl.coins += n | 0; G.FX.dmgText(pl.x, pl.y - pl.bodyH - 6, '+' + (n | 0), '#ffd23f'); } },
     mateLeft() {},
     /** Grupo: quién está eligiendo fusión. Mientras haya alguien, todo parado. */
     hold(names) {
@@ -502,7 +519,7 @@ G.Game = (() => {
    */
   function offerBond(quiet = false) {
     if (!pl || pl.bonds <= 0 || pl.dead || (state !== 'playing' && state !== 'held') || G.Rift.inArena) return;
-    if (['scr-bond', 'scr-pause', 'scr-item', 'scr-levelup'].some(G.UI.isOpen)) return;
+    if (['scr-bond', 'scr-pause', 'scr-item', 'scr-levelup', 'scr-map'].some(G.UI.isOpen)) return;
     const opt = pl.bondOptions();
     if (!opt) {
       if (!quiet) G.Spawner.say('Guardas el vínculo: aprende otro movimiento para usarlo', 3, true);
@@ -525,7 +542,7 @@ G.Game = (() => {
 
   // ---------------- recogida ----------------
 
-  const PICK_SFX = { xp: 'xp', xpBig: 'xp', coin: 'coin', heal: 'heal', bomb: 'break', magnet: 'confirm', ticket: 'shiny', ticket10: 'legend', item: 'legend' };
+  const PICK_SFX = { xp: 'xp', xpBig: 'xp', coin: 'coin', heal: 'heal', bomb: 'break', magnet: 'confirm', ticket: 'shiny', ticket10: 'legend', item: 'legend', ball: 'confirm', egg: 'shiny' };
 
   /*
    * Cooperativo: la elección de objeto y las cartas de nivel no pueden taparse.
@@ -540,42 +557,53 @@ G.Game = (() => {
     if (state !== 'playing' && state !== 'held') return;
     if (openItem && !G.UI.isOpen('scr-item')) {
       const o = openItem;
-      if (o.mine) { state = 'choice'; pl.frozen = true; if (G.Coop.active && !G.Modes.is('siege')) G.Coop.holdStart(); }
-      G.RunUI.showItemChoice(o.cur, o.next, o.take);
+      if (o.ball) G.RunUI.showBallChoice(o.tier, o.options, o.take);
+      else G.RunUI.showItemChoice(o.cur, o.next, o.take);
       return;
     }
+    if (laterBalls.length) offerBall(laterBalls.shift());
     if (laterItems.length) offerItem(laterItems.shift());
   }
 
-  /** Has cogido un objeto: si no llevas ninguno te lo pones; si no, eliges. */
+  const laterBalls = [];
+
+  /** Un objeto directo (asedio): se apila, sin menú. */
   function offerItem(id) {
     if (!pl || !G.Items.BY[id]) return;
     if (state === 'levelup' || G.UI.isOpen('scr-levelup')) { laterItems.push(id); return; }
-    let mine = false;            // esta elección es la que ha parado el juego
-    const take = got => {
+    if (G.Items.gain(pl, id)) {
+      G.Spawner.say(G.Items.text(G.Items.BY[id], 'name') + ' ×' + pl.stacks[id], 2.2, true);
+      G.Progress.event('item', { id });
+    }
+  }
+
+  /** Una bola: la partida se para y eliges 1 de 3 de ese nivel. */
+  function offerBall(tier) {
+    if (!pl) return;
+    tier = Math.max(1, Math.min(3, tier | 0 || 1));
+    if (state === 'levelup' || G.UI.isOpen('scr-levelup') || G.UI.isOpen('scr-item')) { laterBalls.push(tier); return; }
+    const options = G.Items.rollChoices(tier, pl, 3);
+    if (!options.length) return;
+    let mine = false;
+    const take = id => {
       openItem = null;
-      if (got !== pl.item) {
-        pl.equip(got);
-        G.Spawner.say('¡Llevas ' + G.Items.BY[got].name + '!', 2.6, true);
-        G.Progress.event('item', { id: got });
+      if (id && G.Items.gain(pl, id)) {
+        G.Spawner.say(G.Items.text(G.Items.BY[id], 'name') + ' ×' + pl.stacks[id], 2.2, true);
+        G.Progress.event('item', { id });
       }
       if (!mine) { afterLevelUp(); return; }
       if (state === 'choice') state = holdBy.length ? 'held' : 'playing';
       if (G.Coop.active && !G.Modes.is('siege')) G.Coop.holdEnd();
       afterLevelUp();
     };
-    if (!pl.item) { take(id); return; }
-    if (pl.item === id) { G.Spawner.say('Ya llevas ' + G.Items.BY[id].name, 2, true); return; }
-    // Se para el juego mientras eliges; en grupo, para todos (como con las
-    // fusiones). Antes en grupo seguía y te pegaban mientras elegías.
     if (state === 'playing' || state === 'held') {
       mine = true;
       state = 'choice';
       pl.frozen = true;
       if (G.Coop.active && !G.Modes.is('siege')) G.Coop.holdStart();
     }
-    openItem = { cur: pl.item, next: id, take, get mine() { return mine; } };
-    G.RunUI.showItemChoice(pl.item, id, take);
+    openItem = { ball: true, tier, options, take, get mine() { return mine; } };
+    G.RunUI.showBallChoice(tier, options, take);
   }
 
   /** @param who  quien lo ha cogido (en cooperativo puede ser un compañero) */
@@ -593,8 +621,18 @@ G.Game = (() => {
       return;
     }
     if (p.kind === 'coin') {
-      pl.coins += p.value;
-      G.FX.dmgText(who.x, who.y - who.bodyH - 6, '+' + p.value, '#ffd23f');
+      if (mine) {
+        pl.coins += p.value;
+        G.FX.dmgText(who.x, who.y - who.bodyH - 6, '+' + p.value, '#ffd23f');
+      }
+      return;
+    }
+    if (p.kind === 'ball') {
+      if (mine) offerBall(p.value);
+      return;
+    }
+    if (p.kind === 'egg') {
+      if (mine) { pl.eggs++; G.FX.dmgText(who.x, who.y - who.bodyH - 8, '+蛋', '#ffe08a'); }
       return;
     }
     if (p.kind === 'item') {
@@ -653,9 +691,14 @@ G.Game = (() => {
       return;
     }
     if (G.UI.isOpen('scr-item')) {
-      for (let i = 0; i < 2; i++) {
-        if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) document.querySelectorAll('#item-cards .card')[i].click();
+      for (let i = 0; i < 3; i++) {
+        const card = document.querySelectorAll('#item-cards .card')[i];
+        if (card && (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1)))) card.click();
       }
+      return;
+    }
+    if (G.UI.isOpen('scr-map')) {
+      if (G.Input.tap('escape') || G.Input.tap('keym')) closeMap();
       return;
     }
     if (state === 'ui') {
@@ -665,10 +708,13 @@ G.Game = (() => {
       return;
     }
     if (G.Input.tap('escape') || G.Input.tap('keyp')) { togglePause(); return; }
+    if (G.Input.tap('keym') && state === 'playing') { toggleMap(); return; }
     if (state !== 'playing' || !pl) return;
+    if (G.Input.tap('space') && !G.Judgment.cinematic) pl.tryDash();
     for (let i = 0; i < 4; i++) {
-      if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) pl.setActive(i);
+      if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) pl.toggleSlot(i);
     }
+    if (G.Input.tap('keyx')) pl.toggleSlot(pl.focus || 0);
     // Caído en grupo: Q / E cambian a quién miras.
     if (pl.dead) { if (G.Input.tap('keyq')) cycleWatch(-1); if (G.Input.tap('keye') || G.Input.tap('tab')) cycleWatch(1); return; }
     if (G.Input.tap('keyq')) pl.cycle(-1);
@@ -773,14 +819,13 @@ G.Game = (() => {
 
     const b = Math.floor(time / 240);
     if (b !== biome && !G.Rift.inArena && !G.Judgment.active && !(G.Siege && G.Siege.up) && !(G.Castle && G.Castle.up)) {
-      biome = b;
-      G.World.setBiome(b);
+      G.World.setBiome(G.World.runBiome(b));
       G.Audio.sfx('biome');
       G.Spawner.say('— ' + G.World.biomeName() + ' —', 3);
       G.FX.ring(pl.x, pl.y, 10, G.Camera.outerRadius(), '#ffffff', 0.7, 6);
     }
 
-    pl.frozen = state !== 'playing' || (coop && (G.UI.isOpen('scr-pause') || G.UI.isOpen('scr-item')));
+    pl.frozen = state !== 'playing' || (coop && (G.UI.isOpen('scr-pause') || G.UI.isOpen('scr-item') || G.UI.isOpen('scr-map')));
     pl.update(dt);
     if (coop) {
       for (const p of G.Coop.puppets()) { p.netUpdate(dt); G.Combat.ghostOrbit(p, dt, time); }
@@ -855,6 +900,7 @@ G.Game = (() => {
     G.World.drawLiquid(ctx, cam, t);
     G.Hazards.draw(ctx);
     G.Combat.drawGroundFields(ctx);
+    G.World.drawShops(ctx);
     G.Pickups.draw(ctx);
 
     // Todo lo que tiene "pies" se ordena por Y: objetos, enemigos, jugador.
@@ -1052,7 +1098,7 @@ G.Game = (() => {
     debugTime(t) { tampered = true; time = t; },
     /** Para grabar vídeos: cámara lenta (0,5 = mitad de velocidad). */
     debugSpeed(k) { if (k > 1) tampered = true; speedK = k; },
-    togglePause, cycleWatch,
+    togglePause, toggleMap, cycleWatch,
     /** El compañero al que miras estando caído (o null). */
     get watching() { return watched(); },
     /** Abandona la partida en curso (p. ej. al cerrar sesión desde Ajustes). */

@@ -182,6 +182,33 @@ G.RunUI = (() => {
     G.UI.show('scr-over');
   }
 
+  /** Una bola: eliges 1 de 3 objetos de ese nivel. */
+  function showBallChoice(tier, options, cb) {
+    const head = document.querySelector('#scr-item h2');
+    const sub = document.querySelector('#scr-item .sub');
+    const lang = (G.I18n && G.I18n.lang) || '';
+    const zh = String(lang).startsWith('zh');
+    if (head) { head.setAttribute('translate', 'no'); head.textContent = G.Items.ballName(tier); }
+    if (sub) {
+      sub.setAttribute('translate', 'no');
+      sub.textContent = zh ? '選一個。這一局先暫停。' : lang === 'en' ? 'Choose one. This run is paused.' : 'Elige uno. La partida está en pausa.';
+    }
+    const box = $('item-cards');
+    box.innerHTML = '';
+    options.forEach((it, i) => {
+      const n = (G.Game.player && G.Game.player.stacks && G.Game.player.stacks[it.id]) || 0;
+      const el = document.createElement('div');
+      el.className = 'card' + (it.tier >= 3 ? ' evo' : '');
+      el.innerHTML = `<div class="ico">${G.Icons.html(it.id, 36)}</div>
+        <div class="txt"><div class="nm">${G.Items.text(it, 'name')} <span class="tag-chip">${n}/${it.max}</span></div><div class="ds">${G.Items.text(it, 'desc')}</div></div>
+        <div class="key">${i + 1}</div>`;
+      el.onclick = () => { if (guarded()) return; G.UI.hide('scr-item'); cb(it.id); };
+      box.appendChild(el);
+    });
+    G.UI.show('scr-item');
+    guard(box);
+  }
+
   /** Has encontrado un objeto llevando ya otro: ¿con cuál te quedas? */
   function showItemChoice(cur, next, cb) {
     const box = $('item-cards');
@@ -317,10 +344,67 @@ G.RunUI = (() => {
     G.UI.show('scr-pause');
   }
 
+  function mapCopy() {
+    const lang = (G.I18n && G.I18n.lang) || '';
+    const zh = String(lang).startsWith('zh');
+    const en = lang === 'en';
+    const t = (z, e, s) => zh ? z : en ? e : s;
+    const coop = G.Coop && G.Coop.active;
+    return {
+      title: t('地圖', 'Map', 'Mapa'),
+      close: t('關閉', 'Close', 'Cerrar'),
+      foot: coop
+        ? t('M 或 Esc 關閉。其他人還在打。', 'M or Esc closes it. The others keep playing.', 'M o Esc para cerrar. Los demás siguen.')
+        : t('M 或 Esc 關閉。這一局先暫停。', 'M or Esc closes it. This run is paused.', 'M o Esc para cerrar. La partida está en pausa.'),
+      hint: t('點一個標記可以記方向，再點一次取消。', 'Click a marker to remember the way. Click it again to clear it.', 'Pulsa una marca para recordar el camino. Otra vez para quitarla.'),
+      rows: [
+        ['#ff8a96', false, t('敵人。', 'Enemies.', 'Enemigos.')],
+        ['#ff3b4e', false, t('Boss，比較大的紅點。', 'Bosses, the bigger red dot.', 'Jefes, el punto rojo más grande.')],
+        ['#ffe08a', false, t('精靈蛋。走過去就撿起來。', 'Eggs. Walk over them.', 'Huevos. Se cogen al pasar por encima.')],
+        ['#ff6b6b', false, t('精靈球。走過去後三選一。紅是一般、藍是超級、紫是高級。', 'Poké Balls. Walk over one and choose 1 of 3. Red is normal, blue is super, purple is ultra.', 'Poké Balls. Al pasar eliges 1 de 3. Roja normal, azul super, morada ultra.')],
+        ['#ffd23f', true, t('商店。地圖上的攤位。', 'Shops. The stalls on the map.', 'Tiendas. Los puestos del mapa.')],
+        ['#5fd4ff', false, t('隊友。聯機時用另一種顏色。', 'Teammates, in another color.', 'Compañeros, de otro color.')]
+      ]
+    };
+  }
+
+  function showMap() {
+    const box = $('scr-map');
+    const copy = mapCopy();
+    box.querySelector('h2').textContent = copy.title;
+    box.querySelector('#map-close').textContent = copy.close;
+    box.querySelector('.map-foot').textContent = copy.foot;
+    box.querySelector('.map-hint').textContent = copy.hint;
+    box.querySelector('#map-legend').innerHTML = copy.rows.map(([col, sq, text]) =>
+      `<li><i class="map-swatch${sq ? ' sq' : ''}" style="background:${col}"></i><span>${text}</span></li>`).join('');
+    const cv = $('map-radar');
+    if (cv && !cv._wired) {
+      cv._wired = true;
+      const pick = ev => {
+        const pl = G.Game.player;
+        if (!pl) return;
+        const rect = cv.getBoundingClientRect();
+        const x = (ev.clientX - rect.left) / rect.width * cv.width;
+        const y = (ev.clientY - rect.top) / rect.height * cv.height;
+        let best = null, bd = 20 * 20;
+        for (const h of cv._hits || []) {
+          const d = (h.sx - x) * (h.sx - x) + (h.sy - y) * (h.sy - y);
+          if (d < bd) { bd = d; best = h; }
+        }
+        if (!best || (pl.mark && Math.hypot(pl.mark.x - best.x, pl.mark.y - best.y) < 28)) pl.mark = null;
+        else pl.mark = { x: best.x, y: best.y, col: best.col };
+      };
+      cv.addEventListener('click', pick);
+      cv.addEventListener('contextmenu', ev => { ev.preventDefault(); pick(ev); });
+    }
+    $('map-close').onclick = () => G.Game.toggleMap();
+    G.UI.show('scr-map');
+  }
+
   function wirePause(onResume, onQuit) {
     $('btn-resume').onclick = onResume;
     $('btn-quit').onclick = onQuit;
   }
 
-  return { showLevelUp, reroll, showItemChoice, showBond, pickBond, bondBack, pick, setWaiting, closeLevelUp, showOver, wirePause, showPause };
+  return { showLevelUp, reroll, showItemChoice, showBallChoice, showBond, pickBond, bondBack, pick, setWaiting, closeLevelUp, showOver, wirePause, showPause, showMap };
 })();

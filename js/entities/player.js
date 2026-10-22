@@ -74,7 +74,15 @@ G.Player = class Player {
     this.dead = false;
     this.power = null;         // poder de altar activo: { def, t, dur }
     this.slowT = 0;            // pegado por una trampa
-    this.item = null;          // objeto equipado (data/items.js), uno por run
+    this.item = null;          // último objeto cogido (data/items.js)
+    this.stacks = {};          // id → cuántos llevas esta partida
+    this.eggs = 0;             // huevos recogidos (aún no se incuban)
+    this.typeBonus = {};
+    this.dashT = 0;
+    this.dashCd = 0;
+    this.dashA = 0;
+    this.focus = 0;            // hueco resaltado (el nombre de encima)
+    this.mark = null;          // marca del mapa: { x, y, col } o null
     this.sashT = -999;         // última vez que salvó la Banda Focus
     this.bellHeal = 0;         // curación pendiente del Cascabel Concha
     this.statsTaken = {};      // mejoras de stat cogidas (condición de evolución)
@@ -131,11 +139,11 @@ G.Player = class Player {
     m.since = G.Game.st.time;          // desde cuándo lo tienes (daño por segundo en el resumen)
     this.moves.push(m);
     const group = [m];
+    group.on = true;             // al aprenderlo queda encendido; otro toque lo apaga
     this.slots.push(group);
     this.arrange();
-    // Te quedas con el que llevabas (18-10-2026: antes se cambiaba solo al nuevo
-    // y te quitaba el ataque que estabas usando). Sólo si no tenías ninguno, el nuevo.
     if (!this.slots[this.active]) this.active = this.slots.indexOf(group);
+    this.focus = Math.max(0, this.slots.indexOf(group));
     return true;
   }
 
@@ -165,24 +173,39 @@ G.Player = class Player {
 
   hasMove(id) { return this.moves.some(m => m.id === id); }
 
+  /** Enciende ese hueco sin apagar los demás (al empezar la partida). */
   setActive(i) {
-    if (i < 0 || i >= this.slots.length || i === this.active) return;
-    // Cinta Elección: no se puede cambiar de movimiento.
-    if (this.hasItem('choiceband') && this.slots[this.active]) {
-      G.FX.dmgText(this.x, this.y - this.bodyH - 8, 'Cinta Elección', '#ff8ad8');
-      return;
-    }
+    const g = this.slots[i];
+    if (!g) return;
+    g.on = true;
     this.active = i;
-    G.Projectiles.clearOrbs(this);
-    G.Audio.sfx('select');
-    for (const m of this.slots[i]) m.t = Math.min(m.t, m.cd * 0.35);
-    const m = this.slots[i][0];
-    G.FX.ring(this.x, this.y - G.LIFT * 0.5, 6, this.r * 3.4, G.U.TYPE_COLOR[m.type], 0.3, 3);
+    this.focus = i;
   }
 
+  /**
+   * Enciende o apaga un hueco. Varios pueden estar encendidos a la vez:
+   * cada uno dispara con su propia recarga. Otro toque en el mismo lo apaga.
+   */
+  toggleSlot(i) {
+    const g = this.slots[i];
+    if (!g || !g.length) return false;
+    if (this.hasItem('choiceband')) {
+      G.FX.dmgText(this.x, this.y - this.bodyH - 8, 'Cinta Elección', '#ff8ad8');
+      return false;
+    }
+    const next = g.on === false;
+    g.on = next;
+    this.focus = i;
+    this.active = i;
+    if (!next && g.some(m => m.kind === 'orbit')) G.Projectiles.clearOrbs(this);
+    G.Audio.sfx('select');
+    return true;
+  }
+
+  /** Sólo mueve el resalte (Q / E, LB / RB). No apaga nada. */
   cycle(dir) {
     if (!this.slots.length) return;
-    this.setActive((this.active + dir + this.slots.length) % this.slots.length);
+    this.focus = ((this.focus || 0) + dir + this.slots.length) % this.slots.length;
   }
 
   // ---------------- vínculos (fusiones) ----------------
@@ -202,27 +225,37 @@ G.Player = class Player {
   /** Junta `moves` (sueltos) en el grupo `group` (o en uno nuevo) y gasta un vínculo. */
   fuse(moves, group = null) {
     const target = group || this.slots.find(s => s[0] === moves[0]);
-    const cur = this.slots[this.active];
+    let on = target.on !== false;
     for (const m of moves) {
       if (target.includes(m)) continue;
       const i = this.slots.findIndex(s => s.length === 1 && s[0] === m);
       if (i < 0) continue;
+      if (this.slots[i].on !== false) on = true;
       this.slots.splice(i, 1);
       target.push(m);
     }
+    target.on = on;
     this.arrange();
-    // Se pasa al grupo, salvo con la Cinta Elección (sigues en el hueco que tenías, si queda).
-    const a = this.slots.indexOf(cur);
-    this.active = this.hasItem('choiceband') && a >= 0 ? a : this.slots.indexOf(target);
+    this.focus = Math.max(0, this.slots.indexOf(target));
+    this.active = this.focus;
     this.bonds = Math.max(0, this.bonds - 1);
     G.Projectiles.clearOrbs(this);
     return target;
   }
 
-  /** Movimientos que se lanzan ahora (el grupo del hueco activo). */
-  activeGroup() { return this.slots[this.active] || []; }
+  /** Los que están encendidos, de todos los huecos (cada uno con su recarga). */
+  enabledMoves() {
+    const out = [];
+    for (const g of this.slots) if (g && g.on !== false) for (const m of g) out.push(m);
+    return out;
+  }
 
-  activeMove() { return this.activeGroup()[0]; }
+  activeGroup() { return this.enabledMoves(); }
+
+  activeMove() {
+    const all = this.enabledMoves();
+    return all.find(m => m.kind === 'projectile' || m.kind === 'beam') || all[0];
+  }
 
   /**
    * Lo llama combat.js al lanzar un movimiento. Elige la animación de PMD y la
@@ -282,7 +315,8 @@ G.Player = class Player {
     }
     // Con un ataque cuerpo a cuerpo activo se recibe un 25 % menos: hay que
     // estar encima de los enemigos para pegar (iban muy por detrás).
-    const close = this.activeGroup().some(m => m.kind === 'melee') ? 0.75 : 1;
+    const firing = this.enabledMoves().filter(m => m.kind !== 'buff' && m.kind !== 'aura');
+    const close = firing.length && firing.every(m => m.kind === 'melee') ? 0.75 : 1;
     const d = pure ? Math.max(1, amount) : Math.max(1, amount * (1 - this.reduction) * close);
     this.hp -= d;
     this.invuln = 0.45;
@@ -341,18 +375,27 @@ G.Player = class Player {
   }
 
   // ---------------- objeto equipado ----------------
-  hasItem(id) { return this.item === id; }
+  hasItem(id) { return (this.stacks && this.stacks[id] > 0) || this.item === id; }
 
-  /** Se pone un objeto (y se quita el que llevara). */
-  equip(id) {
-    if (this.item) G.Items.BY[this.item].off(this);
-    this.item = id;
-    if (id) G.Items.BY[id].on(this);
+  /** Suma un objeto. Si ya está al tope, no hace nada. */
+  equip(id) { return G.Items.gain(this, id); }
+
+  /** Espacio: un empujón corto hacia donde te mueves. */
+  tryDash() {
+    if (this.dead || this.frozen || this.dashCd > 0 || this.dashT > 0) return false;
+    const [ax, ay] = G.Input.axis();
+    const a = (ax || ay) ? Math.atan2(ay, ax) : (Number.isFinite(this.moveAngle) ? this.moveAngle : (this.aim || 0));
+    this.dashA = a;
+    this.dashT = 0.18;
+    this.dashCd = 2.5;
+    this.moveAngle = a;
+    this.walking = true;
+    return true;
   }
 
   /** Cascabel Concha: un poco de vida por el daño que haces (tope 4/s). */
   onDealt(dmg) {
-    if (this.item === 'shellbell') this.bellHeal = Math.min(4, this.bellHeal + dmg * 0.04);
+    if (this.hasItem('shellbell')) this.bellHeal = Math.min(4, this.bellHeal + dmg * 0.04 * (this.stacks.shellbell || 1));
   }
 
   /** Poder de un altar (ver systems/interact.js): se aplica y se quita solo. */
@@ -395,19 +438,28 @@ G.Player = class Player {
     }
 
     // --- movimiento con colisiones ---
+    if (this.dashCd > 0) this.dashCd -= dt;
+    // --- movimiento con colisiones ---
     // (En cooperativo la pausa no para el juego: sólo te quedas quieto.)
     const [ax, ay] = this.frozen ? [0, 0] : G.Input.axis();
-    this.walking = ax !== 0 || ay !== 0;
-    const s = this.spd;
-    // Hielo: resbalas (la velocidad cambia despacio).
-    const slide = this.inLiquid && G.World.liquidEffect(this.mon.types).slide;
-    this.svx = slide ? G.U.damp(this.svx || 0, ax * s * 1.15, 1.6, dt) : ax * s;
-    this.svy = slide ? G.U.damp(this.svy || 0, ay * s * 1.15, 1.6, dt) : ay * s;
+    if (this.dashT > 0 && !this.frozen) {
+      this.dashT -= dt;
+      const sp = 720;
+      this.svx = Math.cos(this.dashA) * sp;
+      this.svy = Math.sin(this.dashA) * sp;
+      this.walking = true;
+    } else {
+      this.walking = ax !== 0 || ay !== 0;
+      const s = this.spd;
+      // Hielo: resbalas (la velocidad cambia despacio).
+      const slide = this.inLiquid && G.World.liquidEffect(this.mon.types).slide;
+      this.svx = slide ? G.U.damp(this.svx || 0, ax * s * 1.15, 1.6, dt) : ax * s;
+      this.svy = slide ? G.U.damp(this.svy || 0, ay * s * 1.15, 1.6, dt) : ay * s;
+      if (this.walking) this.moveAngle = Math.atan2(ay, ax);
+    }
     this.x += this.svx * dt;
     this.y += this.svy * dt;
     G.World.collide(this);
-    if (this.walking) this.moveAngle = Math.atan2(ay, ax);
-
     // --- terreno líquido ---
     // (Levitación: flota por encima del agua y la lava.)
     this.inLiquid = !(this.abil && this.abil.levitate) && G.World.isLiquid(this.x, this.y);
@@ -466,7 +518,7 @@ G.Player = class Player {
     // --- animación: mira al objetivo al atacar, si no a donde camina ---
     const face = this.attackFace > 0 || !this.walking ? this.aim : this.moveAngle;
     this.anim.dir = G.Sprites.dirFromAngle(face);
-    this.anim.loop(this.walking ? 'Walk' : 'Idle', this.walking ? s / 110 : 1);
+    this.anim.loop(this.walking ? 'Walk' : 'Idle', this.walking ? this.spd / 110 : 1);
   }
 
   /**
@@ -560,6 +612,14 @@ G.Player = class Player {
       ctx.restore();
     }
     G.Sprites.drawShadow(ctx, this.dex, this.x, this.y, this.scale);
+    if (this.dashT > 0) {
+      ctx.save();
+      ctx.globalAlpha = 0.45;
+      ctx.strokeStyle = '#f4f8ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r * 2.2, this.r * 0.9, 0, 0, 6.2832); ctx.stroke();
+      ctx.restore();
+    }
     // Poder de altar: aro de su color latiendo bajo los pies.
     if (this.power && !this.dead) {
       ctx.save();

@@ -30,7 +30,7 @@ G.MenuUI = (() => {
       b.onclick = () => {
         if (sheet) sheet.classList.add('hidden');
         const go = b.dataset.go;
-        if (go === 'play') { if (G.Social.room) G.LobbyUI.open(); else G.Flow.play(); }
+        if (go === 'play') { if (G.Social.room) G.LobbyUI.open(); else G.RegionUI.open(); }
         else if (go === 'dex') openDex();
         else if (go === 'upgrades') openUpgrades();
         else if (go === 'shop') G.ShopUI.open();
@@ -152,9 +152,8 @@ G.MenuUI = (() => {
       (G.DB.guest ? '<br><span style="color:#ffb0b8">Modo invitado: no se guarda</span>' : '');
 
     socialLine();
-    const modeChips = $('mode-chips'), modeHelp = $('mode-help');
-    if (modeChips) G.Modes.mount(modeChips, modeHelp, {
-      mode: G.Settings.get('runMode') || 'normal',
+    const modeChips = $('mode-chips');
+    if (modeChips) G.Modes.mount(modeChips, null, {
       editable: true,
       icons: true,
       onPick(id) {

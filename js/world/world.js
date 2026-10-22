@@ -35,6 +35,7 @@ G.World = (() => {
   const KIND = ['floor', 'wall', 'liquid'];
 
   let seed = 1, biome = 0;
+  let region = null;
   let arena = null;                        // { tx, ty, r } en tiles
   const data = new Map();                  // "cx,cy" -> datos del chunk
   let images = new Map();                  // "cx,cy" -> canvas horneado
@@ -82,6 +83,7 @@ G.World = (() => {
       if (th.pools && ad < arena.r - 1.5 && fbm(tx / 3.2, ty / 3.2, seed + 37 + arena.tx) < th.pools) return LIQUID;
       return FLOOR;
     }
+    if (region) return G.Regions.terrain(region, tx, ty, (x, y, salt) => fbm(x, y, seed + salt));
     const d = Math.hypot(tx, ty);
     if (d < 9) return FLOOR;                          // claro inicial
     const ramp = G.U.clamp((d - 9) / 8, 0, 1);       // aparición suave
@@ -144,6 +146,7 @@ G.World = (() => {
         continue;
       }
 
+      if (region && G.Regions.path(tx, ty)) continue;
       const h = H(tx, ty, seed + 404);
       const grove = fbm(tx / 10, ty / 10, seed + 505) > 0.6;
       let type = null, kind = 0;
@@ -154,7 +157,7 @@ G.World = (() => {
         kind = Math.floor(H(tx, ty, seed + 910) * (type === 'altar' ? 4 : 3));
       }
       if (type) { /* ya elegido */ }
-      else if (open && h < (grove ? 0.07 : 0.006)) type = 'tree';
+      else if (open && h < (region ? region.trees * (grove ? 1.5 : 0.5) : (grove ? 0.07 : 0.006))) type = 'tree';
       else if (open && h > 0.992) type = 'rock';
       else if (open && h > 0.985 && h <= 0.992 && H(tx, ty, seed + 606) < 0.07) type = 'chest';
       else if (fbm(tx / 5, ty / 5, seed + 707) > 0.66 && H(tx, ty, seed + 808) < 0.75) type = 'grass';
@@ -394,7 +397,7 @@ G.World = (() => {
       for (let i = 0; i < n; i++) G.Pickups.drop('coin', p.x + G.U.rand(-14, 14), p.y + G.U.rand(-10, 10), 3);
       G.Pickups.drop(Math.random() < 0.5 ? 'heal' : 'magnet', p.x, p.y);
       G.Pickups.dropXp(p.x, p.y, 20);
-      if (Math.random() < 0.08) G.Pickups.drop('item', p.x, p.y - 12, G.Items.roll());
+      if (Math.random() < 0.08) G.Pickups.drop('ball', p.x, p.y - 12, 2);
       return;
     }
     if (p.type === 'bigchest') {
@@ -406,7 +409,7 @@ G.World = (() => {
       const tk = G.U.randInt(1, 3);
       for (let i = 0; i < tk; i++) G.Pickups.drop('ticket', p.x + G.U.rand(-16, 16), p.y + G.U.rand(-10, 10), 1);
       if (Math.random() < 0.15) G.Pickups.drop('ticket10', p.x, p.y - 10, 1);
-      if (Math.random() < 0.5) G.Pickups.drop('item', p.x + 14, p.y - 14, G.Items.roll());
+      if (Math.random() < 0.5) G.Pickups.drop('ball', p.x + 14, p.y - 14, 3);
       G.Pickups.dropXp(p.x, p.y, G.Game.levelXp());
       G.Progress.event('chest');
       return;
@@ -551,10 +554,50 @@ G.World = (() => {
 
   // ---------------- control ----------------
 
-  function reset(s) {
+  function reset(s, regionId = null) {
+    region = G.Regions.get(regionId);
     seed = (s | 0) || 1;
     data.clear(); images.clear(); broken.clear();
     fade = null; arena = null;
+    placeShops();
+  }
+
+  let shops = [];
+  function placeShops() {
+    shops = [];
+    const spots = [[22, 8], [-16, 18], [12, -20], [28, -6]];
+    for (const [tx, ty] of spots) {
+      if (!walkable(tx, ty)) continue;
+      shops.push({ x: tx * TS + TS / 2, y: ty * TS + TS / 2 });
+      if (shops.length >= 2) break;
+    }
+    if (!shops.length) {
+      for (let r = 8; r <= 36 && !shops.length; r += 4) {
+        for (const [tx, ty] of [[r, 2], [-r, 2], [2, r], [2, -r]]) {
+          if (!walkable(tx, ty)) continue;
+          shops.push({ x: tx * TS + TS / 2, y: ty * TS + TS / 2 });
+          break;
+        }
+      }
+    }
+  }
+  function drawShops(ctx) {
+    for (const s of shops) {
+      if (!G.Camera.sees(s.x, s.y, 40)) continue;
+      ctx.fillStyle = 'rgba(0,0,0,.28)';
+      ctx.beginPath(); ctx.ellipse(s.x, s.y, 16, 6, 0, 0, 6.2832); ctx.fill();
+      ctx.fillStyle = '#8a5a32';
+      ctx.fillRect(s.x - 14, s.y - 20, 28, 14);
+      ctx.fillStyle = '#c9844a';
+      ctx.fillRect(s.x - 16, s.y - 24, 32, 5);
+      ctx.fillStyle = '#ffd23f';
+      ctx.fillRect(s.x - 8, s.y - 36, 16, 12);
+      ctx.fillStyle = '#3a2414';
+      ctx.font = '700 9px Pixelify, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('店', s.x, s.y - 30);
+    }
   }
 
   /**
@@ -586,7 +629,9 @@ G.World = (() => {
   }
 
   return {
-    TS, CW, reset, setBiome, biomeName, liquidKind, liquidEffect, walkable,
+    TS, CW, reset, setBiome, biomeName,
+    runBiome(step) { return region ? region.biome : ((step % G.Regions.originalCount) + G.Regions.originalCount) % G.Regions.originalCount; },
+    regionId() { return region ? region.id : ''; }, liquidKind, liquidEffect, walkable,
     kindAt, isWall, isLiquid, isFree, collide, projectileBlock, propsInCircle, nearestBreakable,
     damageProp, breakAt, specialsNear, update,
     breakProp(p) { if (!broken.has(p.tx + ',' + p.ty)) destroyProp(p); },
@@ -602,7 +647,8 @@ G.World = (() => {
         if (Math.abs(cx * N + N / 2 - a.tx) < R + N && Math.abs(cy * N + N / 2 - a.ty) < R + N) { data.delete(k); images.delete(k); }
       }
     },
-    get arena() { return arena; }, drawGround, drawLiquid, visibleProps, drawProp, drawVignette,
+    get arena() { return arena; }, drawGround, drawLiquid, visibleProps, drawProp, drawShops, drawVignette,
+    get shops() { return shops; },
     get biome() { return biome; }
   };
 })();

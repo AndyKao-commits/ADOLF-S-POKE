@@ -6,6 +6,27 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-22', title: ['Elige la región', 'Choose the region'], new: [
+    ['Antes de una partida en solitario eliges una de las nueve regiones. El mapa cambia y los Pokémon salvajes de esa partida son los de esa región. En una sala se sigue usando el mapa de siempre.',
+     'Before a solo run you choose one of the nine regions. The map changes, and the wild Pokémon in that run are the ones from that region. A co-op room still uses the original map.'],
+    ['Pulsas Espacio (o el botón de abajo a la derecha) y das un paso largo hacia donde te mueves. Tarda un momento en poder repetirse.',
+     'Press Space (or the button at the bottom right) and you dash the way you are moving. It needs a moment before you can do it again.'],
+    ['Los Pokémon sueltan monedas, huevos y Poké Balls. Las monedas y los huevos se cogen al pasar por encima. Una bola para la partida y eliges 1 de 3 objetos: la normal, la super y la ultra no ofrecen lo mismo. Puedes llevar varios a la vez.',
+     'Pokémon drop coins, eggs and Poké Balls. Coins and eggs are picked up by walking over them. A ball pauses the run and you choose 1 of 3 items: a normal, super and ultra ball do not offer the same things. You can hold several at once.'],
+    ['Arriba a la derecha hay un radar: huevos, enemigos, bolas y tiendas. En grupo, los compañeros salen de otro color.',
+     'A radar at the top right shows eggs, enemies, balls and shops. In a group, teammates use another color.'],
+    ['M (o el radar) abre el mapa de la zona y pausa la partida. Ahí se ven huevos, enemigos, bolas, tiendas y, en grupo, los compañeros.',
+     'M (or the radar) opens the area map and pauses the run. It shows eggs, enemies, balls, shops and, in a group, teammates.'],
+    ['Cada ataque que aprendes empieza encendido y se lanza junto con los demás. Tócalo otra vez (o pulsa su número) para apagarlo.',
+     'Each move you learn starts on and fires along with the others. Tap it again (or press its number) to turn it off.']
+  ], chg: [
+    ['El texto bajo el botón de jugar ya no describe el modo. Vale para los cinco modos, también en la sala.',
+     'The line under the play button no longer describes the mode. That goes for all five modes, including in a room.'],
+    ['Arriba a la izquierda sale la cara del Pokémon con el que juegas, el nivel en un círculo, la vida en una barra verde y la experiencia debajo.',
+     'The top left shows the face of the Pokémon you are playing, the level in a circle, HP on a green bar and experience under it.'],
+    ['Los objetos que coges se quedan todos y se apilan. Salen bajo la barra de experiencia, y ya no hay un hueco de objeto junto a los ataques.',
+     'Items you pick up all stay and stack. They show under the experience bar, and the item slot next to your moves is gone.']
+  ] },
   { d: '2026-10-21', title: ['La gran actualización: Tienda Kecleon', 'The big update: Kecleon Shop'], new: [
     ['Mejora nueva: Tienda Kecleon (botón en el menú) con Mentas, Cápsulas Habilidad y 8 MT nuevas cada día. Cada Pokémon tiene ahora su naturaleza (±10 % a dos stats) y su habilidad, con efecto en la partida; se ven y se cambian en su ficha de la colección. Las MT enseñan para siempre ataques de fuera de sus tipos, pero sólo si los aprende en los juegos (Mewtwo puede aprender Bola Sombra; Psyduck no puede aprender Lanzallamas). Gracias a TheAdro7 por la idea y el trabajo de base.',
      'New: the Kecleon Shop (button in the menu) with Mints, Ability Capsules and 8 new TMs every day. Every Pokémon now has its own nature (±10% to two stats) and ability, with an effect in the run; you can see and change them on its page in the collection. TMs permanently teach moves outside its types, but only if it learns them in the games (Mewtwo can learn Shadow Ball; Psyduck cannot learn Flamethrower). Thanks to TheAdro7 for the idea and the groundwork.'],

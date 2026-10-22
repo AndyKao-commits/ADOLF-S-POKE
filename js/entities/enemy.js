@@ -225,7 +225,7 @@
         // Desafío de jefes: cada baja es un jefe, y elegir objeto paraba la partida.
         // Una de cada cinco suelta objeto.
         const bossMode = G.Modes && G.Modes.is('boss');
-        if (!bossMode || Math.random() < 0.2) G.Pickups.drop('item', this.x - 26, this.y - 10, G.Items.roll());
+        if (!bossMode || Math.random() < 0.2) G.Pickups.drop('ball', this.x - 26, this.y - 10, bossMode ? 2 : 3);
       }
       G.Pickups.dropXp(this.x, this.y, this.xp, this.boss, !!this.legend, !!this.judge);
       if (this.golden && Math.random() < 0.35) G.Pickups.drop('coin', this.x + 6, this.y - 4, 3);
