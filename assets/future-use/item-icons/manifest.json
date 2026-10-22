@@ -18,7 +18,8 @@
       "rarity_zh_TW": "神話",
       "rarity_rank": 5,
       "name_color": "yellow",
-      "name_color_zh_TW": "黃色"
+      "name_color_zh_TW": "黃色",
+      "max_per_run": 3
     },
     {
       "name": "Rare Candy",
@@ -32,7 +33,8 @@
       "rarity_zh_TW": "神話",
       "rarity_rank": 5,
       "name_color": "yellow",
-      "name_color_zh_TW": "黃色"
+      "name_color_zh_TW": "黃色",
+      "max_per_run": 10
     },
     {
       "name": "Master Ball",
@@ -46,7 +48,8 @@
       "rarity_zh_TW": "神話",
       "rarity_rank": 5,
       "name_color": "yellow",
-      "name_color_zh_TW": "黃色"
+      "name_color_zh_TW": "黃色",
+      "max_per_run": 1
     },
     {
       "name": "Reaper Cloth",
@@ -60,7 +63,8 @@
       "rarity_zh_TW": "神話",
       "rarity_rank": 5,
       "name_color": "yellow",
-      "name_color_zh_TW": "黃色"
+      "name_color_zh_TW": "黃色",
+      "max_per_run": 1
     },
     {
       "name": "Comet Shard",
@@ -74,7 +78,8 @@
       "rarity_zh_TW": "神話",
       "rarity_rank": 5,
       "name_color": "yellow",
-      "name_color_zh_TW": "黃色"
+      "name_color_zh_TW": "黃色",
+      "max_per_run": 1
     },
     {
       "name": "Moon Stone",
@@ -88,7 +93,8 @@
       "rarity_zh_TW": "神話",
       "rarity_rank": 5,
       "name_color": "yellow",
-      "name_color_zh_TW": "黃色"
+      "name_color_zh_TW": "黃色",
+      "max_per_run": 3
     },
     {
       "name": "Max PP",
@@ -102,7 +108,8 @@
       "rarity_zh_TW": "傳說",
       "rarity_rank": 4,
       "name_color": "purple",
-      "name_color_zh_TW": "紫色"
+      "name_color_zh_TW": "紫色",
+      "max_per_run": 10
     },
     {
       "name": "Max Elixir",
@@ -116,7 +123,8 @@
       "rarity_zh_TW": "傳說",
       "rarity_rank": 4,
       "name_color": "purple",
-      "name_color_zh_TW": "紫色"
+      "name_color_zh_TW": "紫色",
+      "max_per_run": 10
     },
     {
       "name": "Shiny Stone",
@@ -130,7 +138,8 @@
       "rarity_zh_TW": "傳說",
       "rarity_rank": 4,
       "name_color": "purple",
-      "name_color_zh_TW": "紫色"
+      "name_color_zh_TW": "紫色",
+      "max_per_run": 10
     },
     {
       "name": "Dusk Stone",
@@ -144,7 +153,8 @@
       "rarity_zh_TW": "傳說",
       "rarity_rank": 4,
       "name_color": "purple",
-      "name_color_zh_TW": "紫色"
+      "name_color_zh_TW": "紫色",
+      "max_per_run": 10
     },
     {
       "name": "Honey",
@@ -158,7 +168,8 @@
       "rarity_zh_TW": "傳說",
       "rarity_rank": 4,
       "name_color": "purple",
-      "name_color_zh_TW": "紫色"
+      "name_color_zh_TW": "紫色",
+      "max_per_run": 1
     },
     {
       "name": "Fire Stone",
@@ -172,7 +183,8 @@
       "rarity_zh_TW": "傳說",
       "rarity_rank": 4,
       "name_color": "purple",
-      "name_color_zh_TW": "紫色"
+      "name_color_zh_TW": "紫色",
+      "max_per_run": 1
     },
     {
       "name": "Ice Stone",
@@ -186,7 +198,8 @@
       "rarity_zh_TW": "傳說",
       "rarity_rank": 4,
       "name_color": "purple",
-      "name_color_zh_TW": "紫色"
+      "name_color_zh_TW": "紫色",
+      "max_per_run": 1
     },
     {
       "name": "Revive",
@@ -200,7 +213,8 @@
       "rarity_zh_TW": "傳說",
       "rarity_rank": 4,
       "name_color": "purple",
-      "name_color_zh_TW": "紫色"
+      "name_color_zh_TW": "紫色",
+      "max_per_run": 3
     },
     {
       "name": "Power Bracer",
@@ -214,7 +228,8 @@
       "rarity_zh_TW": "傳說",
       "rarity_rank": 4,
       "name_color": "purple",
-      "name_color_zh_TW": "紫色"
+      "name_color_zh_TW": "紫色",
+      "max_per_run": 3
     },
     {
       "name": "Life Orb",
@@ -228,7 +243,8 @@
       "rarity_zh_TW": "稀有",
       "rarity_rank": 3,
       "name_color": "blue",
-      "name_color_zh_TW": "藍色"
+      "name_color_zh_TW": "藍色",
+      "max_per_run": 5
     },
     {
       "name": "Choice Band",
@@ -242,7 +258,8 @@
       "rarity_zh_TW": "稀有",
       "rarity_rank": 3,
       "name_color": "blue",
-      "name_color_zh_TW": "藍色"
+      "name_color_zh_TW": "藍色",
+      "max_per_run": 5
     },
     {
       "name": "Choice Scarf",
@@ -256,7 +273,8 @@
       "rarity_zh_TW": "稀有",
       "rarity_rank": 3,
       "name_color": "blue",
-      "name_color_zh_TW": "藍色"
+      "name_color_zh_TW": "藍色",
+      "max_per_run": 5
     },
     {
       "name": "Expert Belt",
@@ -270,7 +288,8 @@
       "rarity_zh_TW": "稀有",
       "rarity_rank": 3,
       "name_color": "blue",
-      "name_color_zh_TW": "藍色"
+      "name_color_zh_TW": "藍色",
+      "max_per_run": 10
     },
     {
       "name": "Assault Vest",
@@ -284,7 +303,8 @@
       "rarity_zh_TW": "稀有",
       "rarity_rank": 3,
       "name_color": "blue",
-      "name_color_zh_TW": "藍色"
+      "name_color_zh_TW": "藍色",
+      "max_per_run": 10
     },
     {
       "name": "Exp. Share",
@@ -298,7 +318,8 @@
       "rarity_zh_TW": "稀有",
       "rarity_rank": 3,
       "name_color": "blue",
-      "name_color_zh_TW": "藍色"
+      "name_color_zh_TW": "藍色",
+      "max_per_run": 10
     },
     {
       "name": "Star Piece",
@@ -312,7 +333,8 @@
       "rarity_zh_TW": "稀有",
       "rarity_rank": 3,
       "name_color": "blue",
-      "name_color_zh_TW": "藍色"
+      "name_color_zh_TW": "藍色",
+      "max_per_run": 10
     },
     {
       "name": "Metronome",
@@ -326,7 +348,8 @@
       "rarity_zh_TW": "稀有",
       "rarity_rank": 3,
       "name_color": "blue",
-      "name_color_zh_TW": "藍色"
+      "name_color_zh_TW": "藍色",
+      "max_per_run": 3
     },
     {
       "name": "Focus Sash",
@@ -340,7 +363,8 @@
       "rarity_zh_TW": "稀有",
       "rarity_rank": 3,
       "name_color": "blue",
-      "name_color_zh_TW": "藍色"
+      "name_color_zh_TW": "藍色",
+      "max_per_run": 1
     },
     {
       "name": "Lum Berry",
@@ -354,7 +378,8 @@
       "rarity_zh_TW": "稀有",
       "rarity_rank": 3,
       "name_color": "blue",
-      "name_color_zh_TW": "藍色"
+      "name_color_zh_TW": "藍色",
+      "max_per_run": 3
     },
     {
       "name": "Eviolite",
@@ -368,7 +393,8 @@
       "rarity_zh_TW": "稀有",
       "rarity_rank": 3,
       "name_color": "blue",
-      "name_color_zh_TW": "藍色"
+      "name_color_zh_TW": "藍色",
+      "max_per_run": 1
     },
     {
       "name": "Quick Claw",
@@ -382,7 +408,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 10
     },
     {
       "name": "Shell Bell",
@@ -396,7 +423,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 10
     },
     {
       "name": "Leftovers",
@@ -410,7 +438,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 10
     },
     {
       "name": "Rocky Helmet",
@@ -424,7 +453,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 10
     },
     {
       "name": "Amulet Coin",
@@ -438,7 +468,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 10
     },
     {
       "name": "Lucky Egg",
@@ -452,7 +483,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 10
     },
     {
       "name": "Muscle Band",
@@ -466,7 +498,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 10
     },
     {
       "name": "Scope Lens",
@@ -480,7 +513,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 10
     },
     {
       "name": "Light Clay",
@@ -494,7 +528,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 10
     },
     {
       "name": "Sitrus Berry",
@@ -508,7 +543,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 3
     },
     {
       "name": "Smoke Ball",
@@ -522,7 +558,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 3
     },
     {
       "name": "Flame Orb",
@@ -536,7 +573,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 10
     },
     {
       "name": "Toxic Orb",
@@ -550,7 +588,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 10
     },
     {
       "name": "Snowball",
@@ -564,7 +603,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 10
     },
     {
       "name": "Big Root",
@@ -578,7 +618,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 10
     },
     {
       "name": "King's Rock",
@@ -592,7 +633,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 10
     },
     {
       "name": "Protective Pads",
@@ -606,7 +648,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 3
     },
     {
       "name": "Sticky Barb",
@@ -620,7 +663,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 5
     },
     {
       "name": "Silk Scarf",
@@ -634,7 +678,8 @@
       "rarity_zh_TW": "優良",
       "rarity_rank": 2,
       "name_color": "green",
-      "name_color_zh_TW": "綠色"
+      "name_color_zh_TW": "綠色",
+      "max_per_run": 10
     },
     {
       "name": "Charcoal",
@@ -648,7 +693,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Mystic Water",
@@ -662,7 +708,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Miracle Seed",
@@ -676,7 +723,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Magnet",
@@ -690,7 +738,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Never-Melt Ice",
@@ -704,7 +753,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Black Belt",
@@ -718,7 +768,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Poison Barb",
@@ -732,7 +783,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Soft Sand",
@@ -746,7 +798,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Sharp Beak",
@@ -760,7 +813,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Twisted Spoon",
@@ -774,7 +828,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Silver Powder",
@@ -788,7 +843,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Hard Stone",
@@ -802,7 +858,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Spell Tag",
@@ -816,7 +873,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Dragon Fang",
@@ -830,7 +888,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Black Glasses",
@@ -844,7 +903,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Metal Coat",
@@ -858,7 +918,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Fairy Feather",
@@ -872,7 +933,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Oran Berry",
@@ -886,7 +948,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Quick Powder",
@@ -900,7 +963,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Bright Powder",
@@ -914,7 +978,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Razor Claw",
@@ -928,7 +993,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Wide Lens",
@@ -942,7 +1008,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Safety Goggles",
@@ -956,7 +1023,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Nugget",
@@ -970,7 +1038,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 10
     },
     {
       "name": "Big Nugget",
@@ -984,7 +1053,8 @@
       "rarity_zh_TW": "一般",
       "rarity_rank": 1,
       "name_color": "gray",
-      "name_color_zh_TW": "灰色"
+      "name_color_zh_TW": "灰色",
+      "max_per_run": 5
     }
   ],
   "effect_source": {
@@ -995,7 +1065,7 @@
       "image(20261022-154728).png"
     ],
     "scope": "依截圖記錄此遊戲顯示的道具能力；非寶可夢本傳效果，也未與執行中的程式驗證。",
-    "notes": "只記錄畫面明示的條件與數值；不推定疊加算法、觸發對象或未標明的持續時間。未記錄玩家解鎖進度與畫面數量。"
+    "notes": "只記錄畫面明示的條件與數值；不推定疊加算法、觸發對象或未標明的持續時間。未記錄玩家解鎖進度。名稱後 ×N 的每局持有上限另見 holding_limit_rule。"
   },
   "rarity_definitions": [
     {
@@ -1044,5 +1114,22 @@
     ],
     "scope": "素材與企劃標記，未修改遊戲掉落率、能力、價格或執行中的分級。",
     "rank_order": "5 神話 > 4 傳說 > 3 稀有 > 2 優良 > 1 一般"
+  },
+  "holding_limit_rule": {
+    "field": "max_per_run",
+    "meaning": "道具名稱後方 ×N 表示該道具在每一局內可以持有的數量上限 N。",
+    "scope": "per-item-per-run",
+    "source": "使用者明確說明，數值逐項核對三張截圖。",
+    "reference_files": [
+      "image(20261022-165636).png",
+      "image(20261022-165656).png",
+      "image(20261022-165659).png"
+    ],
+    "notes": [
+      "這是每種道具的個別持有上限，非目前持有數量、跨局庫存或所有道具合計上限。",
+      "持有上限與能力文字中的每局觸發次數、冷卻時間分別記錄，不以持有數量推定效果疊加算法。",
+      "消耗後是否恢復可取得名額及滿額時掉落、商店或獎勵的處理方式，截圖未明示，不在此推定。",
+      "本次記錄規定，尚未在遊戲執行程式中加入上限檢查。"
+    ]
   }
 }
