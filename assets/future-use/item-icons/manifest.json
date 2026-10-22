@@ -1,0 +1,570 @@
+{
+  "status": "future-use; not integrated",
+  "size": [
+    64,
+    64
+  ],
+  "format": "RGBA PNG",
+  "items": [
+    {
+      "name": "Max Revive",
+      "file": "max-revive.png",
+      "reference_image": 1,
+      "reference_row": 1,
+      "reference_column": 1,
+      "sha256": "698c6ae8cfd236352b9fbaf754ff8d222a91d4c04d8e43ca7473b996fa7604bb"
+    },
+    {
+      "name": "Rare Candy",
+      "file": "rare-candy.png",
+      "reference_image": 1,
+      "reference_row": 1,
+      "reference_column": 2,
+      "sha256": "9f50c5bc5932df914fc3346dcc16ddef70a428070f00d2862d75e6bc21909ab0"
+    },
+    {
+      "name": "Master Ball",
+      "file": "master-ball.png",
+      "reference_image": 1,
+      "reference_row": 1,
+      "reference_column": 3,
+      "sha256": "1101423081c80b75747ef42a130ec81f1b36a39de9eb2820260581a05da251c3"
+    },
+    {
+      "name": "Reaper Cloth",
+      "file": "reaper-cloth.png",
+      "reference_image": 1,
+      "reference_row": 2,
+      "reference_column": 1,
+      "sha256": "cac993dd7cb2ecebf3ea3ad7c1c6d7313afeb1c3cb632e021453a9312a5423e8"
+    },
+    {
+      "name": "Comet Shard",
+      "file": "comet-shard.png",
+      "reference_image": 1,
+      "reference_row": 2,
+      "reference_column": 2,
+      "sha256": "7a923128c1a3e3d4a0d8dedeed207c288aedecb0c4f8601c2be042fd4f80b341"
+    },
+    {
+      "name": "Moon Stone",
+      "file": "moon-stone.png",
+      "reference_image": 1,
+      "reference_row": 2,
+      "reference_column": 3,
+      "sha256": "748be6ff31fca91581b930b03b1838a1eb07f77f0b90534a48dbd1d0b6e7a2a9"
+    },
+    {
+      "name": "Max PP",
+      "file": "max-pp.png",
+      "reference_image": 1,
+      "reference_row": 3,
+      "reference_column": 1,
+      "sha256": "0b1a306aced852eb45a7a8a39b77b1e4d4021cf1b9e3cd70a64a131402031fa3"
+    },
+    {
+      "name": "Max Elixir",
+      "file": "max-elixir.png",
+      "reference_image": 1,
+      "reference_row": 3,
+      "reference_column": 2,
+      "sha256": "d3018eed649de8a379e3975f56cd60d095b48d8acbe3d698cfcebe4c36582b2f"
+    },
+    {
+      "name": "Shiny Stone",
+      "file": "shiny-stone.png",
+      "reference_image": 1,
+      "reference_row": 3,
+      "reference_column": 3,
+      "sha256": "1f2c518101b94bb8b2628004f76a5bfbd3c17bbc0433bc1918f4a2582f832220"
+    },
+    {
+      "name": "Dusk Stone",
+      "file": "dusk-stone.png",
+      "reference_image": 1,
+      "reference_row": 4,
+      "reference_column": 1,
+      "sha256": "0757badf8eee43c282f4fed0c3a7c4fc9f8c285d9ddfb8a43e7a7340673af38f"
+    },
+    {
+      "name": "Honey",
+      "file": "honey.png",
+      "reference_image": 1,
+      "reference_row": 4,
+      "reference_column": 2,
+      "sha256": "5f923737c9f36ffe3a17ff8e5a2adc2320ec3b74c605a0ce597909a16b9603a6"
+    },
+    {
+      "name": "Fire Stone",
+      "file": "fire-stone.png",
+      "reference_image": 1,
+      "reference_row": 4,
+      "reference_column": 3,
+      "sha256": "9cdf7f4ec6c0d7f1e9890d970ffbd506486032005db0cd4b0600280e8983b5ca"
+    },
+    {
+      "name": "Ice Stone",
+      "file": "ice-stone.png",
+      "reference_image": 1,
+      "reference_row": 5,
+      "reference_column": 1,
+      "sha256": "e3e665bb113a61836d5c22a752a0cda2e1d42945d89458688f0e2895662b0713"
+    },
+    {
+      "name": "Revive",
+      "file": "revive.png",
+      "reference_image": 1,
+      "reference_row": 5,
+      "reference_column": 2,
+      "sha256": "99684c13b64928bd4458fd1dfc0941dc715b3ed7d3af4eb702fcfa6d63db034b"
+    },
+    {
+      "name": "Power Bracer",
+      "file": "power-bracer.png",
+      "reference_image": 1,
+      "reference_row": 5,
+      "reference_column": 3,
+      "sha256": "c018cdae89ab64c6da5480ea6563b5a3e654c5416949c8a0fde52ce5c4958d03"
+    },
+    {
+      "name": "Life Orb",
+      "file": "life-orb.png",
+      "reference_image": 1,
+      "reference_row": 6,
+      "reference_column": 1,
+      "sha256": "2f4cc7701b781303ed325151d23e2a3bacb0d014f0a021223034ad8f8d925d22"
+    },
+    {
+      "name": "Choice Band",
+      "file": "choice-band.png",
+      "reference_image": 1,
+      "reference_row": 6,
+      "reference_column": 2,
+      "sha256": "cd24e9b39d54dba01ed7c059d80e7bdafdedb0b856963ed24b5a60e0c6100612"
+    },
+    {
+      "name": "Choice Scarf",
+      "file": "choice-scarf.png",
+      "reference_image": 1,
+      "reference_row": 6,
+      "reference_column": 3,
+      "sha256": "28072aa64949d94de38d98d07a00f1aa29aee2b7dc5df497745b45cd1e038e53"
+    },
+    {
+      "name": "Expert Belt",
+      "file": "expert-belt.png",
+      "reference_image": 1,
+      "reference_row": 7,
+      "reference_column": 1,
+      "sha256": "96dc0b7c82d91681f92e504a65d9c18863f921d9146dc804c0a9ecb6887b87a9"
+    },
+    {
+      "name": "Assault Vest",
+      "file": "assault-vest.png",
+      "reference_image": 1,
+      "reference_row": 7,
+      "reference_column": 2,
+      "sha256": "c651598cdd9c1ac7e5dc81fca5d026d32cbf7dfc12723d1ac87a9455c6340b26"
+    },
+    {
+      "name": "Exp. Share",
+      "file": "exp-share.png",
+      "reference_image": 1,
+      "reference_row": 7,
+      "reference_column": 3,
+      "sha256": "74de0a6e243e28385861565b1199b600353f7df5be21af19247fccef7f9d8b25"
+    },
+    {
+      "name": "Star Piece",
+      "file": "star-piece.png",
+      "reference_image": 1,
+      "reference_row": 8,
+      "reference_column": 1,
+      "sha256": "606f5fc913330c1cf47ac65008c535f9e1857d02e646b63cd031f88a8a1549c9"
+    },
+    {
+      "name": "Metronome",
+      "file": "metronome.png",
+      "reference_image": 1,
+      "reference_row": 8,
+      "reference_column": 2,
+      "sha256": "e7baba882f788cc9031b3326467699e63b4a6a513d49d9998aa1a3e97942670d"
+    },
+    {
+      "name": "Focus Sash",
+      "file": "focus-sash.png",
+      "reference_image": 1,
+      "reference_row": 8,
+      "reference_column": 3,
+      "sha256": "6587f66eefb932b54052b92df524df16947434f912fabdfc8d6537e0cb0cfa84"
+    },
+    {
+      "name": "Lum Berry",
+      "file": "lum-berry.png",
+      "reference_image": 1,
+      "reference_row": 9,
+      "reference_column": 1,
+      "sha256": "65d8b213ee9eace78c17b386665ab1711c193d606c219af70baf9776153839c2"
+    },
+    {
+      "name": "Eviolite",
+      "file": "eviolite.png",
+      "reference_image": 1,
+      "reference_row": 9,
+      "reference_column": 2,
+      "sha256": "96d714bf25e5615ebdcd58579083ceeecc641e1cd502cfe9e2f85ff7983209ae"
+    },
+    {
+      "name": "Quick Claw",
+      "file": "quick-claw.png",
+      "reference_image": 1,
+      "reference_row": 9,
+      "reference_column": 3,
+      "sha256": "6c0b540c6572b1bb9a4772564746c4d4cdd079572e919128e3698cbecc186d2d"
+    },
+    {
+      "name": "Shell Bell",
+      "file": "shell-bell.png",
+      "reference_image": 2,
+      "reference_row": 1,
+      "reference_column": 1,
+      "sha256": "b446049854c0b86b2c56a9bcdce9e72ff8896a4ef99b68bb3a4c8e9010d40047"
+    },
+    {
+      "name": "Leftovers",
+      "file": "leftovers.png",
+      "reference_image": 2,
+      "reference_row": 1,
+      "reference_column": 2,
+      "sha256": "ea0b099ed6ea252fc225dde5242f36c07810e992d41ef840c347e03b19dced7d"
+    },
+    {
+      "name": "Rocky Helmet",
+      "file": "rocky-helmet.png",
+      "reference_image": 2,
+      "reference_row": 1,
+      "reference_column": 3,
+      "sha256": "99e7ad1721372edf34202f0706b8444737686cbf894869cf5de9fe2e35c774e3"
+    },
+    {
+      "name": "Amulet Coin",
+      "file": "amulet-coin.png",
+      "reference_image": 2,
+      "reference_row": 2,
+      "reference_column": 1,
+      "sha256": "3b83577d845caddd7386cf1a02453ede0264990aabd2c2883bb2dcdeff7a931f"
+    },
+    {
+      "name": "Lucky Egg",
+      "file": "lucky-egg.png",
+      "reference_image": 2,
+      "reference_row": 2,
+      "reference_column": 2,
+      "sha256": "0bb799b76d41d0b14b11769a28d03be1dfa23c00fad8630031e27e5d5cfe9ac1"
+    },
+    {
+      "name": "Muscle Band",
+      "file": "muscle-band.png",
+      "reference_image": 2,
+      "reference_row": 2,
+      "reference_column": 3,
+      "sha256": "86789bd62fa34e086ab8016fdf3633dfd28d8aa34d0f2485f594aabf80ee2ace"
+    },
+    {
+      "name": "Scope Lens",
+      "file": "scope-lens.png",
+      "reference_image": 2,
+      "reference_row": 3,
+      "reference_column": 1,
+      "sha256": "437d64d4b510f43d5bdf4cd1b8001b576a516b0974b88c064c3c4379fabd70ba"
+    },
+    {
+      "name": "Light Clay",
+      "file": "light-clay.png",
+      "reference_image": 2,
+      "reference_row": 3,
+      "reference_column": 2,
+      "sha256": "7a6a185a2fa8aa333ff041b1f854b44967de9c9b11fb0f504d64768bcd9fc991"
+    },
+    {
+      "name": "Sitrus Berry",
+      "file": "sitrus-berry.png",
+      "reference_image": 2,
+      "reference_row": 3,
+      "reference_column": 3,
+      "sha256": "f8fba60b41b0aaccd665735519c4a542860cf256c773e828bdc446ae6f747d5d"
+    },
+    {
+      "name": "Smoke Ball",
+      "file": "smoke-ball.png",
+      "reference_image": 2,
+      "reference_row": 4,
+      "reference_column": 1,
+      "sha256": "a1f1d462f656022a5501796da644334a71d1c497d04deb4072496f3e7e16c6b7"
+    },
+    {
+      "name": "Flame Orb",
+      "file": "flame-orb.png",
+      "reference_image": 2,
+      "reference_row": 4,
+      "reference_column": 2,
+      "sha256": "b15c6e42f9bbfc5feee7568d888e9052116c099df73898634ad803ed998a31a8"
+    },
+    {
+      "name": "Toxic Orb",
+      "file": "toxic-orb.png",
+      "reference_image": 2,
+      "reference_row": 4,
+      "reference_column": 3,
+      "sha256": "c61fbdb6b5a37c3328c6efc976d2d6ce0e77152456bc3b1d529cfe81c2135487"
+    },
+    {
+      "name": "Snowball",
+      "file": "snowball.png",
+      "reference_image": 2,
+      "reference_row": 5,
+      "reference_column": 1,
+      "sha256": "1a31bfc8cf155f430b7ecd48bfddb9cb3aa3147fe898cfa97bbca8d18265d45d"
+    },
+    {
+      "name": "Big Root",
+      "file": "big-root.png",
+      "reference_image": 2,
+      "reference_row": 5,
+      "reference_column": 2,
+      "sha256": "044d65e7bc127194a7344909ffaca38d4bc5db8b56a25b722a89a15eca0cbca3"
+    },
+    {
+      "name": "King's Rock",
+      "file": "king-s-rock.png",
+      "reference_image": 2,
+      "reference_row": 5,
+      "reference_column": 3,
+      "sha256": "0ac375020f4315627f1917407b20dc0e7172071926d6300421a56e6221453db9"
+    },
+    {
+      "name": "Protective Pads",
+      "file": "protective-pads.png",
+      "reference_image": 2,
+      "reference_row": 6,
+      "reference_column": 1,
+      "sha256": "2d7ae83265b722fe385bda9f1514d0a9c654e677cbf2b8091ba989841a4e6da0"
+    },
+    {
+      "name": "Sticky Barb",
+      "file": "sticky-barb.png",
+      "reference_image": 2,
+      "reference_row": 6,
+      "reference_column": 2,
+      "sha256": "89e5c611140770a9d3dc1784cb72138a7b500213d3338adf309e601c884e9294"
+    },
+    {
+      "name": "Silk Scarf",
+      "file": "silk-scarf.png",
+      "reference_image": 2,
+      "reference_row": 6,
+      "reference_column": 3,
+      "sha256": "16c396f39412b4c950ef333807d1084d4e526e477737e1dba78e74cf0377ccba"
+    },
+    {
+      "name": "Charcoal",
+      "file": "charcoal.png",
+      "reference_image": 2,
+      "reference_row": 7,
+      "reference_column": 1,
+      "sha256": "58bcfed2cceb608d385e7e7ccd987be2d286bb84f854517006351d68fdac9c7d"
+    },
+    {
+      "name": "Mystic Water",
+      "file": "mystic-water.png",
+      "reference_image": 2,
+      "reference_row": 7,
+      "reference_column": 2,
+      "sha256": "ba6a40dae3a3f047105063fc68bd6dbc9f7ca5cecdb05d60d955b8e5e6d8f178"
+    },
+    {
+      "name": "Miracle Seed",
+      "file": "miracle-seed.png",
+      "reference_image": 2,
+      "reference_row": 7,
+      "reference_column": 3,
+      "sha256": "bcb4f0ae75e5e1741495b2cf1cb9425ca750e906b828ac79f75b05888ac5cffe"
+    },
+    {
+      "name": "Magnet",
+      "file": "magnet.png",
+      "reference_image": 2,
+      "reference_row": 8,
+      "reference_column": 1,
+      "sha256": "40f2c77336ba904a24e93770fedf45d6002b9881bf5930dd2311cbf31dfdf8d8"
+    },
+    {
+      "name": "Never-Melt Ice",
+      "file": "never-melt-ice.png",
+      "reference_image": 2,
+      "reference_row": 8,
+      "reference_column": 2,
+      "sha256": "773bb11ff2644c1e8b1b8035ee341d7520d4e8b05ceeea69797d242a830b1b50"
+    },
+    {
+      "name": "Black Belt",
+      "file": "black-belt.png",
+      "reference_image": 2,
+      "reference_row": 8,
+      "reference_column": 3,
+      "sha256": "81fc7d246b5a8733dd6d6a3a004d7469b8e67843cc3f80ba74f86c7dcc605791"
+    },
+    {
+      "name": "Poison Barb",
+      "file": "poison-barb.png",
+      "reference_image": 2,
+      "reference_row": 9,
+      "reference_column": 1,
+      "sha256": "5baf7fbdd1eadbb3b0897823013d5877aa462f949759de236d52835372441cff"
+    },
+    {
+      "name": "Soft Sand",
+      "file": "soft-sand.png",
+      "reference_image": 2,
+      "reference_row": 9,
+      "reference_column": 2,
+      "sha256": "59f14f568d1cb4b74f5520b9e3d23880cde0886381b0217cddccb1dad4ada9b3"
+    },
+    {
+      "name": "Sharp Beak",
+      "file": "sharp-beak.png",
+      "reference_image": 2,
+      "reference_row": 9,
+      "reference_column": 3,
+      "sha256": "20c1e973dd6466107af15980f0a1cdbebfcdd7073430519122b4df703a99d065"
+    },
+    {
+      "name": "Twisted Spoon",
+      "file": "twisted-spoon.png",
+      "reference_image": 3,
+      "reference_row": 1,
+      "reference_column": 1,
+      "sha256": "ebdeb0db1519b3969e553c0f45630f5c36f0c9e399c0d36bbbda140f83461956"
+    },
+    {
+      "name": "Silver Powder",
+      "file": "silver-powder.png",
+      "reference_image": 3,
+      "reference_row": 1,
+      "reference_column": 2,
+      "sha256": "e5918e461f478a74bc97e851891491024374396176a69a982afa4609a2c4f4a9"
+    },
+    {
+      "name": "Hard Stone",
+      "file": "hard-stone.png",
+      "reference_image": 3,
+      "reference_row": 1,
+      "reference_column": 3,
+      "sha256": "b775144dda89c513f7c9eb053d63618db4c3f12cf1331d70879bf7d43ae0cbfe"
+    },
+    {
+      "name": "Spell Tag",
+      "file": "spell-tag.png",
+      "reference_image": 3,
+      "reference_row": 1,
+      "reference_column": 4,
+      "sha256": "895ee81d9656ac6295d4fcd681933b676f5adddbfc817c4ab6e96ce91ce16a5e"
+    },
+    {
+      "name": "Dragon Fang",
+      "file": "dragon-fang.png",
+      "reference_image": 3,
+      "reference_row": 2,
+      "reference_column": 1,
+      "sha256": "331eb37a44819a5b7694e20d36c8596ef2b208cd326bd9d5837037ccc9bcf2c7"
+    },
+    {
+      "name": "Black Glasses",
+      "file": "black-glasses.png",
+      "reference_image": 3,
+      "reference_row": 2,
+      "reference_column": 2,
+      "sha256": "8f21cd50def1cef389d11f5d88212db96d831a1f04c09d2bfc546b98cac9ad61"
+    },
+    {
+      "name": "Metal Coat",
+      "file": "metal-coat.png",
+      "reference_image": 3,
+      "reference_row": 2,
+      "reference_column": 3,
+      "sha256": "b4e469c3c977ad5dff04bb65931ffc2b0da2566a8ecd7dac314093a4352579dd"
+    },
+    {
+      "name": "Fairy Feather",
+      "file": "fairy-feather.png",
+      "reference_image": 3,
+      "reference_row": 2,
+      "reference_column": 4,
+      "sha256": "25df5d71e0aa3e60aa0f7f8c63e5ceb5dda8b2ea18844d68941d59b8c6944572"
+    },
+    {
+      "name": "Oran Berry",
+      "file": "oran-berry.png",
+      "reference_image": 3,
+      "reference_row": 3,
+      "reference_column": 1,
+      "sha256": "4fb69d9206d82744a822e9708458a84d2a2d1bdb87c8563b6ddf8672678ccc3a"
+    },
+    {
+      "name": "Quick Powder",
+      "file": "quick-powder.png",
+      "reference_image": 3,
+      "reference_row": 3,
+      "reference_column": 2,
+      "sha256": "f3aef7d51d5ea384dd4c9add6844a40625a9ce8945d563a0b11750378653430a"
+    },
+    {
+      "name": "Bright Powder",
+      "file": "bright-powder.png",
+      "reference_image": 3,
+      "reference_row": 3,
+      "reference_column": 3,
+      "sha256": "f96d23117ceebc189a6a3001c2ecb1d6069f297b7bcc38539139ebece672e764"
+    },
+    {
+      "name": "Razor Claw",
+      "file": "razor-claw.png",
+      "reference_image": 3,
+      "reference_row": 3,
+      "reference_column": 4,
+      "sha256": "f430b99906ef85b67a6bb93baeee3998cc6af03c8ad922778a510bfa573ae445"
+    },
+    {
+      "name": "Wide Lens",
+      "file": "wide-lens.png",
+      "reference_image": 3,
+      "reference_row": 4,
+      "reference_column": 1,
+      "sha256": "de534ed9a2c2bd344f5130556c3e1146d022ef961baa91c56db2bdc27080688b"
+    },
+    {
+      "name": "Safety Goggles",
+      "file": "safety-goggles.png",
+      "reference_image": 3,
+      "reference_row": 4,
+      "reference_column": 2,
+      "sha256": "71d8beba5fa184355a8f54bbe11749ef83bcf779892bcb520e6d9874b61fa7f4"
+    },
+    {
+      "name": "Nugget",
+      "file": "nugget.png",
+      "reference_image": 3,
+      "reference_row": 4,
+      "reference_column": 3,
+      "sha256": "6c660b1bf070e23766bcbb7f80503495a949ad5776bda59a67d81450a9151089"
+    },
+    {
+      "name": "Big Nugget",
+      "file": "big-nugget.png",
+      "reference_image": 3,
+      "reference_row": 4,
+      "reference_column": 4,
+      "sha256": "b86018ac01b111537c201b248a2d41dd477fcc21d8bea35a830fdb48de15d237"
+    }
+  ]
+}
