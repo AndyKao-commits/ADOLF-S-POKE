@@ -49,6 +49,34 @@
       "height": 256,
       "frames": 51,
       "sha256": "08902666ba97c5302757769e3320eddb7cfa31236cbaf9202ca926cf468024b0"
+    },
+    {
+      "label": "精靈球",
+      "path": "assets/future-use/balls/poke-ball.png",
+      "width": 40,
+      "height": 40,
+      "sha256": "f8e215876329eabc8e17e75374898e2e70d68488a0fc717b67bbae5e3258f505"
+    },
+    {
+      "label": "超級球",
+      "path": "assets/future-use/balls/great-ball.png",
+      "width": 40,
+      "height": 40,
+      "sha256": "1bc1efb5272f80f3df22743ea568e539e190b226d1f8e2a1b151a6f54592a647"
+    },
+    {
+      "label": "高級球",
+      "path": "assets/future-use/balls/ultra-ball.png",
+      "width": 40,
+      "height": 40,
+      "sha256": "ffac630276e30070a492c9d1f65c80e26d7e61bcbf973969a6dcdc71f140f75d"
+    },
+    {
+      "label": "大師球",
+      "path": "assets/future-use/balls/master-ball.png",
+      "width": 40,
+      "height": 40,
+      "sha256": "5fb8b01ca9e4b8f51915e913d0e3ca85d873df77daab0c1f8e92b279bbfc59c3"
     }
   ]
 }

@@ -14,3 +14,12 @@
 四級配色為本批素材的視覺分級，不代表已設定遊戲中的稀有度、孵化時間或掉落機率。孵化 GIF 是既有綠斑蛋的共用示範，尚未製作各級專屬動畫。全部素材以 nearest-neighbor 整數倍顯示，避免模糊。未更動雲端資料或玩家紀錄。
 
 `manifest.json` 記錄用途、尺寸、影格數與 SHA-256；`eggs/render-eggs.cjs` 為四級蛋的原生像素繪製來源（需要 `@napi-rs/canvas`）。
+
+## 商店與精靈球預覽／執行方式
+
+在專案根目錄執行 `python3 -m http.server 8000`：
+
+- 商店：`http://localhost:8000/assets/future-use/shop/preview.html`，詳見 [商店使用說明](shop/README.md)。
+- 四種精靈球：`http://localhost:8000/assets/future-use/balls/preview.html`，詳見 [精靈球使用說明](balls/README.md)。
+
+四種球圖示位於 `balls/`，每張 40×40 透明 PNG。預覽頁亦可直接在瀏覽器開啟；本批為靜態素材，不會啟動商店或捕捉功能。
