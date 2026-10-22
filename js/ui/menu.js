@@ -10,6 +10,16 @@ G.MenuUI = (() => {
   const SORTS = [['num', 'Nº'], ['name', 'Nombre'], ['rar', 'Rareza'], ['new', 'Recién conseguidos'], ['used', 'Más usados']];
 
   let dexDrawer = false, dexSheet = false;
+  function shutDrawer() {
+    dexDrawer = false;
+    const d = $('dex-drawer');
+    if (d) d.classList.add('hidden');
+  }
+  function shutSheet() {
+    dexSheet = false;
+    const s = $('dex-sheet');
+    if (s) s.classList.add('hidden');
+  }
 
   function init() {
     const ICON = { play: 'ball', dex: 'book', upgrades: 'up', shop: 'shop', bag: 'bag', gacha: 'ball4', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
@@ -37,9 +47,9 @@ G.MenuUI = (() => {
     const fbtn = $('dex-filter-btn');
     if (fbtn) fbtn.onclick = () => { dexDrawer = !dexDrawer; $('dex-drawer').classList.toggle('hidden', !dexDrawer); };
     const dclose = $('dex-drawer-close');
-    if (dclose) dclose.onclick = () => { dexDrawer = false; $('dex-drawer').classList.add('hidden'); };
+    if (dclose) dclose.onclick = shutDrawer;
     const sclose = $('dex-sheet-close');
-    if (sclose) sclose.onclick = () => { dexSheet = false; $('dex-sheet').classList.add('hidden'); };
+    if (sclose) sclose.onclick = shutSheet;
     document.querySelectorAll('[data-back]').forEach(b => { b.onclick = open; });
     $('menu-code').onsubmit = e => { e.preventDefault(); joinByCode($('menu-code-in').value); };
     $('menu-code-new').onclick = () => G.SocialUI.withNick(async () => {
@@ -734,5 +744,5 @@ G.MenuUI = (() => {
     return el;
   }
 
-  return { init, open, openDex, GEN_NAMES };
+  return { init, open, openDex, GEN_NAMES, shutDrawer, shutSheet };
 })();

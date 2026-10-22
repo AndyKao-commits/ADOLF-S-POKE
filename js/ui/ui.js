@@ -169,6 +169,43 @@ G.UI = (() => {
     };
   }
 
+  // Ventanas flotantes: un toque fuera las cierra y no pulsa lo que había debajo.
+  function wireDismiss() {
+    const hit = (e, sel) => !!(e.target && e.target.closest && e.target.closest(sel));
+    const open = id => {
+      const el = $(id);
+      return !!(el && !el.classList.contains('hidden'));
+    };
+    document.addEventListener('pointerdown', e => {
+      const layers = [];
+      const add = (isOpen, inside, close) => { if (isOpen) layers.push({ inside, close }); };
+      const menuOpen = open('top-more'), soundOpen = open('sound-panel');
+      if (menuOpen || soundOpen) {
+        const inside = hit(e, '#top-more') || hit(e, '#btn-overflow') || hit(e, '#sound-panel') || hit(e, '#btn-sound');
+        add(true, inside, () => {
+          if ($('top-more')) $('top-more').classList.add('hidden');
+          if ($('sound-panel')) $('sound-panel').classList.add('hidden');
+        });
+      }
+      add(open('menu-sheet'), hit(e, '#menu-sheet') || hit(e, '#menu-more-btn'), () => $('menu-sheet').classList.add('hidden'));
+      add(open('dex-drawer'), hit(e, '#dex-drawer') || hit(e, '#dex-filter-btn'), () => G.MenuUI && G.MenuUI.shutDrawer());
+      add(open('dex-sheet'), hit(e, '#dex-sheet') || hit(e, '#dex-grid'), () => G.MenuUI && G.MenuUI.shutSheet());
+      add(open('invite-pop'), hit(e, '#invite-pop'), () => $('invite-pop').classList.add('hidden'));
+      for (const id of ['scr-settings', 'scr-news', 'scr-legal', 'scr-profile', 'scr-support', 'scr-savenote']) {
+        add(open(id), hit(e, '#' + id + ' .box'), () => {
+          if (id === 'scr-savenote' && $('savenote-ok') && $('savenote-ok').onclick) $('savenote-ok').onclick();
+          else $(id).classList.add('hidden');
+        });
+      }
+      add(open('scr-pause'), hit(e, '#scr-pause .box'), () => { if ($('btn-resume') && $('btn-resume').onclick) $('btn-resume').onclick(); });
+      if (!layers.length) return;
+      const insideSome = layers.some(l => l.inside);
+      let closed = false;
+      for (const l of layers) if (!l.inside) { l.close(); closed = true; }
+      if (closed && !insideSome) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+  }
+
   function initChrome() {
     G.Icons.installCss();
     wireLegal();
@@ -188,12 +225,8 @@ G.UI = (() => {
     if (ov && more) {
       ov.onclick = e => { e.stopPropagation(); more.classList.toggle('hidden'); };
       more.addEventListener('click', e => { if (!e.target.closest('#btn-sound')) more.classList.add('hidden'); });
-      document.addEventListener('click', e => {
-        if (more.classList.contains('hidden')) return;
-        if (e.target.closest('#top-more') || e.target.closest('#btn-overflow')) return;
-        more.classList.add('hidden');
-      });
     }
+    wireDismiss();
     wireSounds();
     refreshSoundIcon();
     $('btn-sound').onclick = () => {
