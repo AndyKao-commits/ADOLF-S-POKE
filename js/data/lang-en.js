@@ -205,6 +205,8 @@ G.I18n.add({
 
   // ---------------- pausa y fin ----------------
   'Pausa': 'Pause', 'Continuar': 'Continue', 'Abandonar run': 'Quit run', 'moverse ·': 'move ·', 'movimiento ·': 'move ·', 'ciclar ·': 'cycle ·', 'pausa': 'pause',
+  'encender o apagar ·': 'on or off ·', 'mapa ·': 'map ·',
+  'Arrastra el dedo para moverte · toca un ataque para encenderlo o apagarlo': 'Drag to move · tap a move to turn it on or off',
   'Partida en grupo: el juego sigue mientras estás aquí.': 'Group game: the game keeps running while you\'re here.',
   'Has caído…': 'You fell…', 'Run terminada': 'Run over', 'Volver al menú': 'Back to menu', 'Salir de la partida': 'Leave the game',
   'Tiempo': 'Time', 'Nivel': 'Level', 'Derrotados': 'Defeated', 'Jefes': 'Bosses', 'Pokémonedas ganadas': 'PokéCoins earned',

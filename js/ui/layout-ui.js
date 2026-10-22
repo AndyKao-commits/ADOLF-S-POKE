@@ -1,14 +1,13 @@
 /* ============ layout-ui.js — colocar los botones (móvil) ============
- * Ajustes > Controles > Colocar los botones: se ven los ataques (con el
- * objeto), la pausa y, si es fijo, el joystick, y se arrastran a donde se
- * quiera. Se guarda el centro de cada cosa en proporción a la pantalla
+ * Ajustes > Controles > Colocar los botones: se ven los ataques, la pausa y,
+ * si es fijo, el joystick, y se arrastran a donde se quiera. Se guarda el centro de cada cosa en proporción a la pantalla
  * (G.Settings 'pad'); lo que no se mueve se queda en su sitio de siempre.
  * El HUD (hud.js) y el joystick (touch.js) leen esas posiciones.
  * Las medidas copian las del HUD: si cambian allí, cambiarlas aquí.
  */
 G.LayoutUI = (() => {
-  const S = 54, GAP = 9, ITEM_GAP = 18, N = 4;          // como en hud.js
-  const BAR_W = S + ITEM_GAP + N * S + (N - 1) * GAP;
+  const S = 54, GAP = 9, N = 4;          // como en hud.js
+  const BAR_W = N * S + (N - 1) * GAP;
   let el = null, pos = null, moved = null, mode = 'float';
 
   /** Dónde está cada cosa ahora mismo (centro en px), con lo guardado o lo de siempre. */
@@ -19,7 +18,7 @@ G.LayoutUI = (() => {
     if (k === 'bar') {
       if (p) return [p[0] * w, p[1] * h];
       const totalW = N * S + (N - 1) * GAP;
-      const left = (w - totalW) / 2 - S - ITEM_GAP;
+      const left = (w - totalW) / 2;
       return [left + BAR_W / 2, h - S - 18 - Math.min(28, sa.bottom) + S / 2];
     }
     if (p) return [p[0] * w, p[1] * h];
@@ -40,7 +39,7 @@ G.LayoutUI = (() => {
     el.className = 'scr hidden';
     const slots = Array.from({ length: N }, (_, i) => `<div class="lay-slot${i === 0 ? ' on' : ''}"><i>${i + 1}</i></div>`).join('');
     el.innerHTML = `
-      <div class="lay-thing lay-bar" data-k="bar"><div class="lay-slot item"></div>${slots}<span class="lay-tag">Ataques</span></div>
+      <div class="lay-thing lay-bar" data-k="bar">${slots}<span class="lay-tag">Ataques</span></div>
       <div class="lay-thing lay-pause" data-k="pause"><b></b><b></b></div>
       <div class="lay-thing lay-stick" data-k="stick"><div class="knob"></div><span class="lay-tag">Joystick</span></div>
       <div class="box lay-panel">
@@ -64,7 +63,7 @@ G.LayoutUI = (() => {
       moved = {}; mode = 'float';
       const w = innerWidth, h = innerHeight, sa = G.Touch.safeArea();
       const totalW = N * S + (N - 1) * GAP;
-      pos = { bar: [(w - totalW) / 2 - S - ITEM_GAP + BAR_W / 2, h - S - 18 - Math.min(28, sa.bottom) + S / 2],
+      pos = { bar: [(w - totalW) / 2 + BAR_W / 2, h - S - 18 - Math.min(28, sa.bottom) + S / 2],
               pause: [w - 52 - Math.min(44, sa.right) + 20, 12 + Math.min(20, sa.top) + 20],
               stick: [G.Touch.STICK_DEF[0] * w, G.Touch.STICK_DEF[1] * h] };
       for (const k in pos) pos[k] = fit(k, pos[k][0], pos[k][1], w, h);

@@ -83,7 +83,7 @@
 }
 </script>
 <!-- seo:end -->
-<link rel="stylesheet" href="css/style.css?v=kecleon">
+<link rel="stylesheet" href="css/style.css?v=map22">
 <script src="js/core/locales.js"></script>
 </head>
 <body>
@@ -182,7 +182,6 @@
     </div>
     <div class="menu-go">
       <button class="btn gold menu-play" data-go="play" type="button">Jugar<small>Entra en la mazmorra</small></button>
-      <p class="sub" id="mode-help"></p>
       <div id="menu-stats" class="menu-stats"></div>
     </div>
   </div>
@@ -206,6 +205,21 @@
     <button class="menu-item" data-go="rank">Ranking<small>Quién aguanta más</small></button>
     <button class="menu-item" data-go="settings">Ajustes<small>Sonido, gráficos, controles y cuenta</small></button>
   </nav>
+</section>
+
+<section id="scr-region" class="scr dim hidden">
+  <div class="box region-box">
+    <div class="row between">
+      <h2 translate="no">選擇地區</h2>
+      <button id="region-back" class="btn" type="button" translate="no">返回選單</button>
+    </div>
+    <p class="sub" translate="no">選一張地圖再開始。這一局的野生寶可夢只會是這個地區的。</p>
+    <div id="region-grid" class="region-grid"></div>
+    <div class="row between">
+      <b id="region-picked" translate="no"></b>
+      <button id="region-start" class="btn gold" type="button" data-sfx="confirm" translate="no">開始本局</button>
+    </div>
+  </div>
 </section>
 
 <div id="topbar" class="topbar hidden">
@@ -579,11 +593,26 @@
   </div>
 </section>
 
+<section id="scr-map" class="scr dim hidden" translate="no">
+  <div class="box map-box">
+    <div class="map-head">
+      <h2>地圖</h2>
+      <button id="map-close" class="btn" type="button">關閉</button>
+    </div>
+    <div class="map-body">
+      <canvas id="map-radar" width="480" height="480"></canvas>
+      <ul id="map-legend" style="list-style:none"></ul>
+    </div>
+    <p class="map-foot">M 或 Esc 關閉。這一局先暫停。</p>
+    <p class="map-hint">點一個標記可以記方向，再點一次取消。</p>
+  </div>
+</section>
+
 <section id="scr-pause" class="scr dim hidden">
   <div class="box center pause-box">
     <h2>Pausa</h2>
-    <p class="sub kbd-hint"><kbd>WASD</kbd> moverse · <kbd>1</kbd>–<kbd>4</kbd> movimiento · <kbd>Q</kbd>/<kbd>E</kbd> ciclar · <kbd>Esc</kbd> pausa</p>
-    <p class="sub touch-hint">Arrastra el dedo para moverte · toca un ataque para cambiarlo</p>
+    <p class="sub kbd-hint"><kbd>WASD</kbd> moverse · <kbd>1</kbd>–<kbd>4</kbd> encender o apagar · <kbd>M</kbd> mapa · <kbd>Esc</kbd> pausa</p>
+    <p class="sub touch-hint">Arrastra el dedo para moverte · toca un ataque para encenderlo o apagarlo</p>
     <p id="pause-coop" class="note hidden">Partida en grupo: el juego sigue mientras estás aquí.</p>
     <div class="row" style="justify-content:center">
       <button id="btn-resume" class="btn gold">Continuar</button>
@@ -638,6 +667,7 @@
 <script defer src="js/data/changelog.js"></script>
 <!-- mundo -->
 <script defer src="js/world/tiles.js"></script>
+<script defer src="js/world/regions.js"></script>
 <script defer src="js/world/world.js"></script>
 <!-- entidades -->
 <script defer src="js/entities/vfx.js"></script>
@@ -679,6 +709,7 @@
 <script defer src="js/ui/test.js"></script>
 <script defer src="js/ui/menu.js"></script>
 <script defer src="js/ui/slots.js"></script>
+<script defer src="js/ui/region-ui.js"></script>
 <script defer src="js/ui/gacha-ui.js"></script>
 <script defer src="js/ui/shop-ui.js"></script>
 <script defer src="js/ui/run-ui.js"></script>

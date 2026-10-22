@@ -133,9 +133,33 @@ G.Enemies = (() => {
     return d;
   }
 
+  /** 0 = todas las regiones. En solitario, la del mapa elegido. */
+  function regionGen() {
+    const id = G.World && G.World.regionId && G.World.regionId();
+    const p = id && G.Regions && G.Regions.get(id);
+    return p ? p.gen : 0;
+  }
+  function inRegion(p) {
+    const g = regionGen();
+    return !g || p.gen === g;
+  }
+
   /** Todos los candidatos de un tramo (sin legendarios ni míticos). */
   function candidates(tier) {
-    return G.DEX.filter(p => p.rarity < 5 && p.bst >= tier.bst[0] && p.bst <= tier.bst[1] && G.SPRITE_META[p.dex]);
+    const fit = (lo, hi) => G.DEX.filter(p => p.rarity < 5 && inRegion(p) && p.bst >= lo && p.bst <= hi && G.SPRITE_META[p.dex]);
+    let pool = fit(tier.bst[0], tier.bst[1]);
+    if (regionGen() && pool.length < 6) pool = fit(tier.bst[0] - 50, tier.bst[1] + 50);
+    if (regionGen() && pool.length < 6) pool = G.DEX.filter(p => p.rarity < 5 && inRegion(p) && G.SPRITE_META[p.dex]);
+    return pool;
+  }
+
+  function bossPool(slot, used) {
+    const gen = regionGen();
+    const ok = p => !p.leg && G.SPRITE_META[p.dex] && !used.has(p.dex) && (!gen || p.gen === gen);
+    let pool = G.DEX.filter(p => ok(p) && p.bst >= slot.bst[0] && p.bst <= slot.bst[1]);
+    if (!pool.length) pool = G.DEX.filter(ok);
+    if (!pool.length) pool = G.DEX.filter(p => !p.leg && G.SPRITE_META[p.dex] && !used.has(p.dex));
+    return pool;
   }
 
   // ---------------- elenco de la run ----------------
@@ -176,9 +200,7 @@ G.Enemies = (() => {
     }
     const used = new Set();
     bosses = bossSlots().map(slot => {
-      const ok = p => !p.leg && G.SPRITE_META[p.dex] && !used.has(p.dex);
-      let pool = G.DEX.filter(p => ok(p) && p.bst >= slot.bst[0] && p.bst <= slot.bst[1]);
-      if (!pool.length) pool = G.DEX.filter(p => ok(p) && p.bst >= 580);
+      const pool = bossPool(slot, used);
       const p = G.U.pick(pool);
       used.add(p.dex);
       return {
@@ -225,9 +247,7 @@ G.Enemies = (() => {
   function bossMob(t) {
     const slots = bossSlots();
     const slot = slots.length ? slots[Math.min(slots.length - 1, Math.floor(Math.max(0, t) / 180))] : BOSS_SLOTS[0];
-    const ok = p => !p.leg && G.SPRITE_META[p.dex];
-    let pool = G.DEX.filter(p => ok(p) && p.bst >= slot.bst[0] && p.bst <= slot.bst[1]);
-    if (!pool.length) pool = G.DEX.filter(p => ok(p) && p.bst >= 580);
+    const pool = bossPool(slot, new Set());
     const p = G.U.pick(pool);
     return {
       at: 0, dex: p.dex, name: p.name,

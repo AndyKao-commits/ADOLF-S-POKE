@@ -14,6 +14,59 @@ G.HUD = (() => {
     ctx.closePath();
   }
 
+  /** Barra con cortes, como la de vida de la foto: el relleno y unas rayas encima. */
+  function segBar(ctx, x, y, w, h, frac, col) {
+    const r = Math.min(6, h / 2);
+    roundRect(ctx, x, y, w, h, r);
+    ctx.fillStyle = 'rgba(8,16,28,.72)';
+    ctx.fill();
+    ctx.save();
+    roundRect(ctx, x, y, w, h, r);
+    ctx.clip();
+    const fw = w * G.U.clamp(frac, 0, 1);
+    if (fw > 0) {
+      ctx.fillStyle = col;
+      ctx.fillRect(x, y, fw, h);
+      ctx.fillStyle = 'rgba(255,255,255,.22)';
+      ctx.fillRect(x, y, fw, Math.max(2, h * 0.34));
+    }
+    ctx.fillStyle = 'rgba(0,0,0,.28)';
+    for (let sx = x + 16; sx < x + w - 4; sx += 16) ctx.fillRect(sx, y, 2, h);
+    ctx.restore();
+  }
+
+  /**
+   * Cabeza del Pokémon que está jugando, mirando al frente. El recorte sale
+   * de la parte de arriba del sprite de Idle, así cambia con quien saques.
+   */
+  function portrait(ctx, pl, x, y, size) {
+    const cx = x + size / 2, cy = y + size / 2, rad = size / 2 - 1;
+    const m = G.Sprites.animMeta(pl.dex, 'Idle', pl.shiny);
+    const s = G.Sprites.sheet(pl.dex, 'Idle', pl.shiny);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, rad, 0, 6.2832);
+    ctx.clip();
+    ctx.fillStyle = '#1a2740';
+    ctx.fillRect(x, y, size, size);
+    if (m && s && s.ready) {
+      // Del alto del cuerpo (pies en ay): la cabeza arriba, los pies se salen del círculo.
+      const bodyH = Math.max(12, Math.round(m.ay || m.h * 0.6));
+      const bodyW = Math.max(10, Math.min(m.w, Math.round(bodyH * 0.92)));
+      const sx = Math.round(G.U.clamp(m.ax - bodyW / 2, 0, Math.max(0, m.w - bodyW)));
+      const scale = size / Math.min(bodyW, bodyH);
+      const dw = bodyW * scale, dh = bodyH * scale;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(s.img, sx, 0, bodyW, bodyH, x + (size - dw) / 2, y - 1, dw, dh);
+    }
+    ctx.restore();
+    ctx.beginPath();
+    ctx.arc(cx, cy, rad, 0, 6.2832);
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(244,248,255,.92)';
+    ctx.stroke();
+  }
+
   function bar(ctx, x, y, w, h, frac, col, bg = 'rgba(0,0,0,.55)') {
     roundRect(ctx, x, y, w, h, h / 2); ctx.fillStyle = bg; ctx.fill();
     if (frac > 0) {
@@ -25,54 +78,237 @@ G.HUD = (() => {
     }
   }
 
+  function radar(ctx, w, h, pl) {
+    const R = 52, cx = w - R - 14, cy = G.Touch.active ? 118 : 72;
+    ctx.save();
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 6.2832); ctx.clip();
+    ctx.fillStyle = 'rgba(6, 16, 32, .72)';
+    ctx.fillRect(cx - R, cy - R, R * 2, R * 2);
+    ctx.strokeStyle = 'rgba(244,248,255,.18)';
+    ctx.beginPath(); ctx.arc(cx, cy, R * 0.55, 0, 6.2832); ctx.stroke();
+    const REACH = 820;
+    const dot = (x, y, col, rad) => {
+      const dx = (x - pl.x) / REACH * (R - 4), dy = (y - pl.y) / REACH * (R - 4);
+      if (dx * dx + dy * dy > (R - 4) * (R - 4)) return;
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.arc(cx + dx, cy + dy, rad, 0, 6.2832); ctx.fill();
+    };
+    if (G.World.shops) for (const s of G.World.shops) dot(s.x, s.y, '#ffd23f', 3.5);
+    for (const p of G.Pickups.all()) {
+      if (p.kind === 'egg') dot(p.x, p.y, '#ffe08a', 3);
+      else if (p.kind === 'ball') dot(p.x, p.y, p.value >= 3 ? '#d7c6ff' : p.value === 2 ? '#7eb6ff' : '#ff6b6b', 3);
+    }
+    for (const e of G.EnemyMgr.all()) if (!e.dead) dot(e.x, e.y, e.boss ? '#ff3b4e' : '#ff8a96', e.boss ? 3.2 : 2.2);
+    if (G.Coop && G.Coop.active && G.Coop.puppets) {
+      for (const m of G.Coop.puppets()) if (!m.dead) dot(m.x, m.y, '#5fd4ff', 3);
+    }
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx, cy, 2.4, 0, 6.2832); ctx.fill();
+    ctx.restore();
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, 6.2832);
+    ctx.strokeStyle = 'rgba(244,248,255,.85)'; ctx.lineWidth = 2; ctx.stroke();
+    G.Touch.addButton(cx - R, cy - R, R * 2, R * 2, () => {
+      if (G.Game.state === 'playing' && G.Game.toggleMap) G.Game.toggleMap();
+    }, 4);
+  }
+
+  /** Mapa grande (la pantalla de pausa): anillos y las mismas marcas que el radar. */
+  function paintMap(canvas, pl) {
+    if (!canvas || !pl) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width, h = canvas.height;
+    const cx = w / 2, cy = h / 2, R = Math.min(w, h) / 2 - 18;
+    const REACH = 2200;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#0c1730';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = 'rgba(150, 190, 230, .38)';
+    ctx.lineWidth = 1.5;
+    for (let i = 1; i <= 4; i++) {
+      ctx.beginPath(); ctx.arc(cx, cy, R * i / 4, 0, 6.2832); ctx.stroke();
+    }
+    const hits = [];
+    const at = (wx, wy) => {
+      let dx = (wx - pl.x) / REACH * R, dy = (wy - pl.y) / REACH * R;
+      const d = Math.hypot(dx, dy);
+      if (d > R - 8) { const k = (R - 8) / (d || 1); dx *= k; dy *= k; }
+      return [cx + dx, cy + dy];
+    };
+    const dot = (wx, wy, col, rad, sq) => {
+      const [sx, sy] = at(wx, wy);
+      ctx.fillStyle = col;
+      if (sq) ctx.fillRect(sx - rad, sy - rad, rad * 2, rad * 2);
+      else { ctx.beginPath(); ctx.arc(sx, sy, rad, 0, 6.2832); ctx.fill(); }
+      hits.push({ sx, sy, x: wx, y: wy, col });
+    };
+    if (G.World.shops) for (const s of G.World.shops) dot(s.x, s.y, '#ffd23f', 6, true);
+    for (const p of G.Pickups.all()) {
+      if (p.kind === 'egg') dot(p.x, p.y, '#ffe08a', 5, false);
+      else if (p.kind === 'ball') dot(p.x, p.y, p.value >= 3 ? '#d7c6ff' : p.value === 2 ? '#7eb6ff' : '#ff6b6b', 5, false);
+    }
+    for (const e of G.EnemyMgr.all()) if (!e.dead) dot(e.x, e.y, e.boss ? '#ff3b4e' : '#ff8a96', e.boss ? 6 : 4, false);
+    if (G.Coop && G.Coop.active && G.Coop.puppets) {
+      for (const m of G.Coop.puppets()) if (!m.dead) dot(m.x, m.y, '#5fd4ff', 5, false);
+    }
+    if (pl.mark) {
+      const [sx, sy] = at(pl.mark.x, pl.mark.y);
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(sx, sy, 9, 0, 6.2832); ctx.stroke();
+    }
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx - 7, cy); ctx.lineTo(cx + 7, cy);
+    ctx.moveTo(cx, cy - 7); ctx.lineTo(cx, cy + 7);
+    ctx.stroke();
+    canvas._hits = hits;
+  }
+
+  /** Flecha hacia la marca puesta en el mapa. */
+  function pinArrow(ctx, w, h, pl) {
+    const mk = pl.mark;
+    if (!mk) return;
+    const cam = G.Camera;
+    const sx = (mk.x - cam.left()) * cam.scale, sy = (mk.y - cam.top()) * cam.scale;
+    const on = sx > 28 && sx < w - 28 && sy > 64 && sy < h - 86;
+    ctx.save();
+    ctx.fillStyle = mk.col || '#fff';
+    if (on) {
+      ctx.translate(sx, sy - 16);
+      ctx.beginPath(); ctx.moveTo(0, 12); ctx.lineTo(-7, -7); ctx.lineTo(7, -7); ctx.closePath();
+      ctx.fill();
+    } else {
+      const M = 58;
+      const ex = G.U.clamp(sx, M, w - M), ey = G.U.clamp(sy, M + 36, h - M);
+      const a = Math.atan2(sy - ey, sx - ex);
+      ctx.translate(ex, ey); ctx.rotate(a);
+      ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-10, 9); ctx.lineTo(-10, -9); ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function dashButton(ctx, w, h, pl, touch) {
+    const bs = 54;
+    const bx = w - bs - 18, by = h - bs - (touch ? 28 : 18);
+    const cd = pl.dashCd || 0, ready = cd <= 0 && !(pl.dashT > 0);
+    ctx.beginPath(); ctx.arc(bx + bs / 2, by + bs / 2, bs / 2, 0, 6.2832);
+    ctx.fillStyle = ready ? '#ffd23f' : 'rgba(10,16,28,.82)'; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = ready ? '#fff6d0' : 'rgba(244,248,255,.45)'; ctx.stroke();
+    if (!ready && cd > 0) {
+      ctx.beginPath();
+      ctx.strokeStyle = '#ffd23f'; ctx.lineWidth = 4;
+      ctx.arc(bx + bs / 2, by + bs / 2, bs / 2 - 4, -Math.PI / 2, -Math.PI / 2 + (1 - cd / 2.5) * 6.2832);
+      ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.font = F(800, 14); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(cd.toFixed(1), bx + bs / 2, by + bs / 2);
+    } else {
+      ctx.fillStyle = '#1a1404'; ctx.font = F(800, 18); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('>>', bx + bs / 2, by + bs / 2);
+    }
+    ctx.font = F(700, 10); ctx.fillStyle = '#f4f8ff'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    const zh = String((G.I18n && G.I18n.lang) || '').startsWith('zh');
+    ctx.fillText(zh ? '衝刺' : (touch ? '衝刺' : 'SPACE'), bx + bs / 2, by + bs + 14);
+    G.Touch.addButton(bx, by, bs, bs, () => { if (G.Game.state === 'playing' && pl.tryDash) pl.tryDash(); }, 8);
+  }
+
   function draw(ctx, w, h, pl, st) {
     ctx.save();
     ctx.textBaseline = 'alphabetic';
     G.Touch.clearButtons();
     const touch = G.Touch.active;
 
-    // ---------- barra de experiencia (borde superior) ----------
-    const xpF = pl.xp / pl.xpNext;
-    ctx.fillStyle = 'rgba(0,0,0,.5)';
-    ctx.fillRect(0, 0, w, 7);
-    const g = ctx.createLinearGradient(0, 0, w, 0);
-    g.addColorStop(0, '#4fd1ff'); g.addColorStop(1, '#a98bff');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, w * G.U.clamp(xpF, 0, 1), 7);
-
-    // ---------- vida + nivel ----------
+    // ---------- cabeza, nivel, vida y experiencia ----------
     const sa = G.Touch.safeArea();
-    const px = 16 + sa.left, py = 20 + sa.top;     // lejos de la muesca del iPhone
-    ctx.font = F(800, 13);
-    ctx.fillStyle = '#eaf2ff';
-    ctx.textAlign = 'left';
-    ctx.fillText(pl.mon.name, px, py + 10);
-
-    ctx.font = F(700, 11);
-    ctx.fillStyle = '#ffcb3d';
-    ctx.fillText('Nv. ' + pl.level, px, py + 26);
-
-    bar(ctx, px + 48, py + 17, 168, 11, pl.hp / pl.maxHp, '#ff5f6d');
-    ctx.font = F(700, 10);
-    ctx.fillStyle = 'rgba(255,255,255,.95)';
+    const px = 12 + sa.left, py = 12 + sa.top;
+    const size = 48;
+    portrait(ctx, pl, px, py, size);
+    // Nivel: círculo amarillo sobre la cabeza, como en la foto.
+    const lx = px + 5, ly = py + size - 3;
+    ctx.beginPath();
+    ctx.arc(lx, ly, 10, 0, 6.2832);
+    ctx.fillStyle = '#ffd23f';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#1a1404';
+    ctx.stroke();
+    ctx.font = F(800, 11);
     ctx.textAlign = 'center';
-    ctx.fillText(Math.ceil(pl.hp) + ' / ' + Math.round(pl.maxHp), px + 48 + 84, py + 26);
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#1a1404';
+    ctx.fillText(String(pl.level), lx, ly + 1);
+
+    const bx0 = px + size + 8;
+    const barW = Math.max(96, Math.min(188, w / 2 - bx0 - 36));
+    ctx.font = F(800, 15);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(0,0,0,.55)';
+    ctx.strokeText(pl.mon.name, bx0, py + 15);
+    ctx.fillStyle = '#f4f8ff';
+    ctx.fillText(pl.mon.name, bx0, py + 15);
+
+    const hpY = py + 20, hpH = 16;
+    const hpFrac = pl.maxHp > 0 ? pl.hp / pl.maxHp : 0;
+    segBar(ctx, bx0, hpY, barW, hpH, hpFrac, hpFrac < 0.28 ? '#ff5f6d' : '#3ddc6a');
+    ctx.font = F(800, 12);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(0,0,0,.65)';
+    const hpTxt = Math.ceil(pl.hp) + '/' + Math.round(pl.maxHp);
+    ctx.strokeText(hpTxt, bx0 + barW / 2, hpY + hpH / 2 + 1);
+    ctx.fillStyle = '#fff';
+    ctx.fillText(hpTxt, bx0 + barW / 2, hpY + hpH / 2 + 1);
+
+    const xpY = hpY + hpH + 4, xpH = 9;
+    segBar(ctx, bx0, xpY, barW, xpH, pl.xpNext > 0 ? pl.xp / pl.xpNext : 0, '#7ad7ff');
+    // Objetos de esta partida, bajo la experiencia. Se quedan todos y se apilan.
+    const held = [];
+    const stacks = pl.stacks || {};
+    for (const it of G.Items.LIST) {
+      const n = stacks[it.id] || 0;
+      if (n > 0) held.push([it, n]);
+    }
+    if (held.length) {
+      const icon = 22, igap = 3;
+      const per = Math.max(1, Math.floor((barW + igap) / (icon + igap)));
+      held.forEach(([it, n], i) => {
+        const ix = bx0 + (i % per) * (icon + igap);
+        const iy = xpY + xpH + 4 + Math.floor(i / per) * (icon + 2);
+        G.Icons.draw(ctx, it.id, ix, iy, icon);
+        if (n > 1) {
+          ctx.font = F(800, 10);
+          ctx.textAlign = 'right';
+          ctx.textBaseline = 'bottom';
+          ctx.lineWidth = 3;
+          ctx.strokeStyle = 'rgba(0,0,0,.75)';
+          ctx.strokeText(String(n), ix + icon + 1, iy + icon + 1);
+          ctx.fillStyle = '#ffd23f';
+          ctx.fillText(String(n), ix + icon + 1, iy + icon + 1);
+        }
+      });
+    }
+    ctx.textBaseline = 'alphabetic';
+    ctx.textAlign = 'left';
+    const row = py + size + 6;
 
     // buffs activos
     const COL = { atk: '#ff6b4d', patk: '#ff6b4d', satk: '#c47bff', spd: '#7fe0ff', def: '#b0b8c8', regen: '#5fe08a' };
     const LBL = { atk: 'ATK', patk: 'ATK', satk: 'AT.E', spd: 'VEL', def: 'DEF', regen: 'REG' };
     let bx = px;
     ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
     for (const k in pl.buffs) {
       const b = pl.buffs[k];
       if (b.n <= 0) continue;
       ctx.font = F(800, 9);
       const txt = LBL[k] + ' ×' + b.n;
       const tw = ctx.measureText(txt).width + 12;
-      roundRect(ctx, bx, py + 34, tw, 15, 7);
+      roundRect(ctx, bx, row, tw, 15, 7);
       ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fill();
       ctx.fillStyle = COL[k];
-      ctx.fillText(txt, bx + 6, py + 45);
+      ctx.fillText(txt, bx + 6, row + 11);
       bx += tw + 5;
     }
 
@@ -104,14 +340,15 @@ G.HUD = (() => {
     const boss = G.EnemyMgr.all().find(e => e.boss && !e.dead);
     if (boss) {
       const bw = Math.min(420, w - 80);
-      bar(ctx, (w - bw) / 2, 70, bw, 12, boss.hp / boss.maxHp, '#ffcb3d');
+      const by = Math.max(78, row + 8);
+      bar(ctx, (w - bw) / 2, by, bw, 12, boss.hp / boss.maxHp, '#ffcb3d');
       ctx.font = F(800, 10);
       ctx.fillStyle = '#20160a';
-      ctx.fillText(boss.name.toUpperCase(), w / 2, 80);
+      ctx.fillText(boss.name.toUpperCase(), w / 2, by + 10);
     }
     if (G.Castle.up) {
       const bw = Math.min(420, w - 80);
-      const y = boss ? 88 : 70;
+      const y = boss ? Math.max(96, row + 26) : Math.max(78, row + 8);
       bar(ctx, (w - bw) / 2, y, bw, 12, G.Castle.hp / G.Castle.maxHp, '#5fe08a');
       ctx.font = F(800, 10);
       ctx.fillStyle = '#06210f';
@@ -149,14 +386,14 @@ G.HUD = (() => {
       ctx.font = F(800, 9);
       ctx.textAlign = 'left';
       const tw = ctx.measureText(txt).width + 12;
-      roundRect(ctx, bx, py + 34, tw, 15, 7);
+      roundRect(ctx, bx, row, tw, 15, 7);
       ctx.fillStyle = 'rgba(0,0,0,.6)'; ctx.fill();
       ctx.fillStyle = pw.def.color;
-      ctx.fillText(txt, bx + 6, py + 45);
+      ctx.fillText(txt, bx + 6, row + 11);
       bx += tw + 5;
     }
 
-    if (G.Coop.active) drawCoop(ctx, w, h, pl, px, py + (bx > px ? 56 : 40));
+    if (G.Coop.active) drawCoop(ctx, w, h, pl, px, row + (bx > px ? 20 : 2));
 
     // Grieta: flecha grande que late en el borde si no se ve, y si se ve, una
     // flecha que bota encima; en la arena, cuenta atrás.
@@ -263,8 +500,8 @@ G.HUD = (() => {
     // (layout-ui.js); los ataques nuevos van saliendo hacia la derecha.
     const pb = touch && G.Touch.spot('bar');
     if (pb) {
-      const nAll = Math.max(n, pl.maxMoves), bw = S + 18 + nAll * S + (nAll - 1) * GAP;
-      sx = G.U.clamp(pb[0] * w - bw / 2, 6, Math.max(6, w - bw - 6)) + S + 18;
+      const nAll = Math.max(n, pl.maxMoves), bw = nAll * S + (nAll - 1) * GAP;
+      sx = G.U.clamp(pb[0] * w - bw / 2, 6, Math.max(6, w - bw - 6));
       sy = G.U.clamp(pb[1] * h - S / 2, 24, h - S - 6);
     }
     const BOND = '#ff8ad8';
@@ -274,11 +511,12 @@ G.HUD = (() => {
       const g = pl.slots[i] || [];
       const m = g[0];
       const fused = g.length > 1;
-      const on = i === pl.active;
+      const on = g.on !== false;
+      const focused = i === (pl.focus || 0);
       const x = sx + i * (S + GAP);
       const y = on ? sy - 6 : sy;
-      // Tocar (o hacer clic en) un icono activa ese movimiento.
-      if (m) G.Touch.addButton(x, y, S, S, () => { if (G.Game.state === 'playing' && pl.active !== i) { pl.setActive(i); G.Audio.sfx('click'); } }, GAP / 2 + 3);
+      // Un toque enciende o apaga. Al aprenderlo ya está encendido.
+      if (m) G.Touch.addButton(x, y, S, S, () => { if (G.Game.state === 'playing') pl.toggleSlot(i); }, GAP / 2 + 3);
       const col = m ? G.U.TYPE_COLOR[m.type] : '#4a5468';
 
       // fondo
@@ -331,12 +569,16 @@ G.HUD = (() => {
 
       // tecla
       ctx.font = F(800, 9);
-      ctx.fillStyle = fused ? BOND : on ? col : 'rgba(180,200,230,.6)';
+      ctx.fillStyle = fused ? BOND : on ? col : 'rgba(180,200,230,.45)';
       ctx.textAlign = 'left';
       ctx.fillText(String(i + 1), x + 3, y + 10);
+      if (!on) {
+        ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(x + 12, y + 12); ctx.lineTo(x + S - 12, y + S - 12); ctx.stroke();
+      }
 
-      // nombre encima del activo (con un vínculo: "Ascuas +2")
-      if (on) {
+      // nombre encima del resaltado (con un vínculo: "Ascuas +2")
+      if (focused) {
         ctx.font = F(700, 10);
         ctx.textAlign = 'center';
         ctx.fillStyle = fused ? BOND : col;
@@ -356,23 +598,10 @@ G.HUD = (() => {
       }
     }
 
-    // ---------- objeto equipado (a la izquierda de los movimientos) ----------
-    {
-      const ix = sx - S - 18, iy = sy;
-      roundRect(ctx, ix, iy, S, S, 12);
-      ctx.fillStyle = pl.item ? 'rgba(40,30,10,.9)' : 'rgba(10,16,28,.55)';
-      ctx.fill();
-      ctx.lineWidth = pl.item ? 2 : 1;
-      ctx.strokeStyle = pl.item ? '#ffd23f' : 'rgba(140,170,210,.18)';
-      ctx.stroke();
-      if (pl.item) {
-        G.Icons.draw(ctx, pl.item, ix + (S - 36) / 2, iy + (S - 36) / 2, 36);
-        ctx.font = F(700, 9);
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#ffd23f';
-        ctx.fillText(G.Items.BY[pl.item].name, ix + S / 2, iy - 6);
-      }
-    }
+    radar(ctx, w, h, pl);
+    pinArrow(ctx, w, h, pl);
+    if (G.UI.isOpen('scr-map')) paintMap(document.getElementById('map-radar'), pl);
+    dashButton(ctx, w, h, pl, touch);
 
     // ---------- botón de pausa (táctil) ----------
     if (touch) {
@@ -393,8 +622,8 @@ G.HUD = (() => {
       ctx.font = F(600, 10);
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(180,200,230,.55)';
-      ctx.fillText(touch ? 'Arrastra el dedo para moverte  ·  toca un ataque para cambiarlo'
-                         : 'WASD moverse  ·  1-4 / Q / E o clic en un ataque para cambiarlo  ·  Esc pausa', w / 2, h - 4);
+      ctx.fillText(touch ? '拖曳移動  ·  點招式開關  ·  右上角地圖  ·  右下角衝刺'
+                         : 'WASD move  ·  1-4 toggle moves  ·  M map  ·  Space dash  ·  Esc pause', w / 2, h - 4);
     }
 
     ctx.restore();

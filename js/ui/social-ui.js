@@ -263,8 +263,8 @@
         const key = (room.isHost ? 'h:' : 'g:') + picked;
         if (modeBox.dataset.key !== key) {
           modeBox.dataset.key = key;
-          modeBox.innerHTML = '<b>Modo</b><div class="chips"></div><p class="sub"></p>';
-          G.Modes.mount(modeBox.querySelector('.chips'), modeBox.querySelector('.sub'), {
+          modeBox.innerHTML = '<b>Modo</b><div class="chips"></div>';
+          G.Modes.mount(modeBox.querySelector('.chips'), null, {
             mode: picked,
             editable: room.isHost,
             onPick(id) {

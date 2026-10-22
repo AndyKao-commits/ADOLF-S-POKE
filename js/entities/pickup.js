@@ -21,8 +21,11 @@ G.Pickups = (() => {
     coin:  { color: '#ffd23f', glow: '#b8860b', r: 5.5 },
     ticket:   { color: '#ffd23f', glow: '#c08a10', r: 7 },
     ticket10: { color: '#c47bff', glow: '#8a3fd0', r: 8 },
-    item:     { color: '#ffd23f', glow: '#c08a10', r: 9 }       // value = id del objeto
+    item:     { color: '#ffd23f', glow: '#c08a10', r: 9 },      // value = id del objeto
+    ball:     { color: '#ff5f6d', glow: '#ffffff', r: 8 },      // value = nivel 1..3
+    egg:      { color: '#ffe08a', glow: '#f4f8ff', r: 7 }
   };
+  const WALK = { ball: 1, egg: 1 };
   /** Probabilidad de que un Pokémon normal suelte un ticket del gacha. */
   const BOSS_T10 = 1 / 3;               // ticket ×10 de un jefe normal
   const LEGEND_T10 = 1 / 2;             // ticket ×10 del legendario de la grieta
@@ -67,7 +70,7 @@ G.Pickups = (() => {
   }
 
   /** Imán: todo vuela hacia el jugador más cercano. */
-  function pullAll() { for (const o of list) o.pulled = true; }
+  function pullAll() { for (const o of list) if (!WALK[o.kind]) o.pulled = true; }
 
   /** @param plain  sólo la experiencia (los legendarios de la Sentencia de Arceus) */
   function dropXp(x, y, value, boss = false, legend = false, plain = false) {
@@ -87,6 +90,9 @@ G.Pickups = (() => {
     }
     push(orb(value >= 20 ? 'xpBig' : 'xp', x, y, value));
     if (Math.random() < TICKET_RATE) push(orb('ticket', x + G.U.rand(-6, 6), y, 1));
+    if (Math.random() < 0.08) push(orb('coin', x + G.U.rand(-8, 8), y, 2));
+    if (Math.random() < 0.07) push(orb('ball', x + G.U.rand(-10, 10), y, Math.random() < 0.82 ? 1 : 2));
+    if (Math.random() < 0.035) push(orb('egg', x + G.U.rand(-12, 12), y, 1));
 
     // Drops ocasionales.
     const r = Math.random();
@@ -130,7 +136,8 @@ G.Pickups = (() => {
       const dx = pl.x - p.x, dy = pl.y - p.y;
       const mag2 = pl.magnet * pl.magnet;
 
-      if (p.pulled || d2 < mag2) {
+      const walk = WALK[p.kind];
+      if (!walk && (p.pulled || d2 < mag2)) {
         p.pulled = true;
         const d = Math.sqrt(d2) || 1;
         const pull = 240 + 1400 / d;
@@ -144,11 +151,31 @@ G.Pickups = (() => {
       p.x += p.vx * dt;
       p.y += p.vy * dt;
 
-      if (d2 < 15 * 15) {
+      if (d2 < (walk ? 26 * 26 : 15 * 15)) {
         list.splice(i, 1);
         onCollect(p, pl);
       }
     }
+  }
+
+  function drawLoot(ctx, p, y) {
+    if (p.kind === 'egg') {
+      ctx.fillStyle = '#fff6d8';
+      ctx.beginPath(); ctx.ellipse(p.x, y, 7, 9, 0, 0, 6.2832); ctx.fill();
+      ctx.fillStyle = '#e7c56a';
+      ctx.fillRect(p.x - 2, y - 3, 4, 5);
+      return;
+    }
+    const top = p.value >= 3 ? '#222222' : p.value === 2 ? '#3a6fd8' : '#e23b3b';
+    ctx.fillStyle = top;
+    ctx.beginPath(); ctx.arc(p.x, y, 8, Math.PI, 0); ctx.fill();
+    ctx.fillStyle = '#f4f8ff';
+    ctx.beginPath(); ctx.arc(p.x, y, 8, 0, Math.PI); ctx.fill();
+    ctx.fillStyle = '#222';
+    ctx.fillRect(p.x - 8, y - 1, 16, 2);
+    ctx.beginPath(); ctx.arc(p.x, y, 3, 0, 6.2832); ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(p.x, y, 1.4, 0, 6.2832); ctx.fill();
   }
 
   function draw(ctx) {
@@ -190,6 +217,10 @@ G.Pickups = (() => {
           ctx.fillStyle = '#ffe14d';
           ctx.beginPath(); ctx.arc(p.x, y, 18, 0, 6.2832); ctx.fill();
           ctx.globalAlpha = 1;
+        }
+        if (p.kind === 'ball' || p.kind === 'egg') {
+          drawLoot(ctx, p, y);
+          continue;
         }
         G.Icons.draw(ctx, p.kind === 'item' ? p.value : ICON[p.kind], p.x - sz / 2, y - sz / 2 - 1, sz);
         continue;
