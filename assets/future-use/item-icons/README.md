@@ -13,75 +13,89 @@
 
 下表依使用者提供的三張遊戲截圖記錄，採用該遊戲畫面中的數值，不套用寶可夢本傳的能力設定。`manifest.json` 的 `effect_zh_TW` 與下表一一對應。僅做素材文件記錄，不修改執行中的道具效果。畫面未明示的疊加算法、對象及持續時間不另作推定。
 
-| 道具名稱 | 圖片 | 能力（依遊戲截圖） |
-|---|---|---|
-| Max Revive | `max-revive.png` | 以 60% HP 復活一次。每局一次。 |
-| Rare Candy | `rare-candy.png` | 立即升級 +2，傷害 +5%。 |
-| Master Ball | `master-ball.png` | 傷害 +25%，幸運 +10。 |
-| Reaper Cloth | `reaper-cloth.png` | 每擊敗 100 個敵人傷害 +1%，最多 +30%。 |
-| Comet Shard | `comet-shard.png` | 金幣 +40%，幸運 +30。 |
-| Moon Stone | `moon-stone.png` | 彈體 +2，範圍 +25%。 |
-| Max PP | `max-pp.png` | 彈射、環繞和連鎖招式彈體 +1。 |
-| Max Elixir | `max-elixir.png` | 攻擊速度 +20%。 |
-| Shiny Stone | `shiny-stone.png` | 傷害 +15%，範圍 +15%。 |
-| Dusk Stone | `dusk-stone.png` | 暴擊傷害 +40%，暴擊率 +8%。 |
-| Honey | `honey.png` | 精靈球提供 4 個道具而非 3 個。 |
-| Fire Stone | `fire-stone.png` | 灼傷敵人倒下時爆炸。 |
-| Ice Stone | `ice-stone.png` | 減速敵人倒下時爆炸。 |
-| Revive | `revive.png` | 以 35% HP 復活一次。每局一次。 |
-| Power Bracer | `power-bracer.png` | 傷害 +40%，移動速度 -15%。 |
-| Life Orb | `life-orb.png` | 傷害 +30%，最大 HP -10%。 |
-| Choice Band | `choice-band.png` | 傷害 +35%，攻擊速度 -8%。 |
-| Choice Scarf | `choice-scarf.png` | 移動速度 +20%，攻擊速度 +10%。 |
-| Expert Belt | `expert-belt.png` | 對弱於招式屬性的目標傷害 +30%。 |
-| Assault Vest | `assault-vest.png` | 護甲 +12，最大 HP +12%。 |
-| Exp. Share | `exp-share.png` | 經驗 +25%，拾取半徑 +20%。 |
-| Star Piece | `star-piece.png` | 幸運 +20。 |
-| Metronome | `metronome.png` | 每 10 秒不受傷，傷害 +4%，最多 +40%。 |
-| Focus Sash | `focus-sash.png` | 15% 機率以 1 HP 抵擋致命一擊，每 20 秒一次。 |
-| Lum Berry | `lum-berry.png` | 每 30 秒恢復 20% HP。 |
-| Eviolite | `eviolite.png` | 伙伴仍可進化時：護甲 +50%，最大 HP +25%。 |
-| Quick Claw | `quick-claw.png` | 攻擊速度 +10%。 |
-| Shell Bell | `shell-bell.png` | 恢復所造成傷害的 1%。 |
-| Leftovers | `leftovers.png` | 每秒恢復 +1.2 HP。 |
-| Rocky Helmet | `rocky-helmet.png` | 接觸你的敵人受到 25 傷害。 |
-| Amulet Coin | `amulet-coin.png` | 金幣 +25%。 |
-| Lucky Egg | `lucky-egg.png` | 經驗 +15%。 |
-| Muscle Band | `muscle-band.png` | 傷害 +15%。 |
-| Scope Lens | `scope-lens.png` | 暴擊傷害 +30%。 |
-| Light Clay | `light-clay.png` | 持續時間 +20%。 |
-| Sitrus Berry | `sitrus-berry.png` | HP 低於 30% 時恢復 35% HP，每 45 秒一次。 |
-| Smoke Ball | `smoke-ball.png` | 受擊時 25% 機率隱身 1.5 秒。 |
-| Flame Orb | `flame-orb.png` | 命中時 5% 機率灼傷。 |
-| Toxic Orb | `toxic-orb.png` | 命中時 5% 機率中毒。 |
-| Snowball | `snowball.png` | 命中時 6% 機率減速。 |
-| Big Root | `big-root.png` | 治療 +15%。 |
-| King's Rock | `king-s-rock.png` | 命中時 6% 機率暈眩 0.5 秒。 |
-| Protective Pads | `protective-pads.png` | 接觸敵人的傷害 -30%。 |
-| Sticky Barb | `sticky-barb.png` | 附近敵人每秒受到 15 傷害。 |
-| Silk Scarf | `silk-scarf.png` | 一般招式傷害 +30%，傷害 +3%。 |
-| Charcoal | `charcoal.png` | 火招式傷害 +30%，傷害 +3%。 |
-| Mystic Water | `mystic-water.png` | 水招式傷害 +30%，傷害 +3%。 |
-| Miracle Seed | `miracle-seed.png` | 草招式傷害 +30%，傷害 +3%。 |
-| Magnet | `magnet.png` | 電招式傷害 +30%，傷害 +3%。 |
-| Never-Melt Ice | `never-melt-ice.png` | 冰招式傷害 +30%，傷害 +3%。 |
-| Black Belt | `black-belt.png` | 格鬥招式傷害 +30%，傷害 +3%。 |
-| Poison Barb | `poison-barb.png` | 毒招式傷害 +30%，傷害 +3%。 |
-| Soft Sand | `soft-sand.png` | 地面招式傷害 +30%，傷害 +3%。 |
-| Sharp Beak | `sharp-beak.png` | 飛行招式傷害 +30%，傷害 +3%。 |
-| Twisted Spoon | `twisted-spoon.png` | 超能力招式傷害 +30%，傷害 +3%。 |
-| Silver Powder | `silver-powder.png` | 蟲招式傷害 +30%，傷害 +3%。 |
-| Hard Stone | `hard-stone.png` | 岩石招式傷害 +30%，傷害 +3%。 |
-| Spell Tag | `spell-tag.png` | 幽靈招式傷害 +30%，傷害 +3%。 |
-| Dragon Fang | `dragon-fang.png` | 龍招式傷害 +30%，傷害 +3%。 |
-| Black Glasses | `black-glasses.png` | 惡招式傷害 +30%，傷害 +3%。 |
-| Metal Coat | `metal-coat.png` | 鋼招式傷害 +30%，傷害 +3%。 |
-| Fairy Feather | `fairy-feather.png` | 妖精招式傷害 +30%，傷害 +3%。 |
-| Oran Berry | `oran-berry.png` | 最大 HP +15。 |
-| Quick Powder | `quick-powder.png` | 移動速度 +7%。 |
-| Bright Powder | `bright-powder.png` | 閃避 +4%。 |
-| Razor Claw | `razor-claw.png` | 暴擊率 +6%。 |
-| Wide Lens | `wide-lens.png` | 範圍 +10%。 |
-| Safety Goggles | `safety-goggles.png` | 護甲 +5。 |
-| Nugget | `nugget.png` | 金幣 +15%。 |
-| Big Nugget | `big-nugget.png` | 精靈球價格降低 8%，最多 40%。 |
+## 道具等級
+
+依參考截圖的名稱字色標記，五級名稱由本次使用者授權安排。這是素材／企劃的等級紀錄，不推定為原遊戲的內部 rarity ID。
+
+| 等級 | 字色 | 工程標記 | 排序 | 數量 |
+|---|---|---|---|---|
+| 神話 | 黃色 | `mythic` | 5 | 6 |
+| 傳說 | 紫色 | `legendary` | 4 | 9 |
+| 稀有 | 藍色 | `rare` | 3 | 11 |
+| 優良 | 綠色 | `uncommon` | 2 | 19 |
+| 一般 | 灰色 | `common` | 1 | 25 |
+
+`manifest.json` 每個道具的 `rarity`、`rarity_zh_TW`、`rarity_rank`、`name_color`、`name_color_zh_TW` 可用於對照。`name_color` 是顏色名稱，並非從截圖推定的精確色碼；實際 UI 色碼由工程主題決定。等級只用於文件標記，未調整掉落率、價格或能力。
+
+| 道具名稱 | 等級 | 字色 | 圖片 | 能力（依遊戲截圖） |
+|---|---|---|---|---|
+| Max Revive | 神話 | 黃色 | `max-revive.png` | 以 60% HP 復活一次。每局一次。 |
+| Rare Candy | 神話 | 黃色 | `rare-candy.png` | 立即升級 +2，傷害 +5%。 |
+| Master Ball | 神話 | 黃色 | `master-ball.png` | 傷害 +25%，幸運 +10。 |
+| Reaper Cloth | 神話 | 黃色 | `reaper-cloth.png` | 每擊敗 100 個敵人傷害 +1%，最多 +30%。 |
+| Comet Shard | 神話 | 黃色 | `comet-shard.png` | 金幣 +40%，幸運 +30。 |
+| Moon Stone | 神話 | 黃色 | `moon-stone.png` | 彈體 +2，範圍 +25%。 |
+| Max PP | 傳說 | 紫色 | `max-pp.png` | 彈射、環繞和連鎖招式彈體 +1。 |
+| Max Elixir | 傳說 | 紫色 | `max-elixir.png` | 攻擊速度 +20%。 |
+| Shiny Stone | 傳說 | 紫色 | `shiny-stone.png` | 傷害 +15%，範圍 +15%。 |
+| Dusk Stone | 傳說 | 紫色 | `dusk-stone.png` | 暴擊傷害 +40%，暴擊率 +8%。 |
+| Honey | 傳說 | 紫色 | `honey.png` | 精靈球提供 4 個道具而非 3 個。 |
+| Fire Stone | 傳說 | 紫色 | `fire-stone.png` | 灼傷敵人倒下時爆炸。 |
+| Ice Stone | 傳說 | 紫色 | `ice-stone.png` | 減速敵人倒下時爆炸。 |
+| Revive | 傳說 | 紫色 | `revive.png` | 以 35% HP 復活一次。每局一次。 |
+| Power Bracer | 傳說 | 紫色 | `power-bracer.png` | 傷害 +40%，移動速度 -15%。 |
+| Life Orb | 稀有 | 藍色 | `life-orb.png` | 傷害 +30%，最大 HP -10%。 |
+| Choice Band | 稀有 | 藍色 | `choice-band.png` | 傷害 +35%，攻擊速度 -8%。 |
+| Choice Scarf | 稀有 | 藍色 | `choice-scarf.png` | 移動速度 +20%，攻擊速度 +10%。 |
+| Expert Belt | 稀有 | 藍色 | `expert-belt.png` | 對弱於招式屬性的目標傷害 +30%。 |
+| Assault Vest | 稀有 | 藍色 | `assault-vest.png` | 護甲 +12，最大 HP +12%。 |
+| Exp. Share | 稀有 | 藍色 | `exp-share.png` | 經驗 +25%，拾取半徑 +20%。 |
+| Star Piece | 稀有 | 藍色 | `star-piece.png` | 幸運 +20。 |
+| Metronome | 稀有 | 藍色 | `metronome.png` | 每 10 秒不受傷，傷害 +4%，最多 +40%。 |
+| Focus Sash | 稀有 | 藍色 | `focus-sash.png` | 15% 機率以 1 HP 抵擋致命一擊，每 20 秒一次。 |
+| Lum Berry | 稀有 | 藍色 | `lum-berry.png` | 每 30 秒恢復 20% HP。 |
+| Eviolite | 稀有 | 藍色 | `eviolite.png` | 伙伴仍可進化時：護甲 +50%，最大 HP +25%。 |
+| Quick Claw | 優良 | 綠色 | `quick-claw.png` | 攻擊速度 +10%。 |
+| Shell Bell | 優良 | 綠色 | `shell-bell.png` | 恢復所造成傷害的 1%。 |
+| Leftovers | 優良 | 綠色 | `leftovers.png` | 每秒恢復 +1.2 HP。 |
+| Rocky Helmet | 優良 | 綠色 | `rocky-helmet.png` | 接觸你的敵人受到 25 傷害。 |
+| Amulet Coin | 優良 | 綠色 | `amulet-coin.png` | 金幣 +25%。 |
+| Lucky Egg | 優良 | 綠色 | `lucky-egg.png` | 經驗 +15%。 |
+| Muscle Band | 優良 | 綠色 | `muscle-band.png` | 傷害 +15%。 |
+| Scope Lens | 優良 | 綠色 | `scope-lens.png` | 暴擊傷害 +30%。 |
+| Light Clay | 優良 | 綠色 | `light-clay.png` | 持續時間 +20%。 |
+| Sitrus Berry | 優良 | 綠色 | `sitrus-berry.png` | HP 低於 30% 時恢復 35% HP，每 45 秒一次。 |
+| Smoke Ball | 優良 | 綠色 | `smoke-ball.png` | 受擊時 25% 機率隱身 1.5 秒。 |
+| Flame Orb | 優良 | 綠色 | `flame-orb.png` | 命中時 5% 機率灼傷。 |
+| Toxic Orb | 優良 | 綠色 | `toxic-orb.png` | 命中時 5% 機率中毒。 |
+| Snowball | 優良 | 綠色 | `snowball.png` | 命中時 6% 機率減速。 |
+| Big Root | 優良 | 綠色 | `big-root.png` | 治療 +15%。 |
+| King's Rock | 優良 | 綠色 | `king-s-rock.png` | 命中時 6% 機率暈眩 0.5 秒。 |
+| Protective Pads | 優良 | 綠色 | `protective-pads.png` | 接觸敵人的傷害 -30%。 |
+| Sticky Barb | 優良 | 綠色 | `sticky-barb.png` | 附近敵人每秒受到 15 傷害。 |
+| Silk Scarf | 優良 | 綠色 | `silk-scarf.png` | 一般招式傷害 +30%，傷害 +3%。 |
+| Charcoal | 一般 | 灰色 | `charcoal.png` | 火招式傷害 +30%，傷害 +3%。 |
+| Mystic Water | 一般 | 灰色 | `mystic-water.png` | 水招式傷害 +30%，傷害 +3%。 |
+| Miracle Seed | 一般 | 灰色 | `miracle-seed.png` | 草招式傷害 +30%，傷害 +3%。 |
+| Magnet | 一般 | 灰色 | `magnet.png` | 電招式傷害 +30%，傷害 +3%。 |
+| Never-Melt Ice | 一般 | 灰色 | `never-melt-ice.png` | 冰招式傷害 +30%，傷害 +3%。 |
+| Black Belt | 一般 | 灰色 | `black-belt.png` | 格鬥招式傷害 +30%，傷害 +3%。 |
+| Poison Barb | 一般 | 灰色 | `poison-barb.png` | 毒招式傷害 +30%，傷害 +3%。 |
+| Soft Sand | 一般 | 灰色 | `soft-sand.png` | 地面招式傷害 +30%，傷害 +3%。 |
+| Sharp Beak | 一般 | 灰色 | `sharp-beak.png` | 飛行招式傷害 +30%，傷害 +3%。 |
+| Twisted Spoon | 一般 | 灰色 | `twisted-spoon.png` | 超能力招式傷害 +30%，傷害 +3%。 |
+| Silver Powder | 一般 | 灰色 | `silver-powder.png` | 蟲招式傷害 +30%，傷害 +3%。 |
+| Hard Stone | 一般 | 灰色 | `hard-stone.png` | 岩石招式傷害 +30%，傷害 +3%。 |
+| Spell Tag | 一般 | 灰色 | `spell-tag.png` | 幽靈招式傷害 +30%，傷害 +3%。 |
+| Dragon Fang | 一般 | 灰色 | `dragon-fang.png` | 龍招式傷害 +30%，傷害 +3%。 |
+| Black Glasses | 一般 | 灰色 | `black-glasses.png` | 惡招式傷害 +30%，傷害 +3%。 |
+| Metal Coat | 一般 | 灰色 | `metal-coat.png` | 鋼招式傷害 +30%，傷害 +3%。 |
+| Fairy Feather | 一般 | 灰色 | `fairy-feather.png` | 妖精招式傷害 +30%，傷害 +3%。 |
+| Oran Berry | 一般 | 灰色 | `oran-berry.png` | 最大 HP +15。 |
+| Quick Powder | 一般 | 灰色 | `quick-powder.png` | 移動速度 +7%。 |
+| Bright Powder | 一般 | 灰色 | `bright-powder.png` | 閃避 +4%。 |
+| Razor Claw | 一般 | 灰色 | `razor-claw.png` | 暴擊率 +6%。 |
+| Wide Lens | 一般 | 灰色 | `wide-lens.png` | 範圍 +10%。 |
+| Safety Goggles | 一般 | 灰色 | `safety-goggles.png` | 護甲 +5。 |
+| Nugget | 一般 | 灰色 | `nugget.png` | 金幣 +15%。 |
+| Big Nugget | 一般 | 灰色 | `big-nugget.png` | 精靈球價格降低 8%，最多 40%。 |
