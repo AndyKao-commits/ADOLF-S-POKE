@@ -91,8 +91,10 @@ G.Pickups = (() => {
     push(orb(value >= 20 ? 'xpBig' : 'xp', x, y, value));
     if (Math.random() < TICKET_RATE) push(orb('ticket', x + G.U.rand(-6, 6), y, 1));
     if (Math.random() < 0.08) push(orb('coin', x + G.U.rand(-8, 8), y, 2));
-    if (Math.random() < 0.07) push(orb('ball', x + G.U.rand(-10, 10), y, Math.random() < 0.82 ? 1 : 2));
-    if (Math.random() < 0.035) push(orb('egg', x + G.U.rand(-12, 12), y, 1));
+    const lk = G.Items && G.Items.luckMul ? G.Items.luckMul(G.Game && G.Game.player) : 1;
+    // Un tercio de antes (7 %): el nivel 1 y el 2 siguen en la misma proporción.
+    if (Math.random() < (0.07 / 3) * lk) push(orb('ball', x + G.U.rand(-10, 10), y, Math.random() < 0.82 ? 1 : 2));
+    if (Math.random() < 0.035 * lk) push(orb('egg', x + G.U.rand(-12, 12), y, 1));
 
     // Drops ocasionales.
     const r = Math.random();
@@ -158,6 +160,18 @@ G.Pickups = (() => {
     }
   }
 
+  const ballPic = [null, 'poke-ball', 'great-ball', 'ultra-ball', 'master-ball'].map(name => {
+    if (!name) return null;
+    const img = new Image();
+    img.src = 'assets/future-use/balls/' + name + '.png';
+    return img;
+  });
+  function ballImg(tier) {
+    const i = tier >= 4 ? 4 : tier >= 3 ? 3 : tier === 2 ? 2 : 1;
+    const img = ballPic[i];
+    return img && img.complete && img.naturalWidth ? img : null;
+  }
+
   function drawLoot(ctx, p, y) {
     if (p.kind === 'egg') {
       ctx.fillStyle = '#fff6d8';
@@ -166,16 +180,13 @@ G.Pickups = (() => {
       ctx.fillRect(p.x - 2, y - 3, 4, 5);
       return;
     }
-    const top = p.value >= 3 ? '#222222' : p.value === 2 ? '#3a6fd8' : '#e23b3b';
-    ctx.fillStyle = top;
-    ctx.beginPath(); ctx.arc(p.x, y, 8, Math.PI, 0); ctx.fill();
-    ctx.fillStyle = '#f4f8ff';
-    ctx.beginPath(); ctx.arc(p.x, y, 8, 0, Math.PI); ctx.fill();
-    ctx.fillStyle = '#222';
-    ctx.fillRect(p.x - 8, y - 1, 16, 2);
-    ctx.beginPath(); ctx.arc(p.x, y, 3, 0, 6.2832); ctx.fill();
-    ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.arc(p.x, y, 1.4, 0, 6.2832); ctx.fill();
+    const img = ballImg(p.value);
+    if (!img) return;
+    const sz = 40;
+    const smooth = ctx.imageSmoothingEnabled;
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, p.x - sz / 2, y - sz / 2, sz, sz);
+    ctx.imageSmoothingEnabled = smooth;
   }
 
   function draw(ctx) {
@@ -231,5 +242,5 @@ G.Pickups = (() => {
     ctx.globalAlpha = 1;
   }
 
-  return { clear, all, dropXp, drop, update, draw, addRemote, removeId, pullAll, KIND, get count() { return list.length; } };
+  return { clear, all, dropXp, drop, update, draw, addRemote, removeId, pullAll, KIND, ballImg, get count() { return list.length; } };
 })();

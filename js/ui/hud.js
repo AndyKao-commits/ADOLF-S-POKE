@@ -14,6 +14,68 @@ G.HUD = (() => {
     ctx.closePath();
   }
 
+  /**
+   * Vida (verde) y experiencia (azul) del diseño. El PNG trae el relleno a
+   * medias, así que se separan el marco y un tramo de rayas y el relleno
+   * se recorta según la vida o la experiencia de esta partida.
+   */
+  const barImg = new Image();
+  let barParts = null;
+  barImg.onload = () => { barParts = makeBars(barImg); };
+  barImg.src = 'assets/future-use/status-bars/hp-and-blue-bar-design.png';
+
+  function sliceBar(img, s) {
+    const frame = document.createElement('canvas');
+    frame.width = s.w; frame.height = s.h;
+    const g = frame.getContext('2d');
+    const sliceX = s.x + s.w - s.cap - 16;
+    g.drawImage(img, sliceX, s.y, 8, s.h, s.cap, 0, s.w - s.cap * 2, s.h);
+    g.drawImage(img, s.x + s.w - s.cap, s.y, s.cap, s.h, s.w - s.cap, 0, s.cap, s.h);
+    g.save();
+    g.translate(s.cap, 0);
+    g.scale(-1, 1);
+    g.drawImage(img, s.x + s.w - s.cap, s.y, s.cap, s.h, 0, 0, s.cap, s.h);
+    g.restore();
+
+    const fill = document.createElement('canvas');
+    fill.width = s.w; fill.height = s.h;
+    const fg = fill.getContext('2d');
+    const innerR = s.w - s.cap;
+    for (let dx = s.cap; dx < innerR; dx += s.tileW) {
+      const dw = Math.min(s.tileW, innerR - dx);
+      fg.drawImage(img, s.tileX, s.y + s.top, dw, s.fh, dx, s.top, dw, s.fh);
+    }
+    return { frame, fill, cap: s.cap, top: s.top, fh: s.fh, w: s.w, h: s.h };
+  }
+
+  function makeBars(img) {
+    return {
+      hp: sliceBar(img, { x: 79, y: 303, w: 2022, h: 122, cap: 50, top: 29, fh: 71, tileX: 288, tileW: 141 }),
+      xp: sliceBar(img, { x: 80, y: 437, w: 2020, h: 72, cap: 36, top: 29, fh: 28, tileX: 213, tileW: 137 })
+    };
+  }
+
+  /** @returns {boolean} false si el diseño todavía no ha cargado. */
+  function artBar(ctx, x, y, w, h, frac, key) {
+    const b = barParts && barParts[key];
+    if (!b) return false;
+    const f = G.U.clamp(frac, 0, 1);
+    ctx.drawImage(b.frame, x, y, w, h);
+    if (f > 0) {
+      const cap = b.cap / b.w * w;
+      const top = b.top / b.h * h;
+      const fh = b.fh / b.h * h;
+      const inner = Math.max(0, w - cap * 2);
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x + cap, y + top, Math.max(1, inner * f), fh);
+      ctx.clip();
+      ctx.drawImage(b.fill, x, y, w, h);
+      ctx.restore();
+    }
+    return true;
+  }
+
   /** Barra con cortes, como la de vida de la foto: el relleno y unas rayas encima. */
   function segBar(ctx, x, y, w, h, frac, col) {
     const r = Math.min(6, h / 2);
@@ -78,6 +140,56 @@ G.HUD = (() => {
     }
   }
 
+  /** Color used when a map pin points at this kind of mark. */
+  const MARK_COL = {
+    enemy: '#ff4d5a', boss: '#e1061c', egg: '#fff1c2',
+    ball1: '#e23d3d', ball2: '#3a7ee0', ball3: '#f0d24a', ball4: '#7b4ec8',
+    shop: '#ffd23f', mate: '#5fd4ff'
+  };
+
+  /** One shape per thing. s = 1 on the corner radar, larger on the pause map. */
+  function drawMark(ctx, x, y, kind, s) {
+    ctx.save();
+    if (kind === 'enemy') {
+      ctx.fillStyle = MARK_COL.enemy;
+      ctx.beginPath(); ctx.arc(x, y, 2.2 * s, 0, 6.2832); ctx.fill();
+    } else if (kind === 'boss') {
+      ctx.fillStyle = MARK_COL.boss;
+      ctx.beginPath(); ctx.arc(x, y, 4.4 * s, 0, 6.2832); ctx.fill();
+      ctx.lineWidth = Math.max(1, s * 0.7);
+      ctx.strokeStyle = '#6e0010';
+      ctx.stroke();
+    } else if (kind === 'egg') {
+      ctx.fillStyle = MARK_COL.egg;
+      ctx.beginPath(); ctx.ellipse(x, y, 2.3 * s, 3.5 * s, 0, 0, 6.2832); ctx.fill();
+      ctx.lineWidth = Math.max(1, s * 0.55);
+      ctx.strokeStyle = '#c9a24a';
+      ctx.stroke();
+    } else if (kind === 'ball1' || kind === 'ball2' || kind === 'ball3' || kind === 'ball4') {
+      const tier = kind === 'ball4' ? 4 : kind === 'ball3' ? 3 : kind === 'ball2' ? 2 : 1;
+      const img = G.Pickups.ballImg && G.Pickups.ballImg(tier);
+      const sz = 5.4 * s;
+      if (img) {
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, x - sz, y - sz, sz * 2, sz * 2);
+      }
+    } else if (kind === 'shop') {
+      const img = G.World.shopImg && G.World.shopImg();
+      const wdt = 8 * s, hgt = wdt * 112 / 128;
+      if (img) {
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, x - wdt / 2, y - hgt * 0.72, wdt, hgt);
+      }
+    } else if (kind === 'mate') {
+      const r = 3.2 * s;
+      ctx.fillStyle = MARK_COL.mate;
+      ctx.beginPath();
+      ctx.moveTo(x, y - r); ctx.lineTo(x + r * 0.8, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r * 0.8, y);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+  }
+
   function radar(ctx, w, h, pl) {
     const R = 52, cx = w - R - 14, cy = G.Touch.active ? 118 : 72;
     ctx.save();
@@ -87,23 +199,22 @@ G.HUD = (() => {
     ctx.strokeStyle = 'rgba(244,248,255,.18)';
     ctx.beginPath(); ctx.arc(cx, cy, R * 0.55, 0, 6.2832); ctx.stroke();
     const REACH = 820;
-    const dot = (x, y, col, rad) => {
-      const dx = (x - pl.x) / REACH * (R - 4), dy = (y - pl.y) / REACH * (R - 4);
-      if (dx * dx + dy * dy > (R - 4) * (R - 4)) return;
-      ctx.fillStyle = col;
-      ctx.beginPath(); ctx.arc(cx + dx, cy + dy, rad, 0, 6.2832); ctx.fill();
+    const blot = (x, y, kind) => {
+      const dx = (x - pl.x) / REACH * (R - 6), dy = (y - pl.y) / REACH * (R - 6);
+      if (dx * dx + dy * dy > (R - 6) * (R - 6)) return;
+      drawMark(ctx, cx + dx, cy + dy, kind, 1);
     };
-    if (G.World.shops) for (const s of G.World.shops) dot(s.x, s.y, '#ffd23f', 3.5);
+    if (G.World.shops) for (const s of G.World.shops) blot(s.x, s.y, 'shop');
     for (const p of G.Pickups.all()) {
-      if (p.kind === 'egg') dot(p.x, p.y, '#ffe08a', 3);
-      else if (p.kind === 'ball') dot(p.x, p.y, p.value >= 3 ? '#d7c6ff' : p.value === 2 ? '#7eb6ff' : '#ff6b6b', 3);
+      if (p.kind === 'egg') blot(p.x, p.y, 'egg');
+      else if (p.kind === 'ball') blot(p.x, p.y, p.value >= 4 ? 'ball4' : p.value >= 3 ? 'ball3' : p.value === 2 ? 'ball2' : 'ball1');
     }
-    for (const e of G.EnemyMgr.all()) if (!e.dead) dot(e.x, e.y, e.boss ? '#ff3b4e' : '#ff8a96', e.boss ? 3.2 : 2.2);
+    for (const e of G.EnemyMgr.all()) if (!e.dead) blot(e.x, e.y, e.boss ? 'boss' : 'enemy');
     if (G.Coop && G.Coop.active && G.Coop.puppets) {
-      for (const m of G.Coop.puppets()) if (!m.dead) dot(m.x, m.y, '#5fd4ff', 3);
+      for (const m of G.Coop.puppets()) if (!m.dead) blot(m.x, m.y, 'mate');
     }
-    ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.arc(cx, cy, 2.4, 0, 6.2832); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(cx, cy, 3.2, 0, 6.2832); ctx.stroke();
     ctx.restore();
     ctx.beginPath(); ctx.arc(cx, cy, R, 0, 6.2832);
     ctx.strokeStyle = 'rgba(244,248,255,.85)'; ctx.lineWidth = 2; ctx.stroke();
@@ -134,21 +245,19 @@ G.HUD = (() => {
       if (d > R - 8) { const k = (R - 8) / (d || 1); dx *= k; dy *= k; }
       return [cx + dx, cy + dy];
     };
-    const dot = (wx, wy, col, rad, sq) => {
+    const mark = (wx, wy, kind) => {
       const [sx, sy] = at(wx, wy);
-      ctx.fillStyle = col;
-      if (sq) ctx.fillRect(sx - rad, sy - rad, rad * 2, rad * 2);
-      else { ctx.beginPath(); ctx.arc(sx, sy, rad, 0, 6.2832); ctx.fill(); }
-      hits.push({ sx, sy, x: wx, y: wy, col });
+      drawMark(ctx, sx, sy, kind, 3);
+      hits.push({ sx, sy, x: wx, y: wy, col: MARK_COL[kind] });
     };
-    if (G.World.shops) for (const s of G.World.shops) dot(s.x, s.y, '#ffd23f', 6, true);
+    if (G.World.shops) for (const s of G.World.shops) mark(s.x, s.y, 'shop');
     for (const p of G.Pickups.all()) {
-      if (p.kind === 'egg') dot(p.x, p.y, '#ffe08a', 5, false);
-      else if (p.kind === 'ball') dot(p.x, p.y, p.value >= 3 ? '#d7c6ff' : p.value === 2 ? '#7eb6ff' : '#ff6b6b', 5, false);
+      if (p.kind === 'egg') mark(p.x, p.y, 'egg');
+      else if (p.kind === 'ball') mark(p.x, p.y, p.value >= 4 ? 'ball4' : p.value >= 3 ? 'ball3' : p.value === 2 ? 'ball2' : 'ball1');
     }
-    for (const e of G.EnemyMgr.all()) if (!e.dead) dot(e.x, e.y, e.boss ? '#ff3b4e' : '#ff8a96', e.boss ? 6 : 4, false);
+    for (const e of G.EnemyMgr.all()) if (!e.dead) mark(e.x, e.y, e.boss ? 'boss' : 'enemy');
     if (G.Coop && G.Coop.active && G.Coop.puppets) {
-      for (const m of G.Coop.puppets()) if (!m.dead) dot(m.x, m.y, '#5fd4ff', 5, false);
+      for (const m of G.Coop.puppets()) if (!m.dead) mark(m.x, m.y, 'mate');
     }
     if (pl.mark) {
       const [sx, sy] = at(pl.mark.x, pl.mark.y);
@@ -185,6 +294,22 @@ G.HUD = (() => {
       ctx.fill();
     }
     ctx.restore();
+  }
+
+  function interactButton(ctx, w, h, touch) {
+    if (!G.Game.nearestShop || !G.Game.nearestShop()) return;
+    const dash = 54, bs = 46, gap = 14;
+    const dashX = w - dash - 18;
+    const dashY = h - dash - (touch ? 28 : 18);
+    const bx = dashX - gap - bs;
+    const by = dashY + (dash - bs) / 2;
+    const cx = bx + bs / 2, cy = by + bs / 2;
+    ctx.beginPath(); ctx.arc(cx, cy, bs / 2, 0, 6.2832);
+    ctx.fillStyle = 'rgba(10,16,28,.82)'; ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = '#ffd23f'; ctx.stroke();
+    ctx.fillStyle = '#ffd23f'; ctx.font = F(800, 18); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('E', cx, cy + 1);
+    G.Touch.addButton(bx, by, bs, bs, () => { if (G.Game.openStall) G.Game.openStall(); }, 8);
   }
 
   function dashButton(ctx, w, h, pl, touch) {
@@ -250,7 +375,8 @@ G.HUD = (() => {
 
     const hpY = py + 20, hpH = 16;
     const hpFrac = pl.maxHp > 0 ? pl.hp / pl.maxHp : 0;
-    segBar(ctx, bx0, hpY, barW, hpH, hpFrac, hpFrac < 0.28 ? '#ff5f6d' : '#3ddc6a');
+    if (!artBar(ctx, bx0, hpY, barW, hpH, hpFrac, 'hp'))
+      segBar(ctx, bx0, hpY, barW, hpH, hpFrac, hpFrac < 0.28 ? '#ff5f6d' : '#3ddc6a');
     ctx.font = F(800, 12);
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -262,7 +388,8 @@ G.HUD = (() => {
     ctx.fillText(hpTxt, bx0 + barW / 2, hpY + hpH / 2 + 1);
 
     const xpY = hpY + hpH + 4, xpH = 9;
-    segBar(ctx, bx0, xpY, barW, xpH, pl.xpNext > 0 ? pl.xp / pl.xpNext : 0, '#7ad7ff');
+    if (!artBar(ctx, bx0, xpY, barW, xpH, pl.xpNext > 0 ? pl.xp / pl.xpNext : 0, 'xp'))
+      segBar(ctx, bx0, xpY, barW, xpH, pl.xpNext > 0 ? pl.xp / pl.xpNext : 0, '#7ad7ff');
     // Objetos de esta partida, bajo la experiencia. Se quedan todos y se apilan.
     const held = [];
     const stacks = pl.stacks || {};
@@ -601,6 +728,7 @@ G.HUD = (() => {
     radar(ctx, w, h, pl);
     pinArrow(ctx, w, h, pl);
     if (G.UI.isOpen('scr-map')) paintMap(document.getElementById('map-radar'), pl);
+    interactButton(ctx, w, h, touch);
     dashButton(ctx, w, h, pl, touch);
 
     // ---------- botón de pausa (táctil) ----------

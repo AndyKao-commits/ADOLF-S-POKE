@@ -27,6 +27,12 @@ G.Player = class Player {
     this.magnet = 78 * (perks.magnetMul || 1);
     this.xpMul = perks.xpMul || 1;
     this.coinMul = perks.coinMul || 1;
+    this.armor = 0;
+    this.armorMul = 1;
+    this.luck = 0;
+    this.evade = 0;
+    this.healMul = 1;
+    this.ballCut = 0;
 
     this.maxHp = mon.hp + (perks.hp || 0);
     this.hp = this.maxHp;
@@ -129,8 +135,12 @@ G.Player = class Player {
     const slow = this.inLiquid && !ab.steady ? G.World.liquidEffect(this.mon.types).slow || 1 : 1;
     return G.Judgment && G.Judgment.active ? G.Judgment.capSpd(s * slow * w) : s * slow * w;
   }
-  get reduction() { return Math.min(0.8, this.dmgReduce + this.buffs.def.n * this.buffs.def.amount); }
-  get regen() { return this.regenFlat + this.buffs.regen.n * this.buffs.regen.amount; }
+  get reduction() {
+    const arm = (this.armor || 0) * (this.armorMul || 1);
+    const fromArm = arm > 0 ? arm / (arm + 100) : 0;
+    return Math.min(0.8, this.dmgReduce + fromArm + this.buffs.def.n * this.buffs.def.amount);
+  }
+  get regen() { return (this.regenFlat + this.buffs.regen.n * this.buffs.regen.amount) * (this.healMul || 1); }
 
   // ---------------- movimientos ----------------
   addMove(id) {
@@ -189,10 +199,6 @@ G.Player = class Player {
   toggleSlot(i) {
     const g = this.slots[i];
     if (!g || !g.length) return false;
-    if (this.hasItem('choiceband')) {
-      G.FX.dmgText(this.x, this.y - this.bodyH - 8, 'Cinta Elección', '#ff8ad8');
-      return false;
-    }
     const next = g.on === false;
     g.on = next;
     this.focus = i;
@@ -262,10 +268,6 @@ G.Player = class Player {
    * acelera si la recarga es más corta que la animación, para que encadene.
    */
   cast(m) {
-    // Vidasfera: cada ataque cuesta un poco de vida (nunca te deja KO).
-    if (this.hasItem('lifeorb') && m.kind !== 'orbit' && m.kind !== 'trail' && !this.remote) {
-      this.hp = Math.max(1, this.hp - Math.max(1, this.maxHp * 0.01));
-    }
     const anim = { melee: 'Attack', beam: 'Shoot', projectile: 'Shoot', nova: 'Attack',
                    aura: 'Charge', buff: 'Charge', orbit: 'Charge', boomerang: 'Shoot', chain: 'Shoot',
                    mine: 'Charge', meteor: 'Charge', turret: 'Charge', dash: 'Attack', trail: 'Walk', cone: 'Shoot' }[m.kind] || 'Attack';
@@ -304,6 +306,11 @@ G.Player = class Player {
         G.FX.dmgText(this.x, this.y - this.bodyH - 4, '¡Esquiva!', '#bfe8ff');
         return;
       }
+      if (this.evade > 0 && Math.random() < this.evade) {
+        this.invuln = 0.3;
+        G.FX.dmgText(this.x, this.y - this.bodyH - 4, '¡Esquiva!', '#bfe8ff');
+        return;
+      }
       if (ab.inMul) amount *= ab.inMul(this, type, cls);
     }
     if (!pure) amount *= G.Stats.taken(this.mon, cat);
@@ -326,13 +333,7 @@ G.Player = class Player {
     if (!this.remote) G.Pad.rumble(0.25 + Math.min(0.75, d / this.maxHp * 3), 140);
     G.FX.dmgText(this.x, this.y - this.bodyH - 4, '-' + Math.round(d), eff === 'super' ? '#ff3048' : eff === 'weak' ? '#c9a0a8' : '#ff6b7a', eff === 'super');
     G.FX.burst(this.x, this.y - this.bodyH * 0.5, '#ff5f6d', 6, 90);
-    // Banda Focus: aguanta el golpe con 1 de vida (una vez cada 60 s).
-    if (this.hp <= 0 && this.hasItem('focussash') && performance.now() - this.sashT > 60000) {
-      this.sashT = performance.now();
-      this.hp = 1; this.invuln = 1.2;
-      G.FX.dmgText(this.x, this.y - this.bodyH - 16, '¡Banda Focus!', '#ff9a3d', true);
-      G.FX.ring(this.x, this.y, 6, 70, '#ff9a3d', 0.5, 4);
-    }
+    if (this.hp <= 0) G.Items.sash(this);
     // Robustez (habilidad): lo mismo, una vez cada 90 s.
     if (this.hp <= 0 && ab && ab.sturdy && performance.now() - this.sturdyAt > 90000) {
       this.sturdyAt = performance.now();
@@ -340,7 +341,9 @@ G.Player = class Player {
       G.FX.dmgText(this.x, this.y - this.bodyH - 16, '¡Robustez!', '#c9b48a', true);
       G.FX.ring(this.x, this.y, 6, 70, '#c9b48a', 0.5, 4);
     }
+    if (this.hp <= 0) G.Items.revive(this);
     if (ab && ab.hurt && this.hp > 0) ab.hurt(this, type, cls);
+    G.Items.onDamaged(this);
     if (this.hp <= 0) {
       this.hp = 0; this.dead = true;
       this.anim.play('Faint', { hold: true });
@@ -350,6 +353,7 @@ G.Player = class Player {
   }
 
   heal(amount) {
+    if (this.healMul) amount *= this.healMul;
     if (this.abil && this.abil.healMul) amount *= this.abil.healMul;     // Gula, Recogida
     const before = this.hp;
     this.hp = Math.min(this.maxHp, this.hp + amount);
@@ -395,7 +399,7 @@ G.Player = class Player {
 
   /** Cascabel Concha: un poco de vida por el daño que haces (tope 4/s). */
   onDealt(dmg) {
-    if (this.hasItem('shellbell')) this.bellHeal = Math.min(4, this.bellHeal + dmg * 0.04 * (this.stacks.shellbell || 1));
+    if (this.hasItem('shellbell')) this.bellHeal += dmg * 0.01 * (this.healMul || 1);
   }
 
   /** Poder de un altar (ver systems/interact.js): se aplica y se quita solo. */
@@ -426,9 +430,10 @@ G.Player = class Player {
       if (b.n > 0) { b.t -= dt; if (b.t <= 0) b.n = 0; }
     }
     if (this.slowT > 0) this.slowT -= dt;
-    if (this.bellHeal > 0) { const h = Math.min(this.bellHeal, 4 * dt); this.hp = Math.min(this.maxHp, this.hp + h); this.bellHeal -= h; }
+    if (this.bellHeal > 0) { const h = this.bellHeal * Math.min(1, dt * 4); this.hp = Math.min(this.maxHp, this.hp + h); this.bellHeal -= h; }
     if (this.power && (this.power.t -= dt) <= 0) { this.power.def.off(this); this.power = null; }
     if (this.regen > 0) this.hp = Math.min(this.maxHp, this.hp + this.regen * dt);
+    if (G.Items && G.Items.tick) G.Items.tick(this, dt);
     if (this.abil && this.abil.tick) this.abil.tick(this, dt);
     // Sequía, Llovizna...: su clima al empezar y cada 3 min, si no hay otro (en
     // grupo lo pone el anfitrión, que es quien manda el clima a todos).

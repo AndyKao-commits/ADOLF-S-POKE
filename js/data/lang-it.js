@@ -578,7 +578,7 @@ G.I18n.add({
   'Ahora mismo no se pueden crear cuentas nuevas. Si ya tienes cuenta, entra normal; si no, puedes jugar como invitado.': 'Al momento non è possibile creare nuovi account. Se possiedi già un account, accedi normalmente; altrimenti, puoi giocare come ospite.',
   'Atajos de movimientos': 'Scorciatoie mosse',
   'Elige qué movimiento va siempre en cada hueco (teclas 1-4 o los iconos de abajo), para la memoria muscular. Si aún no tienes tantos movimientos, va al hueco más cercano.': 'Scegli quale mossa assegnare a ciascuno slot (tasti 1-4 o icone in basso), per la memoria muscolare. Se non hai ancora abbastanza mosse, andrà allo slot più vicino.',
-  'Golpe Crítico': 'Brutto Colpo', '+3% de críticos (x1,5 de daño)': '+3% di probabilità di brutto colpo (x1,5 di danno)',
+  'Golpe Crítico': 'Brutto Colpo', '+3% de críticos (x1,75 de daño)': '+3% di probabilità di brutto colpo (x1,75 di danno)',
   'Cambio de cartas': 'Ritiro carte',
   '+1 cambio de cartas de nivel por run': '+1 cambio carte a ogni passaggio di livello per run', 'Veto': 'Veto',
   'Bloquea 1 movimiento: no te sale en las cartas': 'Blocca 1 mossa: non apparirà mai tra le carte', 'Elegir ({x})': 'Scegli ({x})',

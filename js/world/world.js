@@ -397,7 +397,7 @@ G.World = (() => {
       for (let i = 0; i < n; i++) G.Pickups.drop('coin', p.x + G.U.rand(-14, 14), p.y + G.U.rand(-10, 10), 3);
       G.Pickups.drop(Math.random() < 0.5 ? 'heal' : 'magnet', p.x, p.y);
       G.Pickups.dropXp(p.x, p.y, 20);
-      if (Math.random() < 0.08) G.Pickups.drop('ball', p.x, p.y - 12, 2);
+      if (Math.random() < 0.08 / 3) G.Pickups.drop('ball', p.x, p.y - 12, 2);
       return;
     }
     if (p.type === 'bigchest') {
@@ -409,7 +409,7 @@ G.World = (() => {
       const tk = G.U.randInt(1, 3);
       for (let i = 0; i < tk; i++) G.Pickups.drop('ticket', p.x + G.U.rand(-16, 16), p.y + G.U.rand(-10, 10), 1);
       if (Math.random() < 0.15) G.Pickups.drop('ticket10', p.x, p.y - 10, 1);
-      if (Math.random() < 0.5) G.Pickups.drop('ball', p.x + 14, p.y - 14, 3);
+      if (Math.random() < 0.5 / 3) G.Pickups.drop('ball', p.x + 14, p.y - 14, 3);
       G.Pickups.dropXp(p.x, p.y, G.Game.levelXp());
       G.Progress.event('chest');
       return;
@@ -581,22 +581,22 @@ G.World = (() => {
       }
     }
   }
+  const shopPic = new Image();
+  shopPic.src = 'assets/future-use/shop/shop-only.png';
+  function shopImg() { return shopPic.complete && shopPic.naturalWidth ? shopPic : null; }
+
   function drawShops(ctx) {
+    const dw = 128, dh = 112;
     for (const s of shops) {
-      if (!G.Camera.sees(s.x, s.y, 40)) continue;
+      if (!G.Camera.sees(s.x, s.y, 90)) continue;
       ctx.fillStyle = 'rgba(0,0,0,.28)';
-      ctx.beginPath(); ctx.ellipse(s.x, s.y, 16, 6, 0, 0, 6.2832); ctx.fill();
-      ctx.fillStyle = '#8a5a32';
-      ctx.fillRect(s.x - 14, s.y - 20, 28, 14);
-      ctx.fillStyle = '#c9844a';
-      ctx.fillRect(s.x - 16, s.y - 24, 32, 5);
-      ctx.fillStyle = '#ffd23f';
-      ctx.fillRect(s.x - 8, s.y - 36, 16, 12);
-      ctx.fillStyle = '#3a2414';
-      ctx.font = '700 9px Pixelify, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText('店', s.x, s.y - 30);
+      ctx.beginPath(); ctx.ellipse(s.x, s.y, 40, 12, 0, 0, 6.2832); ctx.fill();
+      const img = shopImg();
+      if (!img) continue;
+      const smooth = ctx.imageSmoothingEnabled;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, s.x - dw / 2, s.y - dh, dw, dh);
+      ctx.imageSmoothingEnabled = smooth;
     }
   }
 
@@ -648,7 +648,7 @@ G.World = (() => {
       }
     },
     get arena() { return arena; }, drawGround, drawLiquid, visibleProps, drawProp, drawShops, drawVignette,
-    get shops() { return shops; },
+    get shops() { return shops; }, shopImg,
     get biome() { return biome; }
   };
 })();

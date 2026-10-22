@@ -30,7 +30,11 @@ G.MenuUI = (() => {
       b.onclick = () => {
         if (sheet) sheet.classList.add('hidden');
         const go = b.dataset.go;
-        if (go === 'play') { if (G.Social.room) G.LobbyUI.open(); else G.RegionUI.open(); }
+        if (go === 'play') {
+          if (G.Social.room) G.LobbyUI.open();
+          else if ((G.Settings.get('runMode') || 'normal') === 'normal') G.RegionUI.open();
+          else G.Flow.play();
+        }
         else if (go === 'dex') openDex();
         else if (go === 'upgrades') openUpgrades();
         else if (go === 'shop') G.ShopUI.open();
@@ -154,6 +158,7 @@ G.MenuUI = (() => {
     socialLine();
     const modeChips = $('mode-chips');
     if (modeChips) G.Modes.mount(modeChips, null, {
+      mode: G.Settings.get('runMode') || 'normal',
       editable: true,
       icons: true,
       onPick(id) {
@@ -574,7 +579,8 @@ G.MenuUI = (() => {
     for (const u of G.Upgrades.LIST) {
       const lvl = levels[u.id] || 0;
       const maxed = lvl >= u.max;
-      const cost = maxed ? 0 : G.Upgrades.cost(u.id, lvl);
+      const unpriced = u.priced === false;
+      const cost = maxed || unpriced ? null : G.Upgrades.cost(u.id, lvl);
       // Mejoras que necesitan otra (Segundo movimiento inicial → Repertorio).
       const locked = !maxed && u.needs && !levels[u.needs];
       const pick2 = u.id === 'start2' && lvl > 0 ? G.startMove2Of(upgDex) : null;
@@ -590,9 +596,9 @@ G.MenuUI = (() => {
           ${u.id === 'ban' && lvl > 0 ? `<button class="btn small" data-ban>Elegir (${banList().length}/${lvl})</button>` : ''}
           ${u.id === 'start' && lvl > 0 ? `<button class="btn small" data-start>Elegir: ${G.Moves.BY_ID[G.startMoveOf(upgDex)].name}</button>` : ''}
           ${u.id === 'start2' && lvl > 0 ? `<button class="btn small" data-start2>Elegir: ${pick2 ? G.Moves.BY_ID[pick2].name : G.T('Al azar')}</button>` : ''}
-          <button class="btn small ${maxed ? '' : 'gold'}" data-buy data-sfx="none" ${maxed || locked || s.coins < cost ? 'disabled' : ''}
+          <button class="btn small ${maxed || unpriced ? '' : 'gold'}" data-buy data-sfx="none" ${maxed || locked || unpriced || cost == null || s.coins < cost ? 'disabled' : ''}
             ${locked ? `title="${G.T('Primero compra Repertorio')}"` : ''}>
-          ${maxed ? 'Máx.' : locked ? G.T('Necesita Repertorio') : `<span class="coin"></span> ${cost}`}</button></div>`;
+          ${maxed ? 'Máx.' : unpriced ? G.T('Sin precio') : locked ? G.T('Necesita Repertorio') : `<span class="coin"></span> ${cost}`}</button></div>`;
       if (u.id === 'ban' && lvl > 0) el.querySelector('[data-ban]').onclick = () => { banOpen = !banOpen; renderUpgrades(); };
       if (u.id === 'start' && lvl > 0) el.querySelector('[data-start]').onclick = () => { startOpen = !startOpen; renderUpgrades(); };
       if (u.id === 'start2' && lvl > 0) el.querySelector('[data-start2]').onclick = () => { start2Open = !start2Open; renderUpgrades(); };
@@ -601,7 +607,7 @@ G.MenuUI = (() => {
         const sv = G.DB.save, lv = G.DB.upgradesOf(upgDex), now = lv[u.id] || 0;
         if (now >= u.max || (u.needs && !lv[u.needs])) { renderUpgrades(); return; }
         const price = G.Upgrades.cost(u.id, now);
-        if (sv.coins < price) { renderUpgrades(); return; }
+        if (price == null || sv.coins < price) { renderUpgrades(); return; }
         sv.coins -= price;
         lv[u.id] = now + 1;
         G.DB.commit(true);

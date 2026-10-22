@@ -358,12 +358,12 @@ G.RunUI = (() => {
         : t('M 或 Esc 關閉。這一局先暫停。', 'M or Esc closes it. This run is paused.', 'M o Esc para cerrar. La partida está en pausa.'),
       hint: t('點一個標記可以記方向，再點一次取消。', 'Click a marker to remember the way. Click it again to clear it.', 'Pulsa una marca para recordar el camino. Otra vez para quitarla.'),
       rows: [
-        ['#ff8a96', false, t('敵人。', 'Enemies.', 'Enemigos.')],
-        ['#ff3b4e', false, t('Boss，比較大的紅點。', 'Bosses, the bigger red dot.', 'Jefes, el punto rojo más grande.')],
-        ['#ffe08a', false, t('精靈蛋。走過去就撿起來。', 'Eggs. Walk over them.', 'Huevos. Se cogen al pasar por encima.')],
-        ['#ff6b6b', false, t('精靈球。走過去後三選一。紅是一般、藍是超級、紫是高級。', 'Poké Balls. Walk over one and choose 1 of 3. Red is normal, blue is super, purple is ultra.', 'Poké Balls. Al pasar eliges 1 de 3. Roja normal, azul super, morada ultra.')],
-        ['#ffd23f', true, t('商店。地圖上的攤位。', 'Shops. The stalls on the map.', 'Tiendas. Los puestos del mapa.')],
-        ['#5fd4ff', false, t('隊友。聯機時用另一種顏色。', 'Teammates, in another color.', 'Compañeros, de otro color.')]
+        { shapes: [['mk-enemy', '#ff4d5a']], text: t('敵人。紅點。', 'Enemies. A red dot.', 'Enemigos. Un punto rojo.') },
+        { shapes: [['mk-boss', '#e1061c']], text: t('Boss。比較大的紅點。', 'Bosses. The bigger red dot.', 'Jefes. El punto rojo más grande.') },
+        { shapes: [['mk-egg', '#fff1c2']], text: t('精靈蛋。米色橢圓。走過去就撿起來。', 'Eggs. A cream oval. Walk over them.', 'Huevos. Un óvalo crema. Se cogen al pasar.') },
+        { shapes: [['img', 'assets/future-use/balls/poke-ball.png'], ['img', 'assets/future-use/balls/great-ball.png'], ['img', 'assets/future-use/balls/ultra-ball.png']], text: t('精靈球。走過去後三選一。紅是一般、藍是超級、黃是高級。', 'Poké Balls. Walk over one and choose 1 of 3. Red is normal, blue is super, yellow is ultra.', 'Poké Balls. Al pasar eliges 1 de 3. Roja normal, azul super, amarilla ultra.') },
+        { shapes: [['img', 'assets/future-use/shop/shop-only.png']], text: t('商店。紅白條紋的攤位。', 'Shops. The red and white stall.', 'Tiendas. El puesto de rayas rojas y blancas.') },
+        { shapes: [['mk-mate', '#5fd4ff']], text: t('隊友。青色菱形。聯機時才會出現。', 'Teammates. A cyan diamond, only in co-op.', 'Compañeros. Un rombo cian, sólo en cooperativo.') }
       ]
     };
   }
@@ -375,8 +375,10 @@ G.RunUI = (() => {
     box.querySelector('#map-close').textContent = copy.close;
     box.querySelector('.map-foot').textContent = copy.foot;
     box.querySelector('.map-hint').textContent = copy.hint;
-    box.querySelector('#map-legend').innerHTML = copy.rows.map(([col, sq, text]) =>
-      `<li><i class="map-swatch${sq ? ' sq' : ''}" style="background:${col}"></i><span>${text}</span></li>`).join('');
+    box.querySelector('#map-legend').innerHTML = copy.rows.map(row =>
+      `<li><span class="map-icons">${row.shapes.map(([k, col]) => k === 'img'
+        ? `<img class="map-swatch mk-img" src="${col}" alt="">`
+        : `<i class="map-swatch ${k}" style="--c:${col}"></i>`).join('')}</span><span>${row.text}</span></li>`).join('');
     const cv = $('map-radar');
     if (cv && !cv._wired) {
       cv._wired = true;
@@ -406,5 +408,45 @@ G.RunUI = (() => {
     $('btn-quit').onclick = onQuit;
   }
 
-  return { showLevelUp, reroll, showItemChoice, showBallChoice, showBond, pickBond, bondBack, pick, setWaiting, closeLevelUp, showOver, wirePause, showPause, showMap };
+  function showStall(shop, api) {
+    const lang = (G.I18n && G.I18n.lang) || '';
+    const zh = String(lang).startsWith('zh');
+    const en = lang === 'en';
+    $('stall-title').textContent = zh ? '喵喵的商店' : en ? "Meowth's shop" : 'Tienda de Meowth';
+    $('stall-sub').textContent = zh ? '每次購買後價格上漲 3 金幣' : en ? 'Each purchase raises prices by 3 coins' : 'Cada compra sube los precios 3 monedas';
+    const pl = G.Game.player;
+    $('stall-coins').textContent = zh ? '你有 ' + pl.coins + ' 金幣' : en ? 'You have ' + pl.coins + ' coins' : 'Tienes ' + pl.coins + ' monedas';
+    const box = $('stall-cards');
+    box.innerHTML = '';
+    const have = id => (pl.stacks && pl.stacks[id]) || 0;
+    (shop.stock || []).forEach(id => {
+      const it = G.Items.BY[id];
+      if (!it) return;
+      const n = have(id);
+      const price = G.Game.stallPrice(it, shop);
+      const full = n >= it.max;
+      const rare = G.Items.RARITY[it.rarity] || G.Items.RARITY.common;
+      const label = zh ? rare.zh : en ? rare.en : rare.es;
+      const el = document.createElement('div');
+      el.className = 'card stall-card' + (full ? ' off' : '');
+      el.innerHTML = `<div class="ico">${G.Icons.html(it.id, 40)}</div>
+        <div class="txt" style="flex:1">
+          <div class="nm"><b>${G.Items.text(it, 'name')}</b> <span class="stall-rarity" style="background:${rare.color}">${label}</span><span class="stall-count">${n}/${it.max}</span></div>
+          <div class="ds">${G.Items.text(it, 'desc')}</div>
+          <div class="stall-price">${price} ${zh ? '金幣' : en ? 'coins' : 'monedas'}</div>
+        </div>`;
+      el.onclick = () => { if (!full) api.buy(id); };
+      box.appendChild(el);
+    });
+    const refresh = $('stall-refresh');
+    const cost = 15;
+    refresh.textContent = (zh ? '刷新貨物：' : en ? 'Refresh: ' : 'Cambiar: ') + cost + (zh ? ' 金幣' : en ? ' coins' : ' monedas');
+    refresh.disabled = pl.coins < cost;
+    refresh.onclick = () => api.refresh();
+    $('stall-leave').textContent = zh ? '離開' : en ? 'Leave' : 'Salir';
+    $('stall-leave').onclick = () => api.leave();
+    G.UI.show('scr-stall');
+  }
+
+  return { showLevelUp, reroll, showItemChoice, showBallChoice, showBond, pickBond, bondBack, pick, setWaiting, closeLevelUp, showOver, wirePause, showPause, showMap, showStall };
 })();

@@ -357,7 +357,7 @@ G.I18n.add({
   "Cada Pokémon tiene sus propias mejoras: sólo cuentan cuando juegas con él.": "Chaque Pokémon a ses propres améliorations\u00a0: elles ne comptent que quand tu joues avec lui.",
   "(compañero)": "(partenaire)",
   "Golpe Crítico": "Coup critique",
-  "+3% de críticos (x1,5 de daño)": "+3\u00a0% de coups critiques (dégâts x1,5)",
+  "+3% de críticos (x1,75 de daño)": "+3\u00a0% de coups critiques (dégâts x1,75)",
   "Cambio de cartas": "Changement de cartes",
   "+1 cambio de cartas de nivel por run": "+1 changement de cartes de niveau par run",
   "Bloquea 1 movimiento: no te sale en las cartas": "Bloque 1 capacité\u00a0: elle n'apparaît plus dans tes cartes",

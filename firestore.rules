@@ -242,12 +242,14 @@ service cloud.firestore {
       allow create, update: if signedIn() && validTop(board);
     }
 
-    // Presencia aproximada: "en línea" si at es de hace menos de unos minutos.
+    // Presencia aproximada: "en línea" si on es cierto y at es reciente.
     match /pres/{uid} {
       allow read: if signedIn();
-      // Quitado el 20-10-2026 (era 1/4 de las escrituras): nadie puede escribirlo,
-      // así tampoco gastan las versiones viejas del juego. Sólo se puede borrar.
-      allow create, update: if false;
+      allow create, update: if signedIn() && me() == uid
+        && request.resource.data.keys().hasOnly(['at', 'room', 'play', 'on'])
+        && request.resource.data.at == request.time
+        && request.resource.data.room is string && request.resource.data.room.size() <= 40
+        && request.resource.data.play is bool && request.resource.data.on is bool;
       allow delete: if signedIn() && me() == uid;
     }
 

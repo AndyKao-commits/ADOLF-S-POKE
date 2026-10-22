@@ -16,7 +16,7 @@
  * Por qué así: el plan gratuito de Firebase sólo admite 100 conexiones a la
  * vez a la Realtime Database. Si todo el mundo estuviera conectado para el
  * "en línea", ése sería el máximo de jugadores. Ahora sólo cuentan los que
- * están en una sala; el "en línea" va por Firestore con un latido cada 10 min
+ * están en una sala; el "en línea" va por Firestore con un latido cada 2 min
  * y se lee sólo al abrir Amigos o la sala (lo leído vale 1 min).
  *
  * El resto del juego escucha los cambios con G.Social.on(fn).
@@ -45,10 +45,10 @@ G.Social = (() => {
       if (skew) console.warn('[Social] el reloj de este aparato va desfasado', Math.round(skew / 60000), 'min: se corrige');
     }).catch(() => {});
   }
-  // Latido de presencia: cada 30 min (era 15; antes 10). 57.000 jugadores con
-  // amigos lo escribían 4 veces por hora (13-10-2026, menos gasto de Firestore).
-  const BEAT = 30 * 60 * 1000;
-  const ONLINE = 40 * 60 * 1000;        // "en línea" si el último latido es más reciente
+  // Este grupo es pequeño. Un latido cada 2 min; "en línea" si el último
+  // es de hace menos de 5 min. Al cerrar la pestaña se marca desconectado.
+  const BEAT = 2 * 60 * 1000;
+  const ONLINE = 5 * 60 * 1000;
   const PRES_TTL = 60 * 1000;           // lo leído de los amigos vale 1 min
 
   let fb = null, uid = null;
@@ -139,8 +139,11 @@ G.Social = (() => {
   const hasFrKey = () => 'ps.hasfr.' + uid;
   function online() {
     if (beatT) return;                        // ya estaba en marcha
-    beatT = 1;
     if (fb.rtdb) fb.rtdb.goOffline();         // se conecta sólo al entrar en una sala
+    writeStatus();
+    beatT = setInterval(() => { if (document.visibilityState === 'visible') writeStatus(); }, BEAT);
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('pagehide', onHide);
     let known = false;
     try { known = localStorage.getItem(hasFrKey()) === '1'; } catch (e) { /* nada */ }
     if (known) listenInvites();
@@ -169,13 +172,21 @@ G.Social = (() => {
   let playing = false, lastBeat = 0;
   /** ¿Hay alguien que pueda leer tu "en línea"? (sólo los amigos confirmados) */
   const hasFriends = () => [...friends.values()].some(f => f.status === 'ok');
-  // El "en línea" de los amigos se quitó el 20-10-2026: era 1/4 de todas las
-  // escrituras de Firestore (unas 2 millones al día). Ya no se escribe ni se lee
-  // pres/{uid}; se puede invitar a cualquier amigo (la invitación caduca sola).
-  // writeStatus y refreshPresence se quedan vacías para no tocar a quien las llama.
+  const mayPublish = () => {
+    if (hasFriends()) return true;
+    try { return localStorage.getItem(hasFrKey()) === '1'; } catch (e) { return false; }
+  };
   const presKey = () => 'ps.pres.' + uid;
-  function writeStatus() {}
-  function setPlaying(p) { playing = !!p; }
+  function writeStatus(on = true) {
+    if (!fb || !me || !mayPublish()) return;
+    if (on) lastBeat = Date.now();
+    fb.fs.collection('pres').doc(uid).set({
+      on: !!on, at: fts(), room: room ? room.id : '', play: playing
+    }).catch(() => {});
+  }
+  function setPlaying(p) { if (playing !== !!p) { playing = !!p; writeStatus(); } }
+  function onVisible() { if (document.visibilityState === 'visible') writeStatus(true); }
+  function onHide() { writeStatus(false); }
 
   async function stop(why) {
     if (!started) return;
@@ -183,6 +194,9 @@ G.Social = (() => {
     if (unFriends) { unFriends(); unFriends = null; }
     if (unInv) { unInv(); unInv = null; }
     clearInterval(beatT); beatT = 0; friendsReady = null;
+    document.removeEventListener('visibilitychange', onVisible);
+    window.removeEventListener('pagehide', onHide);
+    if (me && fb) await fb.fs.collection('pres').doc(uid).delete().catch(() => {});
     try { localStorage.removeItem(presKey()); } catch (e) { /* nada */ }
     if (why === 'delete') {
       try { localStorage.removeItem('ps.nick.' + uid); } catch (e) { /* nada */ }
@@ -230,13 +244,29 @@ G.Social = (() => {
       emit('friends');
       // Con amigos ya te pueden invitar (y este navegador lo recuerda para la próxima vez).
       try { if (hasFriends()) localStorage.setItem(hasFrKey(), '1'); else localStorage.removeItem(hasFrKey()); } catch (e) { /* nada */ }
+      if (hasFriends() && Date.now() - lastBeat > BEAT) writeStatus();
       if (hasFriends()) listenInvites();
       if (ready) { ready(); ready = null; }
     }, e => { console.warn('[Social] amigos:', e.code || e.message); if (ready) { ready(); ready = null; } });
   }
 
-  /** (Quitado el 20-10-2026 con el "en línea": ya no lee nada.) */
-  async function refreshPresence() {}
+  /** Lee el "en línea" de tus amigos (1 lectura por amigo). Lo leído vale 1 min. */
+  async function refreshPresence(force = false) {
+    if (!fb || (!force && Date.now() - presAt < PRES_TTL)) return;
+    presAt = Date.now();
+    const ok = [...friends.values()].filter(f => f.status === 'ok');
+    const docs = await Promise.all(ok.map(f => fb.fs.collection('pres').doc(f.uid).get().catch(() => null)));
+    const t = now();
+    ok.forEach((f, i) => {
+      const v = docs[i] && docs[i].exists ? docs[i].data() : null;
+      const on = !!(v && v.on && t - msOf(v.at) < ONLINE);
+      const p = { online: on, play: !!(on && v.play), room: on ? (v.room || '') : '', seen: v ? msOf(v.at) : 0 };
+      pres.set(f.uid, p);
+      const cur = friends.get(f.uid);
+      if (cur) Object.assign(cur, p);
+    });
+    emit('presence');
+  }
 
   /** Envía una solicitud de amistad (o acepta la que ya te había mandado). */
   async function request(name) {

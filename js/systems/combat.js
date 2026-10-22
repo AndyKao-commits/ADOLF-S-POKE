@@ -46,6 +46,7 @@ G.Combat = (() => {
   }
 
   function run(pl, m) {
+    m = G.Items.shaped(pl, m);
     switch (m.kind) {
       case 'projectile': fireProjectiles(pl, m); break;
       case 'melee':      melee(pl, m); break;
@@ -763,8 +764,8 @@ G.Combat = (() => {
     else if (G.Projectiles.all().some(p => p.orb && p.owner === pl)) G.Projectiles.clearOrbs(pl);
   }
 
-  // Golpe crítico (Mejoras → Golpe Crítico): x1,5 de daño, número naranja y grande.
-  const CRIT_MUL = 1.5;
+  // Golpe crítico (Mejoras → Golpe Crítico): x1,75 de daño, número naranja y grande.
+  const CRIT_MUL = 1.75;
   const isCrit = pl => !ghost && pl.critChance > 0 && Math.random() < pl.critChance;
 
   /** En asedio, los monstruos de este jugador no reciben su ataque (ni lo paran). */
@@ -793,9 +794,9 @@ G.Combat = (() => {
 
   function hit(pl, e, dmg, col, dx, dy, knock, m) {
     if (isAlly(e, pl)) return;
-    const k = typeK(m.type, e) * G.Stats.taken(e.mon, m.cat) * abilOut(pl, m, e);
+    const k = typeK(m.type, e) * G.Stats.taken(e.mon, m.cat) * abilOut(pl, m, e) * G.Items.outMul(pl, m.type, e);
     const crit = isCrit(pl), sk = statusK(pl);
-    dmg *= k * (crit ? critMul(pl) : 1);
+    dmg *= k * (crit ? critMul(pl) * G.Items.critMul(pl) : 1);
     e.hurt(dmg, col, dx, dy, sk ? knock : 0, crit ? 'crit' : G.Types.label(G.Types.mult(m.type, e.types)));
     if (!ghost) pl.onDealt(dmg);
     pl.dmgDealt += dmg;
@@ -804,6 +805,7 @@ G.Combat = (() => {
     if (m.poison && sk) e.applyPoison(m.poison * sk);
     if (m.slow && sk) e.applySlow(Math.min(0.8, m.slow * sk));
     afterHit(pl, e, m);
+    if (!ghost) G.Items.onHit(pl, e);
   }
 
   // ---------------- colisiones ----------------
@@ -908,7 +910,7 @@ G.Combat = (() => {
         }
 
         const crit = isCrit(pl), sk = statusK(pl);
-        const k = (p.mtype ? typeK(p.mtype, e) : 1) * G.Stats.taken(e.mon, p.mcat) * (crit ? critMul(pl) : 1) * abilOut(pl, p.src, e);
+        const k = (p.mtype ? typeK(p.mtype, e) : 1) * G.Stats.taken(e.mon, p.mcat) * (crit ? critMul(pl) * G.Items.critMul(pl) : 1) * abilOut(pl, p.src, e) * G.Items.outMul(pl, p.mtype, e);
         e.hurt(p.dmg * k, p.color, p.vx || (e.x - pl.x), p.vy || (e.y - pl.y), sk ? p.knock : 0,
                crit ? 'crit' : p.mtype ? G.Types.label(G.Types.mult(p.mtype, e.types)) : null);
         if (Math.random() < 0.5) G.FX.sp('impact', p.vis ? p.vis.pal : 'normal', e.x, e.y - e.bodyH * 0.5, { life: 0.12, scale: 1 });
@@ -920,6 +922,7 @@ G.Combat = (() => {
         if (p.slow && sk) e.applySlow(Math.min(0.8, p.slow * sk));
         if (p.drain) pl.heal(p.drain);                    // Beso Drenaje
         afterHit(pl, e, p.src);
+        if (!p.ghost) G.Items.onHit(pl, e);
 
         if (!p.orb && rebound(p, e)) break;
         if (!p.orb) {
@@ -941,8 +944,8 @@ G.Combat = (() => {
       if (e.touchCd > 0 || e.behavior === 'thief' || e.stunT > 0) continue;
       e.touchCd = 0.55;
       e.strike(pl);
-      pl.hurt(e.dmg, e.atkType, false, e.cat);
-      if (pl.hasItem('rockyhelmet')) e.hurt(15 + pl.level * 4, '#9aa6b5', e.x - pl.x, e.y - pl.y, 80);
+      pl.hurt(e.dmg * (pl.hasItem('protectivepads') ? 0.7 : 1), e.atkType, false, e.cat);
+      if (pl.hasItem('rockyhelmet')) e.hurt(25, '#9aa6b5', e.x - pl.x, e.y - pl.y, 80);
       if (pl.abil && pl.abil.contact && !pl.dead && !e.dead) pl.abil.contact(pl, e);     // Elec. Estática, Cuerpo Llama...
       const [nx, ny] = G.U.norm(e.x - pl.x, e.y - pl.y);
       e.kx += nx * 150; e.ky += ny * 150;

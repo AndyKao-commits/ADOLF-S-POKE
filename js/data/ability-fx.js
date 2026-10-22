@@ -82,7 +82,7 @@ G.AbilityFX = (() => {
     'solar-power': { d: '+40 % de daño especial con sol, pero el sol le quita algo de vida.',
       out: (pl, m) => (wx() === 'sun' && cls(m) === 's' ? 1.4 : 1),
       tick: (pl, dt) => { if (wx() === 'sun' && pl.hp > pl.maxHp * 0.1) pl.hp -= pl.maxHp * 0.004 * dt; } },
-    'sniper': { d: 'Sus golpes críticos hacen ×2 de daño (en vez de ×1,5).', critMul: 2 },
+    'sniper': { d: 'Sus golpes críticos hacen ×2 de daño (en vez de ×1,75).', critMul: 2 },
     'super-luck': { d: '+10 % de probabilidad de golpe crítico.', start: pl => { pl.critChance += 0.1; } },
     'compound-eyes': { d: '+6 % de probabilidad de golpe crítico.', start: pl => { pl.critChance += 0.06; } },
     'moxie': moxie, 'chilling-neigh': moxie, 'grim-neigh': moxie, 'beast-boost': moxie,

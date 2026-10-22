@@ -401,12 +401,42 @@ G.Icons = (() => {
   }
 
   /** <img> pixelado para el DOM. */
+  function itemFile(name) {
+    const it = G.Items && G.Items.BY && G.Items.BY[name];
+    return it && it.file;
+  }
+  const pics = new Map();
+  function itemPic(name) {
+    const file = itemFile(name);
+    if (!file) return null;
+    let rec = pics.get(file);
+    if (!rec) {
+      const img = new Image();
+      rec = { img, ok: false };
+      img.onload = () => { rec.ok = true; };
+      img.src = file;
+      pics.set(file, rec);
+    }
+    return rec;
+  }
+
   function html(name, size = 20, cls = '') {
+    const file = itemFile(name);
+    if (file) return `<img class="pix ${cls}" src="${file}" width="${size}" height="${size}" alt="" draggable="false">`;
     const cv = canvas(name), w = snap(name, size), h = w * cv.height / cv.width;
     return `<img class="pix ${cls}" src="${url(name)}" width="${w}" height="${h}" alt="" draggable="false">`;
   }
 
   function draw(ctx, name, x, y, size) {
+    const pic = itemPic(name);
+    if (pic) {
+      if (!pic.ok) return;
+      const prev = ctx.imageSmoothingEnabled;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(pic.img, Math.round(x), Math.round(y), size, size);
+      ctx.imageSmoothingEnabled = prev;
+      return;
+    }
     const cv = canvas(name);
     const s2 = snap(name, size);
     x += (size - s2) / 2; y += (size - s2) / 2; size = s2;

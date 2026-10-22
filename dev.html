@@ -83,7 +83,7 @@
 }
 </script>
 <!-- seo:end -->
-<link rel="stylesheet" href="css/style.css?v=map22">
+<link rel="stylesheet" href="css/style.css?v=map26">
 <script src="js/core/locales.js"></script>
 </head>
 <body>
@@ -596,6 +596,19 @@
   </div>
 </section>
 
+<section id="scr-stall" class="scr dim hidden" translate="no">
+  <div class="box center stall-box">
+    <h2 id="stall-title">喵喵的商店</h2>
+    <p id="stall-sub" class="sub">每次購買後價格上漲 3 金幣</p>
+    <p id="stall-coins" class="sub"></p>
+    <div id="stall-cards" class="cards"></div>
+    <div class="row stall-actions">
+      <button id="stall-refresh" class="btn" type="button"></button>
+      <button id="stall-leave" class="btn gold" type="button">離開</button>
+    </div>
+  </div>
+</section>
+
 <section id="scr-item" class="scr dim hidden">
   <div class="box center">
     <h2>¡Un objeto!</h2>
@@ -612,7 +625,7 @@
     </div>
     <div class="map-body">
       <canvas id="map-radar" width="480" height="480"></canvas>
-      <ul id="map-legend" style="list-style:none"></ul>
+      <ul id="map-legend" class="map-legend" style="list-style:none"></ul>
     </div>
     <p class="map-foot">M 或 Esc 關閉。這一局先暫停。</p>
     <p class="map-hint">點一個標記可以記方向，再點一次取消。</p>

@@ -3,6 +3,21 @@
   const $ = G.UI.$;
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+  function ago(t) {
+    const m = Math.max(1, Math.round((G.Social.now() - t) / 60000));
+    if (m < 60) return 'hace ' + m + ' min';
+    const h = Math.round(m / 60);
+    if (h < 48) return 'hace ' + h + ' h';
+    return 'hace ' + Math.round(h / 24) + ' días';
+  }
+
+  function stateText(f) {
+    if (f.status === 'in') return 'Quiere ser tu amigo';
+    if (f.status === 'out') return 'Solicitud enviada';
+    if (!f.online) return f.seen ? 'Visto ' + ago(f.seen) : 'Desconectado';
+    return f.play ? 'Jugando' : 'En línea';
+  }
+
   /** ¿Se puede usar lo online? Si no, explica por qué. */
   function needOnline() {
     if (G.DB.online) return true;
@@ -78,15 +93,8 @@
     function open() {
       withNick(() => {
         G.UI.show('scr-friends', true); msg(''); render();
-        G.Social.ensureFriends().then(() => { if (G.UI.isOpen('scr-friends')) render(); });
+        G.Social.ensureFriends().then(() => G.Social.refreshPresence(true)).then(() => { if (G.UI.isOpen('scr-friends')) render(); });
       });
-    }
-
-    // (Sin "en línea" desde el 20-10-2026: costaba 1/4 de las escrituras de Firestore.)
-    function stateText(f) {
-      if (f.status === 'in') return 'Quiere ser tu amigo';
-      if (f.status === 'out') return 'Solicitud enviada';
-      return '';
     }
 
     function render() {
@@ -94,7 +102,7 @@
       $('fr-me').innerHTML = 'Tu apodo: <b class="gold" translate="no">' + esc(G.Social.me ? G.Social.me.name : '') + '</b> · dáselo a tus amigos para que te añadan.';
       $('fr-room').classList.toggle('hidden', !room);
       const list = G.Social.friends.sort((a, b) => {
-        const rank = f => f.status === 'in' ? 0 : f.status === 'ok' ? 1 : 2;
+        const rank = f => f.status === 'in' ? 0 : f.status === 'ok' ? (f.online ? (f.play ? 2 : 1) : 3) : 4;
         return rank(a) - rank(b) || a.name.localeCompare(b.name);
       });
       const box = $('fr-list');
@@ -106,7 +114,7 @@
       for (const f of list) {
         const el = document.createElement('div');
         el.className = 'fr-row';
-        const dot = f.status !== 'ok' ? 'pend' : 'on';
+        const dot = f.status !== 'ok' ? 'pend' : !f.online ? 'off' : f.play ? 'play' : 'on';
         const inRoom = room && room.members.some(m => m.uid === f.uid);
         el.innerHTML = `<i class="dot ${dot}"></i><b translate="no"><a href="#" class="plink" title="Ver su perfil">${esc(f.name)}</a></b><span class="st">${inRoom ? 'En tu sala' : stateText(f)}</span><span class="grow"></span>`;
         if (f.status === 'ok') el.querySelector('.plink').onclick = e => { e.preventDefault(); G.ProfileUI.show(f.uid); };
@@ -170,7 +178,7 @@
     function open() {
       if (!G.Social.room) { G.MenuUI.open(); return; }
       G.Social.refreshMember();
-      G.Social.ensureFriends().then(() => { if (G.UI.isOpen('scr-lobby')) { membersKey = ''; render(); } });
+      G.Social.ensureFriends().then(() => G.Social.refreshPresence(true)).then(() => { if (G.UI.isOpen('scr-lobby')) { membersKey = ''; render(); } });
       G.UI.show('scr-lobby', true);
       membersKey = '';
       render();
@@ -242,7 +250,8 @@
         for (const f of free) {
           const el = document.createElement('div');
           el.className = 'fr-row';
-          el.innerHTML = `<i class="dot on"></i><b translate="no">${esc(f.name)}</b><span class="grow"></span>`;
+          const dot = !f.online ? 'off' : f.play ? 'play' : 'on';
+          el.innerHTML = `<i class="dot ${dot}"></i><b translate="no">${esc(f.name)}</b><span class="st">${stateText(f)}</span><span class="grow"></span>`;
           const b = document.createElement('button');
           b.className = 'btn small gold'; b.textContent = 'Invitar';
           b.onclick = async () => { const r = await G.Social.invite(f.uid); G.UI.toast(r.ok ? r.msg : r.error); };

@@ -13,19 +13,25 @@ G.Upgrades = (() => {
     { id: 'xp',     icon: 'book', name: 'Sabiduría',      unit: '+5% experiencia',    max: 8,  base: 100, grow: 1.42 },
     { id: 'coins',  icon: 'coin', name: 'Fortuna',        unit: '+8% Pokémonedas',    max: 8,  base: 120, grow: 1.45 },
     { id: 'moves',  icon: 'cards', name: 'Repertorio',     unit: 'Empiezas con 2 movimientos', max: 1, base: 1500, grow: 1 },
-    { id: 'crit',   icon: 'star', name: 'Golpe Crítico',  unit: '+3% de críticos (x1,5 de daño)', max: 10, base: 90, grow: 1.4 },
+    { id: 'crit',   icon: 'star', name: 'Golpe Crítico',  unit: '+3% de críticos (x1,75 de daño)', max: 10, base: 90, grow: 1.4 },
     { id: 'reroll', icon: 'up', name: 'Cambio de cartas', unit: '+1 cambio de cartas de nivel por run', max: 5, base: 150, grow: 1.6 },
     { id: 'ban',    icon: 'ban', name: 'Veto',           unit: 'Bloquea 1 movimiento: no te sale en las cartas', max: 3, base: 300, grow: 1.9 },
     // 19-10-2026: se compra una vez y luego se elige gratis (save.pstart, ver G.startMoveOf).
     { id: 'start',  icon: 'cursor', name: 'Movimiento inicial', unit: 'Eliges con qué ataque empiezas la partida', max: 1, base: 400, grow: 1 },
     // 20-10-2026: igual, para el segundo de Repertorio (save.pstart2, ver G.startMove2Of). Sin Repertorio no se compra.
-    { id: 'start2', icon: 'cursor', name: 'Segundo movimiento inicial', unit: 'Eliges el segundo ataque con el que empiezas (necesita Repertorio)', max: 1, base: 400, grow: 1, needs: 'moves' }
+    { id: 'start2', icon: 'cursor', name: 'Segundo movimiento inicial', unit: 'Eliges el segundo ataque con el que empiezas (necesita Repertorio)', max: 1, base: 400, grow: 1, needs: 'moves' },
+    { id: 'luck', icon: 'star', name: 'Suerte', unit: '+5 de suerte por nivel. Hace más raros los objetos. El cambio de rareza aún no tiene precio.', max: 6, priced: false },
+    { id: 'skip', icon: 'cards', name: 'Saltar', unit: '+1 salto de carta de nivel por partida.', max: 5, priced: false },
+    { id: 'fourth', icon: 'cards', name: 'Cuarta carta', unit: 'Al subir de nivel salen 4 cartas en vez de 3.', max: 1, priced: false },
+    { id: 'revival', icon: 'heart', name: 'Reponerse', unit: 'Una vez por partida, revives con el 50 % de vida.', max: 1, priced: false },
+    { id: 'seal', icon: 'ban', name: 'Sellar', unit: '+1 objeto que deja de salir. Hay que elegir cuáles.', max: 2, priced: false }
   ];
   const BY = {};
   for (const u of LIST) BY[u.id] = u;
 
   function cost(id, lvl) {
     const u = BY[id];
+    if (!u || u.priced === false) return null;
     const full = Math.round(u.base * Math.pow(u.grow, lvl) / 10) * 10;
     // 朋友房：強化一律半價，再取到 10 的倍數（至少 10）。
     return Math.max(10, Math.floor(full / 2 / 10) * 10);

@@ -225,7 +225,8 @@
         // Desafío de jefes: cada baja es un jefe, y elegir objeto paraba la partida.
         // Una de cada cinco suelta objeto.
         const bossMode = G.Modes && G.Modes.is('boss');
-        if (!bossMode || Math.random() < 0.2) G.Pickups.drop('ball', this.x - 26, this.y - 10, bossMode ? 2 : 3);
+        // Un tercio: un jefe normal ya no suelta siempre la bola amarilla.
+        if (Math.random() < (bossMode ? 0.2 : 1) / 3) G.Pickups.drop('ball', this.x - 26, this.y - 10, bossMode ? 2 : 3);
       }
       G.Pickups.dropXp(this.x, this.y, this.xp, this.boss, !!this.legend, !!this.judge);
       if (this.golden && Math.random() < 0.35) G.Pickups.drop('coin', this.x + 6, this.y - 4, 3);
@@ -999,6 +1000,7 @@
         if (e.dead) {
           pl.kills++;
           if (pl.abil && pl.abil.kill) pl.abil.kill(pl, e);     // Autoestima y parecidas
+          if (G.Items && G.Items.onKill) G.Items.onKill(pl, e);
           if (e.boss && !e.judge) pl.bosses++;
           G.Progress.kill(e);
           corpses.push(e);

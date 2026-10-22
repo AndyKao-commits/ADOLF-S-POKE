@@ -138,7 +138,7 @@ G.Game = (() => {
     G.Pickups.clear();
     if (coop) G.Coop.lockRun(coop.rules, false);
     else G.Coop.lockRun(null, true);
-    G.World.reset(coop ? coop.seed : Math.floor(Math.random() * 1e6), coop ? null : G.Settings.get('region'));
+    G.World.reset(coop ? coop.seed : Math.floor(Math.random() * 1e6), (!coop && G.Modes.is('normal')) ? G.Settings.get('region') : null);
     G.World.setBiome(G.World.runBiome(0), true);
     G.Spawner.reset();
     G.Rift.reset();
@@ -581,7 +581,7 @@ G.Game = (() => {
     if (!pl) return;
     tier = Math.max(1, Math.min(3, tier | 0 || 1));
     if (state === 'levelup' || G.UI.isOpen('scr-levelup') || G.UI.isOpen('scr-item')) { laterBalls.push(tier); return; }
-    const options = G.Items.rollChoices(tier, pl, 3);
+    const options = G.Items.rollChoices(tier, pl, G.Items.choices(pl));
     if (!options.length) return;
     let mine = false;
     const take = id => {
@@ -669,8 +669,79 @@ G.Game = (() => {
 
   // ---------------- teclado ----------------
 
+  const SHOP_R = 86;
+  function nearestShop() {
+    if (!pl || pl.dead || state !== 'playing') return null;
+    let best = null, bd = SHOP_R * SHOP_R;
+    for (const s of (G.World.shops || [])) {
+      const d = G.U.dist2(pl.x, pl.y, s.x, s.y);
+      if (d <= bd) { bd = d; best = s; }
+    }
+    return best;
+  }
+  function rollStall(shop) {
+    const have = id => (pl.stacks && pl.stacks[id]) || 0;
+    const pool = G.Items.LIST.filter(i => have(i.id) < i.max);
+    shop.stock = G.U.pickN(pool, Math.min(3, pool.length)).map(i => i.id);
+  }
+  function stallPrice(it, shop) {
+    const raw = (it.shopBase || 36) + (shop.markup || 0);
+    return Math.max(1, Math.round(raw * (1 - Math.min(0.4, pl.ballCut || 0))));
+  }
+  function paintStall() {
+    if (!stallShop) return;
+    G.RunUI.showStall(stallShop, { buy: buyStall, refresh: refreshStall, leave: closeStall });
+  }
+  let stallShop = null;
+  function openStall() {
+    const s = nearestShop();
+    if (!s) return;
+    if (!s.stock) rollStall(s);
+    stallShop = s;
+    state = 'stall';
+    pl.frozen = true;
+    paintStall();
+    G.Audio.sfx('select');
+  }
+  function closeStall() {
+    if (state !== 'stall') return;
+    state = 'playing';
+    if (pl) pl.frozen = false;
+    stallShop = null;
+    G.UI.hide('scr-stall');
+  }
+  function buyStall(id) {
+    if (!stallShop || !pl) return;
+    const it = G.Items.BY[id];
+    if (!it) return;
+    const price = stallPrice(it, stallShop);
+    if ((pl.stacks && pl.stacks[id] || 0) >= it.max || pl.coins < price) return;
+    if (!G.Items.gain(pl, id)) return;
+    pl.coins -= price;
+    stallShop.markup = (stallShop.markup || 0) + 3;
+    G.Audio.sfx('buy');
+    paintStall();
+  }
+  function refreshStall() {
+    if (!stallShop || !pl || pl.coins < 15) return;
+    pl.coins -= 15;
+    rollStall(stallShop);
+    G.Audio.sfx('select');
+    paintStall();
+  }
+
   function handleKeys() {
     if (G.SettingsUI.isOpen) { if (G.Input.tap('escape')) G.SettingsUI.close(); return; }
+    if (state === 'stall') {
+      if (G.Input.tap('escape')) closeStall();
+      for (let i = 0; i < 3; i++) {
+        if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) {
+          const row = document.querySelectorAll('#stall-cards .card')[i];
+          if (row) row.click();
+        }
+      }
+      return;
+    }
     // La Sentencia de Arceus: Espacio, Intro o Esc saltan la animación (si se puede).
     if (G.Judgment.cinematic && state === 'playing') {
       if (['space', 'enter', 'escape'].some(k => G.Input.tap(k))) G.Judgment.skip();
@@ -716,6 +787,7 @@ G.Game = (() => {
     if (G.Input.tap('keyx')) pl.toggleSlot(pl.focus || 0);
     // Caído en grupo: Q / E cambian a quién miras.
     if (pl.dead) { if (G.Input.tap('keyq')) cycleWatch(-1); if (G.Input.tap('keye') || G.Input.tap('tab')) cycleWatch(1); return; }
+    if (G.Input.tap('keye') && nearestShop()) { openStall(); return; }
     if (G.Input.tap('keyq')) pl.cycle(-1);
     if (G.Input.tap('keye') || G.Input.tap('tab')) pl.cycle(1);
   }
@@ -1093,6 +1165,7 @@ G.Game = (() => {
 
   return {
     init, startRun, everyone, levelXp, flash, offerBond, siegeOver, castleClear, noteXp,
+    nearestShop, openStall, closeStall, stallPrice,
     giveItem: offerItem,
     /** Para pruebas: salta el reloj de la run. */
     debugTime(t) { tampered = true; time = t; },
@@ -1114,7 +1187,7 @@ G.Game = (() => {
 G.Flow = {
   boot() {
     G.UI.initChrome();
-    G.LoginUI.init(); G.TestUI.init(); G.MenuUI.init(); G.GachaUI.init();
+    G.LoginUI.init(); G.TestUI.init(); G.MenuUI.init(); G.RegionUI.init(); G.GachaUI.init();
     G.SocialUI.init(); G.RankingUI.init(); G.ModUI.init(); G.GoalsUI.init(); G.ProfileUI.init(); G.SettingsUI.init(); G.SupportUI.init(); G.NewsUI.init(); G.Updater.init();
     // Tu nombre arriba a la derecha abre tu perfil.
     document.getElementById('user-pill').onclick = () => G.GoalsUI.open('profile');

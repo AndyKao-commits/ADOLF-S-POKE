@@ -6,6 +6,25 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-23', title: ['Barras y mapa', 'Bars and the map'], chg: [
+    ['Arriba a la izquierda, la vida es la barra verde de rayas y la experiencia es la barra azul. El relleno sigue la vida y la experiencia de la partida.',
+     'At the top left, HP is the striped green bar and experience is the blue bar. The fill follows this run\'s HP and experience.'],
+    ['La tienda del mapa es el puesto de rayas rojas y blancas. Las Poké Balls del suelo son la roja, la azul y la amarilla.',
+     'The shop on the map is the red and white stall. The Poké Balls on the ground are the red, the blue and the yellow one.'],
+    ['Los objetos de la partida usan los iconos nuevos. Cada uno hace lo que dice su ficha: el daño, la vida, la suerte y el resto salen de esa lista, y ya no valen los efectos viejos.',
+     'Items in a run use the new icons. Each one does what its card says: damage, HP, luck and the rest come from that list, and the old effects no longer apply.'],
+    ['Junto a un puesto, E (o el botón E de la derecha) abre la tienda de Meowth. Vende 3 objetos de la partida. Cada compra sube los precios 3 monedas, y cambiar el género cuesta 15.',
+     'Next to a stall, E (or the E button on the right) opens Meowth\'s shop. It sells 3 items for this run. Each purchase raises prices by 3 coins, and refreshing the stock costs 15.'],
+    ['El golpe crítico de las mejoras hace ×1,75 de daño. Cinco mejoras nuevas aparecen en la lista, pero aún no tienen precio y no se pueden comprar.',
+     'The critical-hit upgrade deals ×1.75 damage. Five new upgrades show in the list, but they have no price yet and cannot be bought.'],
+    ['Las Poké Balls salen un tercio de lo de antes. Vale para la roja, la azul y la amarilla: un Pokémon normal, un jefe y los cofres.',
+     'Poké Balls drop one third as often. That goes for the red, the blue and the yellow one: a normal Pokémon, a boss and the chests.'],
+    ['En Amigos, el punto verde ya no sale en todo el mundo. Verde es quien tiene el juego abierto; gris es quien no está.',
+     'In Friends, the green dot is no longer on everyone. Green means the game is open; grey means they are not.']
+  ], fix: [
+    ['En la leyenda del mapa, las marcas de las Poké Balls tapaban la palabra. Cada cosa queda ahora en su sitio, y en el mapa se ven más grandes.',
+     'In the map legend, the Poké Ball marks covered the words. Each mark now stays in its place, and the marks on the map are larger.']
+  ] },
   { d: '2026-10-22', title: ['Elige la región', 'Choose the region'], new: [
     ['Antes de una partida en solitario eliges una de las nueve regiones. El mapa cambia y los Pokémon salvajes de esa partida son los de esa región. En una sala se sigue usando el mapa de siempre.',
      'Before a solo run you choose one of the nine regions. The map changes, and the wild Pokémon in that run are the ones from that region. A co-op room still uses the original map.'],
@@ -25,7 +44,14 @@ G.CHANGELOG = [
     ['Arriba a la izquierda sale la cara del Pokémon con el que juegas, el nivel en un círculo, la vida en una barra verde y la experiencia debajo.',
      'The top left shows the face of the Pokémon you are playing, the level in a circle, HP on a green bar and experience under it.'],
     ['Los objetos que coges se quedan todos y se apilan. Salen bajo la barra de experiencia, y ya no hay un hueco de objeto junto a los ataques.',
-     'Items you pick up all stay and stack. They show under the experience bar, and the item slot next to your moves is gone.']
+     'Items you pick up all stay and stack. They show under the experience bar, and the item slot next to your moves is gone.'],
+    ['En el mapa cada cosa tiene su marca: punto rojo el enemigo, punto rojo más grande el jefe, óvalo el huevo, bola verde, azul o morada, caseta la tienda y rombo el compañero.',
+     'On the map each thing has its own mark: a red dot for an enemy, a bigger red dot for a boss, an oval for an egg, a green, blue or purple ball, a stall for a shop and a diamond for a teammate.']
+  ], fix: [
+    ['En la pantalla de elegir región, «Empezar» y «Volver» no hacían nada.',
+     'On the region screen, Start and Back did nothing.'],
+    ['El modo elegido se queda marcado. El mapa de la región sólo se elige en la mazmorra normal; los demás modos entran directo.',
+     'The mode you pick stays selected. The region map is only chosen for the normal dungeon; the other modes start straight away.']
   ] },
   { d: '2026-10-21', title: ['La gran actualización: Tienda Kecleon', 'The big update: Kecleon Shop'], new: [
     ['Mejora nueva: Tienda Kecleon (botón en el menú) con Mentas, Cápsulas Habilidad y 8 MT nuevas cada día. Cada Pokémon tiene ahora su naturaleza (±10 % a dos stats) y su habilidad, con efecto en la partida; se ven y se cambian en su ficha de la colección. Las MT enseñan para siempre ataques de fuera de sus tipos, pero sólo si los aprende en los juegos (Mewtwo puede aprender Bola Sombra; Psyduck no puede aprender Lanzallamas). Gracias a TheAdro7 por la idea y el trabajo de base.',

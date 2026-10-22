@@ -1224,7 +1224,7 @@ G.I18n.add({
   "Atajos de movimientos": "Atalhos de golpes",
   "Elige qué movimiento va siempre en cada hueco (teclas 1-4 o los iconos de abajo), para la memoria muscular. Si aún no tienes tantos movimientos, va al hueco más cercano.": "Escolha qual golpe fica sempre em cada espaço (teclas 1-4 ou os ícones embaixo), para a memória muscular. Se você ainda não tem tantos golpes, ele vai para o espaço mais próximo.",
   "Golpe Crítico": "Golpe Crítico",
-  "+3% de críticos (x1,5 de daño)": "+3% de críticos (x1,5 de dano)",
+  "+3% de críticos (x1,75 de daño)": "+3% de críticos (x1,75 de dano)",
   "Cambio de cartas": "Troca de cartas",
   "+1 cambio de cartas de nivel por run": "+1 troca de cartas de nível por run",
   "Veto": "Veto",
