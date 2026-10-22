@@ -34,7 +34,7 @@ G.Regions = (() => {
       flowers: layout === 'garden' ? ['#f6a1cb', '#e3b6ff', '#fff1b5'] : base.flowers.slice()
     });
     const biome = G.Tiles.BIOMES.push(palette) - 1;
-    return { id, name, subtitle, layout, biome, trees };
+    return { id, name, subtitle, layout, biome, trees, grassChance: id === 'kalos' ? .20 : id === 'sinnoh' ? .17 : id === 'alola' ? .22 : .32 };
   });
   const byId = Object.fromEntries(list.map(p => [p.id, p]));
   const get = id => byId[id] || null;
@@ -42,8 +42,11 @@ G.Regions = (() => {
   // Connected 5-tile-wide routes every 48 tiles: walking routes stay reachable
   // across water, ridges and city blocks; no props spawn on these routes.
   function path(x, y) { return Math.abs(x) < 3 || Math.abs(y) < 3 || mod(x + 2, 48) < 5 || mod(y + 2, 48) < 5; }
+  // Three-tile clearing around a landmark in every 48×48 tile district.
+  function landmark(x,y) { return Math.abs(mod(x,48)-12)<=1 && Math.abs(mod(y,48)-12)<=1; }
   function terrain(p, x, y, noise) {
     if (Math.hypot(x, y) < 9 || path(x, y)) return 0;
+    if (landmark(x, y)) return 0;
     const n = noise(x / 12, y / 12, 101), h = noise(x / 7, y / 7, 202);
     const river = Math.abs(Math.sin(y / 19) * 8 - mod(x + 24, 48) + 24);
     switch (p.layout) {
@@ -59,5 +62,5 @@ G.Regions = (() => {
       default: return 0;
     }
   }
-  return { list, get, path, terrain, originalCount };
+  return { list, get, path, terrain, landmark, originalCount };
 })();

@@ -147,6 +147,12 @@ G.World = (() => {
       }
 
       if (region && G.Regions.path(tx, ty)) continue;
+      if (region && G.Regions.landmark(tx, ty)) {
+        if (((tx % 48) + 48) % 48 === 12 && ((ty % 48) + 48) % 48 === 12) {
+          const marker = makeProp('landmark', tx, ty); c.props.push(marker); c.propAt.set(tx + ',' + ty, marker);
+        }
+        continue;
+      }
       const h = H(tx, ty, seed + 404);
       const grove = fbm(tx / 10, ty / 10, seed + 505) > 0.6;
       let type = null, kind = 0;
@@ -160,7 +166,7 @@ G.World = (() => {
       else if (open && h < (region ? region.trees * (grove ? 1.5 : 0.5) : (grove ? 0.07 : 0.006))) type = 'tree';
       else if (open && h > 0.992) type = 'rock';
       else if (open && h > 0.985 && h <= 0.992 && H(tx, ty, seed + 606) < 0.07) type = 'chest';
-      else if (fbm(tx / 5, ty / 5, seed + 707) > 0.66 && H(tx, ty, seed + 808) < 0.75) type = 'grass';
+      else if (fbm(tx / 5, ty / 5, seed + 707) > 0.66 && H(tx, ty, seed + 808) < (region ? region.grassChance : 0.75)) type = 'grass';
       if (!type) continue;
 
       const p = makeProp(type, tx, ty, kind);
@@ -170,6 +176,7 @@ G.World = (() => {
   }
 
   const PROP = {
+    landmark: { solid: true, hp: Infinity, r: 14 },
     tree:  { solid: true,  hp: Infinity, r: 13 },
     rock:  { solid: true,  hp: 34,       r: 12 },
     chest: { solid: true,  hp: 22,       r: 12 },

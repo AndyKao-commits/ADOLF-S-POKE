@@ -47,3 +47,19 @@ test('terrain repeats by seed, differs by region, and arena return retains selec
   G.World.reset(1); assert.equal(G.World.runBiome(2),2); assert.equal(G.World.runBiome(22),0);
   G.World.reset(1,'invalid'); assert.equal(G.World.runBiome(0),0);
 });
+
+test('regional landmarks are solid, repeat across chunks, and leave corridors free', () => {
+  const G = world(), cam = {w:1600,h:1600,left:()=>-800,top:()=>-800,sees:()=>true};
+  for(const p of G.Regions.list) {
+    G.World.reset(417,p.id); G.World.setBiome(p.biome,true);
+    const markers=G.World.visibleProps(cam).filter(p=>p.type==='landmark');
+    assert.ok(markers.length>0,p.id);
+    for(const m of markers) {
+      assert.ok(!G.Regions.path(m.tx,m.ty));
+      assert.equal(G.World.walkable(m.tx,m.ty),false);
+      assert.equal(G.World.isFree(m.x,m.y,12),false);
+      assert.equal(G.World.walkable(m.tx+1,m.ty),true);
+      assert.equal(G.World.walkable(m.tx,m.ty+1),true);
+    }
+  }
+});

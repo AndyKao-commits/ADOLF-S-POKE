@@ -230,7 +230,9 @@ G.Tiles = (() => {
         else if (kind === 'liquid') paintLiquid(P, C, ox, oy, tx, ty, at);
       }
     }
-    return P.canvas();
+    const canvas = P.canvas();
+    if (G.RegionArt) G.RegionArt.ground(canvas, cx, cy, n, at, bi, seed);
+    return canvas;
   }
 
   function paintFloor(P, C, ox, oy, tx, ty, dirtAt, at) {
@@ -362,7 +364,7 @@ G.Tiles = (() => {
   function propSprite(bi, type, variant = 0) {
     const k = bi + '/' + type + '/' + variant;
     let cv = propCache.get(k);
-    if (!cv) { cv = PAINT[type](BIOMES[bi], variant); propCache.set(k, cv); }
+    if (!cv) { cv = (G.RegionArt && G.RegionArt.sprite(bi, type, variant)) || (PAINT[type] || PAINT.altar)(BIOMES[bi], variant); propCache.set(k, cv); }
     return cv;
   }
 
