@@ -23,3 +23,9 @@
 - 四種精靈球：`http://localhost:8000/assets/future-use/balls/preview.html`，詳見 [精靈球使用說明](balls/README.md)。
 
 四種球圖示位於 `balls/`，每張 40×40 透明 PNG。預覽頁亦可直接在瀏覽器開啟；本批為靜態素材，不會啟動商店或捕捉功能。
+
+## 糖果與精靈蛋
+
+- [糖果規則及預覽方式](candy/README.md)：新版大圖 `candy/rare-candy-design.png`。
+- [精靈蛋規則及預覽方式](eggs/USAGE.md)：新版大圖 `eggs/pokemon-egg-design.png`、四級蛋與孵化動畫。
+- 工程資料表：`docs/specs/candy-and-eggs.json`。尚未接入正式遊戲。

@@ -1,0 +1,54 @@
+{
+  "status": "specification-and-preview-only; not runtime integrated",
+  "candy": {
+    "name": "Rare Candy",
+    "asset": {
+      "path": "assets/future-use/candy/rare-candy-design.png",
+      "width": 1536,
+      "height": 1024,
+      "mode": "RGBA",
+      "sha256": "03029a3167e3178027848d292a6d35db691e5d5c604660705de220442e9f7f56"
+    },
+    "small_icon_alternative": "assets/future-use/item-icons/rare-candy.png",
+    "effect_zh_TW": "立即升級 +2，傷害 +5%。",
+    "rarity": "mythic",
+    "rarity_zh_TW": "神話",
+    "max_per_run": 10,
+    "rule_source": "assets/future-use/item-icons/manifest.json",
+    "activation_mode": "pending; not specified by screenshot",
+    "stacking_formula": "pending; do not infer multiplicative vs additive",
+    "notes": "數量上限為每局持有上限；消耗後是否補回可取得名額未定。"
+  },
+  "egg": {
+    "name": "精靈蛋",
+    "asset": {
+      "path": "assets/future-use/eggs/pokemon-egg-design.png",
+      "width": 1122,
+      "height": 1402,
+      "mode": "RGBA",
+      "sha256": "a11a024961fb25e4fdd6213ed37543488ef7ca998a183a306a0b7b0425d64229"
+    },
+    "role": "通用精靈蛋外觀；不指定等級",
+    "tier_assets": [
+      "assets/future-use/eggs/egg-level-1.png",
+      "assets/future-use/eggs/egg-level-2.png",
+      "assets/future-use/eggs/egg-level-3.png",
+      "assets/future-use/eggs/egg-level-4.png"
+    ],
+    "hatching_animation": "assets/future-use/egg-hatching/egg-hatching.gif",
+    "animation_role": "共用美術示範，非孵化時間或結果判定",
+    "tier_rules": "1 級綠、2 級藍、3 級紫、4 級金僅為既有外觀分級",
+    "hatching_duration_seconds": null,
+    "cost": null,
+    "reward_pool": null,
+    "rarity_probabilities": null,
+    "inventory_limit": null,
+    "rules_status": "尚未定義孵化數值與獎勵；不可當作已可玩的功能。",
+    "implementation_proposal": [
+      "取得蛋後保存蛋的唯一 ID、等級與狀態。",
+      "孵化條件達成後先保存結果，再播放動畫；動畫結束顯示已保存的結果。",
+      "同一顆蛋只結算一次，重新整理或動畫重播不重複發獎。"
+    ],
+    "proposal_status": "工程接入建議，尚未實作"
+  }
+}
