@@ -35,6 +35,7 @@ G.World = (() => {
   const KIND = ['floor', 'wall', 'liquid'];
 
   let seed = 1, biome = 0;
+  let region = null;
   let arena = null;                        // { tx, ty, r } en tiles
   const data = new Map();                  // "cx,cy" -> datos del chunk
   let images = new Map();                  // "cx,cy" -> canvas horneado
@@ -82,6 +83,7 @@ G.World = (() => {
       if (th.pools && ad < arena.r - 1.5 && fbm(tx / 3.2, ty / 3.2, seed + 37 + arena.tx) < th.pools) return LIQUID;
       return FLOOR;
     }
+    if (region) return G.Regions.terrain(region, tx, ty, (x, y, salt) => fbm(x, y, seed + salt));
     const d = Math.hypot(tx, ty);
     if (d < 9) return FLOOR;                          // claro inicial
     const ramp = G.U.clamp((d - 9) / 8, 0, 1);       // aparición suave
@@ -144,6 +146,13 @@ G.World = (() => {
         continue;
       }
 
+      if (region && G.Regions.path(tx, ty)) continue;
+      if (region && G.Regions.landmark(tx, ty)) {
+        if (((tx % 48) + 48) % 48 === 12 && ((ty % 48) + 48) % 48 === 12) {
+          const marker = makeProp('landmark', tx, ty); c.props.push(marker); c.propAt.set(tx + ',' + ty, marker);
+        }
+        continue;
+      }
       const h = H(tx, ty, seed + 404);
       const grove = fbm(tx / 10, ty / 10, seed + 505) > 0.6;
       let type = null, kind = 0;
@@ -154,10 +163,10 @@ G.World = (() => {
         kind = Math.floor(H(tx, ty, seed + 910) * (type === 'altar' ? 4 : 3));
       }
       if (type) { /* ya elegido */ }
-      else if (open && h < (grove ? 0.07 : 0.006)) type = 'tree';
+      else if (open && h < (region ? region.trees * (grove ? 1.5 : 0.5) : (grove ? 0.07 : 0.006))) type = 'tree';
       else if (open && h > 0.992) type = 'rock';
       else if (open && h > 0.985 && h <= 0.992 && H(tx, ty, seed + 606) < 0.07) type = 'chest';
-      else if (fbm(tx / 5, ty / 5, seed + 707) > 0.66 && H(tx, ty, seed + 808) < 0.75) type = 'grass';
+      else if (fbm(tx / 5, ty / 5, seed + 707) > 0.66 && H(tx, ty, seed + 808) < (region ? region.grassChance : 0.75)) type = 'grass';
       if (!type) continue;
 
       const p = makeProp(type, tx, ty, kind);
@@ -167,6 +176,7 @@ G.World = (() => {
   }
 
   const PROP = {
+    landmark: { solid: true, hp: Infinity, r: 14 },
     tree:  { solid: true,  hp: Infinity, r: 13 },
     rock:  { solid: true,  hp: 34,       r: 12 },
     chest: { solid: true,  hp: 22,       r: 12 },
@@ -551,7 +561,8 @@ G.World = (() => {
 
   // ---------------- control ----------------
 
-  function reset(s) {
+  function reset(s, regionId = null) {
+    region = G.Regions.get(regionId);
     seed = (s | 0) || 1;
     data.clear(); images.clear(); broken.clear();
     fade = null; arena = null;
@@ -586,7 +597,8 @@ G.World = (() => {
   }
 
   return {
-    TS, CW, reset, setBiome, biomeName, liquidKind, liquidEffect, walkable,
+    TS, CW, reset, setBiome, biomeName,
+    runBiome(step) { return region ? region.biome : ((step % G.Regions.originalCount) + G.Regions.originalCount) % G.Regions.originalCount; }, liquidKind, liquidEffect, walkable,
     kindAt, isWall, isLiquid, isFree, collide, projectileBlock, propsInCircle, nearestBreakable,
     damageProp, breakAt, specialsNear, update,
     breakProp(p) { if (!broken.has(p.tx + ',' + p.ty)) destroyProp(p); },

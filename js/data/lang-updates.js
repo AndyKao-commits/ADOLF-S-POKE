@@ -8,6 +8,9 @@
 (() => {
   const languages = ['fr', 'it', 'pt-BR', 'zh-Hans', 'zh-Hant'];
   const rows = [
+    ["Nueve regiones", "Neuf régions", "Nove regioni", "Nove regiões", "九个地区", "九個地區"],
+    ["Nueve campos regionales seleccionables para un jugador, con rutas conectadas, terreno propio, vegetación regional y nueve monumentos. El cooperativo conserva el terreno original.", "Neuf terrains régionaux solo, avec chemins reliés, relief distinct, végétation régionale et neuf monuments. Le mode coopératif conserve le terrain original.", "Nove campi regionali in singolo, con percorsi collegati, terreni diversi, vegetazione regionale e nove monumenti. La modalità cooperativa conserva il terreno originale.", "Nove campos regionais solo, com rotas conectadas, terrenos distintos, vegetação regional e nove monumentos. O cooperativo mantém o terreno original.", "新增九个单人地区场景，各有地形、连通路线、地区植被与九种地标。合作模式沿用原有地形。", "新增九個單人地區場景，各有地形、連通路線、地區植被與九種地標。合作模式沿用原有地形。"],
+
     ["Tipo", "Type", "Tipo", "Tipo", "属性", "屬性"],
     ["Nuevo", "Nouveau", "Novità", "Novidades", "新增", "新增"],
     ["Cambios", "Modifications", "Modifiche", "Alterações", "变更", "變更"],

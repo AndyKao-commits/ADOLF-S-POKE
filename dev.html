@@ -83,7 +83,7 @@
 }
 </script>
 <!-- seo:end -->
-<link rel="stylesheet" href="css/style.css?v=kecleon">
+<link rel="stylesheet" href="css/style.css">
 <script src="js/core/locales.js"></script>
 </head>
 <body>
@@ -183,6 +183,9 @@
     <div class="menu-go">
       <button class="btn gold menu-play" data-go="play" type="button">Jugar<small>Entra en la mazmorra</small></button>
       <p class="sub" id="mode-help"></p>
+      <label for="menu-region">地區 / Region</label>
+      <select id="menu-region" class="btn" aria-label="地區 / Region"></select>
+      <p id="menu-region-help" class="sub"></p>
       <div id="menu-stats" class="menu-stats"></div>
     </div>
   </div>
@@ -638,6 +641,8 @@
 <script defer src="js/data/changelog.js"></script>
 <!-- mundo -->
 <script defer src="js/world/tiles.js"></script>
+<script defer src="js/world/regions.js"></script>
+<script defer src="js/world/region-art.js"></script>
 <script defer src="js/world/world.js"></script>
 <!-- entidades -->
 <script defer src="js/entities/vfx.js"></script>

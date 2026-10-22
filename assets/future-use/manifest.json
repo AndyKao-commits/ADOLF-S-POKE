@@ -1,0 +1,54 @@
+{
+  "status": "reserved-for-future-use",
+  "runtimeIntegrated": false,
+  "assets": [
+    {
+      "label": "精靈蛋 1 級",
+      "level": 1,
+      "path": "assets/future-use/eggs/egg-level-1.png",
+      "width": 40,
+      "height": 48,
+      "sha256": "b8c6115d4e1d3389542562e13876193543cf7c3f28f030c0bce74f05654657e3"
+    },
+    {
+      "label": "精靈蛋 2 級",
+      "level": 2,
+      "path": "assets/future-use/eggs/egg-level-2.png",
+      "width": 40,
+      "height": 48,
+      "sha256": "c49c6938ccfda3c36ef759debacd46d57f0a374fdfa9cfece8cde016e07837f0"
+    },
+    {
+      "label": "精靈蛋 3 級",
+      "level": 3,
+      "path": "assets/future-use/eggs/egg-level-3.png",
+      "width": 40,
+      "height": 48,
+      "sha256": "3c33b38c46e0f75615849976740b47973cbf10ad1f13b2ca94a349674761a7ea"
+    },
+    {
+      "label": "精靈蛋 4 級",
+      "level": 4,
+      "path": "assets/future-use/eggs/egg-level-4.png",
+      "width": 40,
+      "height": 48,
+      "sha256": "929cf2454d2d2afe4d5fd698321f377e3492c0a42fd5a2c2c42db7c6bd9ad4f1"
+    },
+    {
+      "label": "店鋪",
+      "path": "assets/future-use/shop/shop-only.png",
+      "width": 512,
+      "height": 448,
+      "frames": 1,
+      "sha256": "f3daa931a20a0909378b68a28856ab370bd9c9c336d29b7fa3c2af71980e4e1c"
+    },
+    {
+      "label": "孵化動畫",
+      "path": "assets/future-use/egg-hatching/egg-hatching.gif",
+      "width": 256,
+      "height": 256,
+      "frames": 51,
+      "sha256": "08902666ba97c5302757769e3320eddb7cfa31236cbaf9202ca926cf468024b0"
+    }
+  ]
+}
