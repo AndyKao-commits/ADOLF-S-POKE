@@ -12,7 +12,8 @@
       "reference_image": 1,
       "reference_row": 1,
       "reference_column": 1,
-      "sha256": "698c6ae8cfd236352b9fbaf754ff8d222a91d4c04d8e43ca7473b996fa7604bb"
+      "sha256": "698c6ae8cfd236352b9fbaf754ff8d222a91d4c04d8e43ca7473b996fa7604bb",
+      "effect_zh_TW": "以 60% HP 復活一次。每局一次。"
     },
     {
       "name": "Rare Candy",
@@ -20,7 +21,8 @@
       "reference_image": 1,
       "reference_row": 1,
       "reference_column": 2,
-      "sha256": "9f50c5bc5932df914fc3346dcc16ddef70a428070f00d2862d75e6bc21909ab0"
+      "sha256": "9f50c5bc5932df914fc3346dcc16ddef70a428070f00d2862d75e6bc21909ab0",
+      "effect_zh_TW": "立即升級 +2，傷害 +5%。"
     },
     {
       "name": "Master Ball",
@@ -28,7 +30,8 @@
       "reference_image": 1,
       "reference_row": 1,
       "reference_column": 3,
-      "sha256": "1101423081c80b75747ef42a130ec81f1b36a39de9eb2820260581a05da251c3"
+      "sha256": "1101423081c80b75747ef42a130ec81f1b36a39de9eb2820260581a05da251c3",
+      "effect_zh_TW": "傷害 +25%，幸運 +10。"
     },
     {
       "name": "Reaper Cloth",
@@ -36,7 +39,8 @@
       "reference_image": 1,
       "reference_row": 2,
       "reference_column": 1,
-      "sha256": "cac993dd7cb2ecebf3ea3ad7c1c6d7313afeb1c3cb632e021453a9312a5423e8"
+      "sha256": "cac993dd7cb2ecebf3ea3ad7c1c6d7313afeb1c3cb632e021453a9312a5423e8",
+      "effect_zh_TW": "每擊敗 100 個敵人傷害 +1%，最多 +30%。"
     },
     {
       "name": "Comet Shard",
@@ -44,7 +48,8 @@
       "reference_image": 1,
       "reference_row": 2,
       "reference_column": 2,
-      "sha256": "7a923128c1a3e3d4a0d8dedeed207c288aedecb0c4f8601c2be042fd4f80b341"
+      "sha256": "7a923128c1a3e3d4a0d8dedeed207c288aedecb0c4f8601c2be042fd4f80b341",
+      "effect_zh_TW": "金幣 +40%，幸運 +30。"
     },
     {
       "name": "Moon Stone",
@@ -52,7 +57,8 @@
       "reference_image": 1,
       "reference_row": 2,
       "reference_column": 3,
-      "sha256": "748be6ff31fca91581b930b03b1838a1eb07f77f0b90534a48dbd1d0b6e7a2a9"
+      "sha256": "748be6ff31fca91581b930b03b1838a1eb07f77f0b90534a48dbd1d0b6e7a2a9",
+      "effect_zh_TW": "彈體 +2，範圍 +25%。"
     },
     {
       "name": "Max PP",
@@ -60,7 +66,8 @@
       "reference_image": 1,
       "reference_row": 3,
       "reference_column": 1,
-      "sha256": "0b1a306aced852eb45a7a8a39b77b1e4d4021cf1b9e3cd70a64a131402031fa3"
+      "sha256": "0b1a306aced852eb45a7a8a39b77b1e4d4021cf1b9e3cd70a64a131402031fa3",
+      "effect_zh_TW": "彈射、環繞和連鎖招式彈體 +1。"
     },
     {
       "name": "Max Elixir",
@@ -68,7 +75,8 @@
       "reference_image": 1,
       "reference_row": 3,
       "reference_column": 2,
-      "sha256": "d3018eed649de8a379e3975f56cd60d095b48d8acbe3d698cfcebe4c36582b2f"
+      "sha256": "d3018eed649de8a379e3975f56cd60d095b48d8acbe3d698cfcebe4c36582b2f",
+      "effect_zh_TW": "攻擊速度 +20%。"
     },
     {
       "name": "Shiny Stone",
@@ -76,7 +84,8 @@
       "reference_image": 1,
       "reference_row": 3,
       "reference_column": 3,
-      "sha256": "1f2c518101b94bb8b2628004f76a5bfbd3c17bbc0433bc1918f4a2582f832220"
+      "sha256": "1f2c518101b94bb8b2628004f76a5bfbd3c17bbc0433bc1918f4a2582f832220",
+      "effect_zh_TW": "傷害 +15%，範圍 +15%。"
     },
     {
       "name": "Dusk Stone",
@@ -84,7 +93,8 @@
       "reference_image": 1,
       "reference_row": 4,
       "reference_column": 1,
-      "sha256": "0757badf8eee43c282f4fed0c3a7c4fc9f8c285d9ddfb8a43e7a7340673af38f"
+      "sha256": "0757badf8eee43c282f4fed0c3a7c4fc9f8c285d9ddfb8a43e7a7340673af38f",
+      "effect_zh_TW": "暴擊傷害 +40%，暴擊率 +8%。"
     },
     {
       "name": "Honey",
@@ -92,7 +102,8 @@
       "reference_image": 1,
       "reference_row": 4,
       "reference_column": 2,
-      "sha256": "5f923737c9f36ffe3a17ff8e5a2adc2320ec3b74c605a0ce597909a16b9603a6"
+      "sha256": "5f923737c9f36ffe3a17ff8e5a2adc2320ec3b74c605a0ce597909a16b9603a6",
+      "effect_zh_TW": "精靈球提供 4 個道具而非 3 個。"
     },
     {
       "name": "Fire Stone",
@@ -100,7 +111,8 @@
       "reference_image": 1,
       "reference_row": 4,
       "reference_column": 3,
-      "sha256": "9cdf7f4ec6c0d7f1e9890d970ffbd506486032005db0cd4b0600280e8983b5ca"
+      "sha256": "9cdf7f4ec6c0d7f1e9890d970ffbd506486032005db0cd4b0600280e8983b5ca",
+      "effect_zh_TW": "灼傷敵人倒下時爆炸。"
     },
     {
       "name": "Ice Stone",
@@ -108,7 +120,8 @@
       "reference_image": 1,
       "reference_row": 5,
       "reference_column": 1,
-      "sha256": "e3e665bb113a61836d5c22a752a0cda2e1d42945d89458688f0e2895662b0713"
+      "sha256": "e3e665bb113a61836d5c22a752a0cda2e1d42945d89458688f0e2895662b0713",
+      "effect_zh_TW": "減速敵人倒下時爆炸。"
     },
     {
       "name": "Revive",
@@ -116,7 +129,8 @@
       "reference_image": 1,
       "reference_row": 5,
       "reference_column": 2,
-      "sha256": "99684c13b64928bd4458fd1dfc0941dc715b3ed7d3af4eb702fcfa6d63db034b"
+      "sha256": "99684c13b64928bd4458fd1dfc0941dc715b3ed7d3af4eb702fcfa6d63db034b",
+      "effect_zh_TW": "以 35% HP 復活一次。每局一次。"
     },
     {
       "name": "Power Bracer",
@@ -124,7 +138,8 @@
       "reference_image": 1,
       "reference_row": 5,
       "reference_column": 3,
-      "sha256": "c018cdae89ab64c6da5480ea6563b5a3e654c5416949c8a0fde52ce5c4958d03"
+      "sha256": "c018cdae89ab64c6da5480ea6563b5a3e654c5416949c8a0fde52ce5c4958d03",
+      "effect_zh_TW": "傷害 +40%，移動速度 -15%。"
     },
     {
       "name": "Life Orb",
@@ -132,7 +147,8 @@
       "reference_image": 1,
       "reference_row": 6,
       "reference_column": 1,
-      "sha256": "2f4cc7701b781303ed325151d23e2a3bacb0d014f0a021223034ad8f8d925d22"
+      "sha256": "2f4cc7701b781303ed325151d23e2a3bacb0d014f0a021223034ad8f8d925d22",
+      "effect_zh_TW": "傷害 +30%，最大 HP -10%。"
     },
     {
       "name": "Choice Band",
@@ -140,7 +156,8 @@
       "reference_image": 1,
       "reference_row": 6,
       "reference_column": 2,
-      "sha256": "cd24e9b39d54dba01ed7c059d80e7bdafdedb0b856963ed24b5a60e0c6100612"
+      "sha256": "cd24e9b39d54dba01ed7c059d80e7bdafdedb0b856963ed24b5a60e0c6100612",
+      "effect_zh_TW": "傷害 +35%，攻擊速度 -8%。"
     },
     {
       "name": "Choice Scarf",
@@ -148,7 +165,8 @@
       "reference_image": 1,
       "reference_row": 6,
       "reference_column": 3,
-      "sha256": "28072aa64949d94de38d98d07a00f1aa29aee2b7dc5df497745b45cd1e038e53"
+      "sha256": "28072aa64949d94de38d98d07a00f1aa29aee2b7dc5df497745b45cd1e038e53",
+      "effect_zh_TW": "移動速度 +20%，攻擊速度 +10%。"
     },
     {
       "name": "Expert Belt",
@@ -156,7 +174,8 @@
       "reference_image": 1,
       "reference_row": 7,
       "reference_column": 1,
-      "sha256": "96dc0b7c82d91681f92e504a65d9c18863f921d9146dc804c0a9ecb6887b87a9"
+      "sha256": "96dc0b7c82d91681f92e504a65d9c18863f921d9146dc804c0a9ecb6887b87a9",
+      "effect_zh_TW": "對弱於招式屬性的目標傷害 +30%。"
     },
     {
       "name": "Assault Vest",
@@ -164,7 +183,8 @@
       "reference_image": 1,
       "reference_row": 7,
       "reference_column": 2,
-      "sha256": "c651598cdd9c1ac7e5dc81fca5d026d32cbf7dfc12723d1ac87a9455c6340b26"
+      "sha256": "c651598cdd9c1ac7e5dc81fca5d026d32cbf7dfc12723d1ac87a9455c6340b26",
+      "effect_zh_TW": "護甲 +12，最大 HP +12%。"
     },
     {
       "name": "Exp. Share",
@@ -172,7 +192,8 @@
       "reference_image": 1,
       "reference_row": 7,
       "reference_column": 3,
-      "sha256": "74de0a6e243e28385861565b1199b600353f7df5be21af19247fccef7f9d8b25"
+      "sha256": "74de0a6e243e28385861565b1199b600353f7df5be21af19247fccef7f9d8b25",
+      "effect_zh_TW": "經驗 +25%，拾取半徑 +20%。"
     },
     {
       "name": "Star Piece",
@@ -180,7 +201,8 @@
       "reference_image": 1,
       "reference_row": 8,
       "reference_column": 1,
-      "sha256": "606f5fc913330c1cf47ac65008c535f9e1857d02e646b63cd031f88a8a1549c9"
+      "sha256": "606f5fc913330c1cf47ac65008c535f9e1857d02e646b63cd031f88a8a1549c9",
+      "effect_zh_TW": "幸運 +20。"
     },
     {
       "name": "Metronome",
@@ -188,7 +210,8 @@
       "reference_image": 1,
       "reference_row": 8,
       "reference_column": 2,
-      "sha256": "e7baba882f788cc9031b3326467699e63b4a6a513d49d9998aa1a3e97942670d"
+      "sha256": "e7baba882f788cc9031b3326467699e63b4a6a513d49d9998aa1a3e97942670d",
+      "effect_zh_TW": "每 10 秒不受傷，傷害 +4%，最多 +40%。"
     },
     {
       "name": "Focus Sash",
@@ -196,7 +219,8 @@
       "reference_image": 1,
       "reference_row": 8,
       "reference_column": 3,
-      "sha256": "6587f66eefb932b54052b92df524df16947434f912fabdfc8d6537e0cb0cfa84"
+      "sha256": "6587f66eefb932b54052b92df524df16947434f912fabdfc8d6537e0cb0cfa84",
+      "effect_zh_TW": "15% 機率以 1 HP 抵擋致命一擊，每 20 秒一次。"
     },
     {
       "name": "Lum Berry",
@@ -204,7 +228,8 @@
       "reference_image": 1,
       "reference_row": 9,
       "reference_column": 1,
-      "sha256": "65d8b213ee9eace78c17b386665ab1711c193d606c219af70baf9776153839c2"
+      "sha256": "65d8b213ee9eace78c17b386665ab1711c193d606c219af70baf9776153839c2",
+      "effect_zh_TW": "每 30 秒恢復 20% HP。"
     },
     {
       "name": "Eviolite",
@@ -212,7 +237,8 @@
       "reference_image": 1,
       "reference_row": 9,
       "reference_column": 2,
-      "sha256": "96d714bf25e5615ebdcd58579083ceeecc641e1cd502cfe9e2f85ff7983209ae"
+      "sha256": "96d714bf25e5615ebdcd58579083ceeecc641e1cd502cfe9e2f85ff7983209ae",
+      "effect_zh_TW": "伙伴仍可進化時：護甲 +50%，最大 HP +25%。"
     },
     {
       "name": "Quick Claw",
@@ -220,7 +246,8 @@
       "reference_image": 1,
       "reference_row": 9,
       "reference_column": 3,
-      "sha256": "6c0b540c6572b1bb9a4772564746c4d4cdd079572e919128e3698cbecc186d2d"
+      "sha256": "6c0b540c6572b1bb9a4772564746c4d4cdd079572e919128e3698cbecc186d2d",
+      "effect_zh_TW": "攻擊速度 +10%。"
     },
     {
       "name": "Shell Bell",
@@ -228,7 +255,8 @@
       "reference_image": 2,
       "reference_row": 1,
       "reference_column": 1,
-      "sha256": "b446049854c0b86b2c56a9bcdce9e72ff8896a4ef99b68bb3a4c8e9010d40047"
+      "sha256": "b446049854c0b86b2c56a9bcdce9e72ff8896a4ef99b68bb3a4c8e9010d40047",
+      "effect_zh_TW": "恢復所造成傷害的 1%。"
     },
     {
       "name": "Leftovers",
@@ -236,7 +264,8 @@
       "reference_image": 2,
       "reference_row": 1,
       "reference_column": 2,
-      "sha256": "ea0b099ed6ea252fc225dde5242f36c07810e992d41ef840c347e03b19dced7d"
+      "sha256": "ea0b099ed6ea252fc225dde5242f36c07810e992d41ef840c347e03b19dced7d",
+      "effect_zh_TW": "每秒恢復 +1.2 HP。"
     },
     {
       "name": "Rocky Helmet",
@@ -244,7 +273,8 @@
       "reference_image": 2,
       "reference_row": 1,
       "reference_column": 3,
-      "sha256": "99e7ad1721372edf34202f0706b8444737686cbf894869cf5de9fe2e35c774e3"
+      "sha256": "99e7ad1721372edf34202f0706b8444737686cbf894869cf5de9fe2e35c774e3",
+      "effect_zh_TW": "接觸你的敵人受到 25 傷害。"
     },
     {
       "name": "Amulet Coin",
@@ -252,7 +282,8 @@
       "reference_image": 2,
       "reference_row": 2,
       "reference_column": 1,
-      "sha256": "3b83577d845caddd7386cf1a02453ede0264990aabd2c2883bb2dcdeff7a931f"
+      "sha256": "3b83577d845caddd7386cf1a02453ede0264990aabd2c2883bb2dcdeff7a931f",
+      "effect_zh_TW": "金幣 +25%。"
     },
     {
       "name": "Lucky Egg",
@@ -260,7 +291,8 @@
       "reference_image": 2,
       "reference_row": 2,
       "reference_column": 2,
-      "sha256": "0bb799b76d41d0b14b11769a28d03be1dfa23c00fad8630031e27e5d5cfe9ac1"
+      "sha256": "0bb799b76d41d0b14b11769a28d03be1dfa23c00fad8630031e27e5d5cfe9ac1",
+      "effect_zh_TW": "經驗 +15%。"
     },
     {
       "name": "Muscle Band",
@@ -268,7 +300,8 @@
       "reference_image": 2,
       "reference_row": 2,
       "reference_column": 3,
-      "sha256": "86789bd62fa34e086ab8016fdf3633dfd28d8aa34d0f2485f594aabf80ee2ace"
+      "sha256": "86789bd62fa34e086ab8016fdf3633dfd28d8aa34d0f2485f594aabf80ee2ace",
+      "effect_zh_TW": "傷害 +15%。"
     },
     {
       "name": "Scope Lens",
@@ -276,7 +309,8 @@
       "reference_image": 2,
       "reference_row": 3,
       "reference_column": 1,
-      "sha256": "437d64d4b510f43d5bdf4cd1b8001b576a516b0974b88c064c3c4379fabd70ba"
+      "sha256": "437d64d4b510f43d5bdf4cd1b8001b576a516b0974b88c064c3c4379fabd70ba",
+      "effect_zh_TW": "暴擊傷害 +30%。"
     },
     {
       "name": "Light Clay",
@@ -284,7 +318,8 @@
       "reference_image": 2,
       "reference_row": 3,
       "reference_column": 2,
-      "sha256": "7a6a185a2fa8aa333ff041b1f854b44967de9c9b11fb0f504d64768bcd9fc991"
+      "sha256": "7a6a185a2fa8aa333ff041b1f854b44967de9c9b11fb0f504d64768bcd9fc991",
+      "effect_zh_TW": "持續時間 +20%。"
     },
     {
       "name": "Sitrus Berry",
@@ -292,7 +327,8 @@
       "reference_image": 2,
       "reference_row": 3,
       "reference_column": 3,
-      "sha256": "f8fba60b41b0aaccd665735519c4a542860cf256c773e828bdc446ae6f747d5d"
+      "sha256": "f8fba60b41b0aaccd665735519c4a542860cf256c773e828bdc446ae6f747d5d",
+      "effect_zh_TW": "HP 低於 30% 時恢復 35% HP，每 45 秒一次。"
     },
     {
       "name": "Smoke Ball",
@@ -300,7 +336,8 @@
       "reference_image": 2,
       "reference_row": 4,
       "reference_column": 1,
-      "sha256": "a1f1d462f656022a5501796da644334a71d1c497d04deb4072496f3e7e16c6b7"
+      "sha256": "a1f1d462f656022a5501796da644334a71d1c497d04deb4072496f3e7e16c6b7",
+      "effect_zh_TW": "受擊時 25% 機率隱身 1.5 秒。"
     },
     {
       "name": "Flame Orb",
@@ -308,7 +345,8 @@
       "reference_image": 2,
       "reference_row": 4,
       "reference_column": 2,
-      "sha256": "b15c6e42f9bbfc5feee7568d888e9052116c099df73898634ad803ed998a31a8"
+      "sha256": "b15c6e42f9bbfc5feee7568d888e9052116c099df73898634ad803ed998a31a8",
+      "effect_zh_TW": "命中時 5% 機率灼傷。"
     },
     {
       "name": "Toxic Orb",
@@ -316,7 +354,8 @@
       "reference_image": 2,
       "reference_row": 4,
       "reference_column": 3,
-      "sha256": "c61fbdb6b5a37c3328c6efc976d2d6ce0e77152456bc3b1d529cfe81c2135487"
+      "sha256": "c61fbdb6b5a37c3328c6efc976d2d6ce0e77152456bc3b1d529cfe81c2135487",
+      "effect_zh_TW": "命中時 5% 機率中毒。"
     },
     {
       "name": "Snowball",
@@ -324,7 +363,8 @@
       "reference_image": 2,
       "reference_row": 5,
       "reference_column": 1,
-      "sha256": "1a31bfc8cf155f430b7ecd48bfddb9cb3aa3147fe898cfa97bbca8d18265d45d"
+      "sha256": "1a31bfc8cf155f430b7ecd48bfddb9cb3aa3147fe898cfa97bbca8d18265d45d",
+      "effect_zh_TW": "命中時 6% 機率減速。"
     },
     {
       "name": "Big Root",
@@ -332,7 +372,8 @@
       "reference_image": 2,
       "reference_row": 5,
       "reference_column": 2,
-      "sha256": "044d65e7bc127194a7344909ffaca38d4bc5db8b56a25b722a89a15eca0cbca3"
+      "sha256": "044d65e7bc127194a7344909ffaca38d4bc5db8b56a25b722a89a15eca0cbca3",
+      "effect_zh_TW": "治療 +15%。"
     },
     {
       "name": "King's Rock",
@@ -340,7 +381,8 @@
       "reference_image": 2,
       "reference_row": 5,
       "reference_column": 3,
-      "sha256": "0ac375020f4315627f1917407b20dc0e7172071926d6300421a56e6221453db9"
+      "sha256": "0ac375020f4315627f1917407b20dc0e7172071926d6300421a56e6221453db9",
+      "effect_zh_TW": "命中時 6% 機率暈眩 0.5 秒。"
     },
     {
       "name": "Protective Pads",
@@ -348,7 +390,8 @@
       "reference_image": 2,
       "reference_row": 6,
       "reference_column": 1,
-      "sha256": "2d7ae83265b722fe385bda9f1514d0a9c654e677cbf2b8091ba989841a4e6da0"
+      "sha256": "2d7ae83265b722fe385bda9f1514d0a9c654e677cbf2b8091ba989841a4e6da0",
+      "effect_zh_TW": "接觸敵人的傷害 -30%。"
     },
     {
       "name": "Sticky Barb",
@@ -356,7 +399,8 @@
       "reference_image": 2,
       "reference_row": 6,
       "reference_column": 2,
-      "sha256": "89e5c611140770a9d3dc1784cb72138a7b500213d3338adf309e601c884e9294"
+      "sha256": "89e5c611140770a9d3dc1784cb72138a7b500213d3338adf309e601c884e9294",
+      "effect_zh_TW": "附近敵人每秒受到 15 傷害。"
     },
     {
       "name": "Silk Scarf",
@@ -364,7 +408,8 @@
       "reference_image": 2,
       "reference_row": 6,
       "reference_column": 3,
-      "sha256": "16c396f39412b4c950ef333807d1084d4e526e477737e1dba78e74cf0377ccba"
+      "sha256": "16c396f39412b4c950ef333807d1084d4e526e477737e1dba78e74cf0377ccba",
+      "effect_zh_TW": "一般招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Charcoal",
@@ -372,7 +417,8 @@
       "reference_image": 2,
       "reference_row": 7,
       "reference_column": 1,
-      "sha256": "58bcfed2cceb608d385e7e7ccd987be2d286bb84f854517006351d68fdac9c7d"
+      "sha256": "58bcfed2cceb608d385e7e7ccd987be2d286bb84f854517006351d68fdac9c7d",
+      "effect_zh_TW": "火招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Mystic Water",
@@ -380,7 +426,8 @@
       "reference_image": 2,
       "reference_row": 7,
       "reference_column": 2,
-      "sha256": "ba6a40dae3a3f047105063fc68bd6dbc9f7ca5cecdb05d60d955b8e5e6d8f178"
+      "sha256": "ba6a40dae3a3f047105063fc68bd6dbc9f7ca5cecdb05d60d955b8e5e6d8f178",
+      "effect_zh_TW": "水招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Miracle Seed",
@@ -388,7 +435,8 @@
       "reference_image": 2,
       "reference_row": 7,
       "reference_column": 3,
-      "sha256": "bcb4f0ae75e5e1741495b2cf1cb9425ca750e906b828ac79f75b05888ac5cffe"
+      "sha256": "bcb4f0ae75e5e1741495b2cf1cb9425ca750e906b828ac79f75b05888ac5cffe",
+      "effect_zh_TW": "草招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Magnet",
@@ -396,7 +444,8 @@
       "reference_image": 2,
       "reference_row": 8,
       "reference_column": 1,
-      "sha256": "40f2c77336ba904a24e93770fedf45d6002b9881bf5930dd2311cbf31dfdf8d8"
+      "sha256": "40f2c77336ba904a24e93770fedf45d6002b9881bf5930dd2311cbf31dfdf8d8",
+      "effect_zh_TW": "電招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Never-Melt Ice",
@@ -404,7 +453,8 @@
       "reference_image": 2,
       "reference_row": 8,
       "reference_column": 2,
-      "sha256": "773bb11ff2644c1e8b1b8035ee341d7520d4e8b05ceeea69797d242a830b1b50"
+      "sha256": "773bb11ff2644c1e8b1b8035ee341d7520d4e8b05ceeea69797d242a830b1b50",
+      "effect_zh_TW": "冰招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Black Belt",
@@ -412,7 +462,8 @@
       "reference_image": 2,
       "reference_row": 8,
       "reference_column": 3,
-      "sha256": "81fc7d246b5a8733dd6d6a3a004d7469b8e67843cc3f80ba74f86c7dcc605791"
+      "sha256": "81fc7d246b5a8733dd6d6a3a004d7469b8e67843cc3f80ba74f86c7dcc605791",
+      "effect_zh_TW": "格鬥招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Poison Barb",
@@ -420,7 +471,8 @@
       "reference_image": 2,
       "reference_row": 9,
       "reference_column": 1,
-      "sha256": "5baf7fbdd1eadbb3b0897823013d5877aa462f949759de236d52835372441cff"
+      "sha256": "5baf7fbdd1eadbb3b0897823013d5877aa462f949759de236d52835372441cff",
+      "effect_zh_TW": "毒招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Soft Sand",
@@ -428,7 +480,8 @@
       "reference_image": 2,
       "reference_row": 9,
       "reference_column": 2,
-      "sha256": "59f14f568d1cb4b74f5520b9e3d23880cde0886381b0217cddccb1dad4ada9b3"
+      "sha256": "59f14f568d1cb4b74f5520b9e3d23880cde0886381b0217cddccb1dad4ada9b3",
+      "effect_zh_TW": "地面招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Sharp Beak",
@@ -436,7 +489,8 @@
       "reference_image": 2,
       "reference_row": 9,
       "reference_column": 3,
-      "sha256": "20c1e973dd6466107af15980f0a1cdbebfcdd7073430519122b4df703a99d065"
+      "sha256": "20c1e973dd6466107af15980f0a1cdbebfcdd7073430519122b4df703a99d065",
+      "effect_zh_TW": "飛行招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Twisted Spoon",
@@ -444,7 +498,8 @@
       "reference_image": 3,
       "reference_row": 1,
       "reference_column": 1,
-      "sha256": "ebdeb0db1519b3969e553c0f45630f5c36f0c9e399c0d36bbbda140f83461956"
+      "sha256": "ebdeb0db1519b3969e553c0f45630f5c36f0c9e399c0d36bbbda140f83461956",
+      "effect_zh_TW": "超能力招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Silver Powder",
@@ -452,7 +507,8 @@
       "reference_image": 3,
       "reference_row": 1,
       "reference_column": 2,
-      "sha256": "e5918e461f478a74bc97e851891491024374396176a69a982afa4609a2c4f4a9"
+      "sha256": "e5918e461f478a74bc97e851891491024374396176a69a982afa4609a2c4f4a9",
+      "effect_zh_TW": "蟲招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Hard Stone",
@@ -460,7 +516,8 @@
       "reference_image": 3,
       "reference_row": 1,
       "reference_column": 3,
-      "sha256": "b775144dda89c513f7c9eb053d63618db4c3f12cf1331d70879bf7d43ae0cbfe"
+      "sha256": "b775144dda89c513f7c9eb053d63618db4c3f12cf1331d70879bf7d43ae0cbfe",
+      "effect_zh_TW": "岩石招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Spell Tag",
@@ -468,7 +525,8 @@
       "reference_image": 3,
       "reference_row": 1,
       "reference_column": 4,
-      "sha256": "895ee81d9656ac6295d4fcd681933b676f5adddbfc817c4ab6e96ce91ce16a5e"
+      "sha256": "895ee81d9656ac6295d4fcd681933b676f5adddbfc817c4ab6e96ce91ce16a5e",
+      "effect_zh_TW": "幽靈招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Dragon Fang",
@@ -476,7 +534,8 @@
       "reference_image": 3,
       "reference_row": 2,
       "reference_column": 1,
-      "sha256": "331eb37a44819a5b7694e20d36c8596ef2b208cd326bd9d5837037ccc9bcf2c7"
+      "sha256": "331eb37a44819a5b7694e20d36c8596ef2b208cd326bd9d5837037ccc9bcf2c7",
+      "effect_zh_TW": "龍招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Black Glasses",
@@ -484,7 +543,8 @@
       "reference_image": 3,
       "reference_row": 2,
       "reference_column": 2,
-      "sha256": "8f21cd50def1cef389d11f5d88212db96d831a1f04c09d2bfc546b98cac9ad61"
+      "sha256": "8f21cd50def1cef389d11f5d88212db96d831a1f04c09d2bfc546b98cac9ad61",
+      "effect_zh_TW": "惡招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Metal Coat",
@@ -492,7 +552,8 @@
       "reference_image": 3,
       "reference_row": 2,
       "reference_column": 3,
-      "sha256": "b4e469c3c977ad5dff04bb65931ffc2b0da2566a8ecd7dac314093a4352579dd"
+      "sha256": "b4e469c3c977ad5dff04bb65931ffc2b0da2566a8ecd7dac314093a4352579dd",
+      "effect_zh_TW": "鋼招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Fairy Feather",
@@ -500,7 +561,8 @@
       "reference_image": 3,
       "reference_row": 2,
       "reference_column": 4,
-      "sha256": "25df5d71e0aa3e60aa0f7f8c63e5ceb5dda8b2ea18844d68941d59b8c6944572"
+      "sha256": "25df5d71e0aa3e60aa0f7f8c63e5ceb5dda8b2ea18844d68941d59b8c6944572",
+      "effect_zh_TW": "妖精招式傷害 +30%，傷害 +3%。"
     },
     {
       "name": "Oran Berry",
@@ -508,7 +570,8 @@
       "reference_image": 3,
       "reference_row": 3,
       "reference_column": 1,
-      "sha256": "4fb69d9206d82744a822e9708458a84d2a2d1bdb87c8563b6ddf8672678ccc3a"
+      "sha256": "4fb69d9206d82744a822e9708458a84d2a2d1bdb87c8563b6ddf8672678ccc3a",
+      "effect_zh_TW": "最大 HP +15。"
     },
     {
       "name": "Quick Powder",
@@ -516,7 +579,8 @@
       "reference_image": 3,
       "reference_row": 3,
       "reference_column": 2,
-      "sha256": "f3aef7d51d5ea384dd4c9add6844a40625a9ce8945d563a0b11750378653430a"
+      "sha256": "f3aef7d51d5ea384dd4c9add6844a40625a9ce8945d563a0b11750378653430a",
+      "effect_zh_TW": "移動速度 +7%。"
     },
     {
       "name": "Bright Powder",
@@ -524,7 +588,8 @@
       "reference_image": 3,
       "reference_row": 3,
       "reference_column": 3,
-      "sha256": "f96d23117ceebc189a6a3001c2ecb1d6069f297b7bcc38539139ebece672e764"
+      "sha256": "f96d23117ceebc189a6a3001c2ecb1d6069f297b7bcc38539139ebece672e764",
+      "effect_zh_TW": "閃避 +4%。"
     },
     {
       "name": "Razor Claw",
@@ -532,7 +597,8 @@
       "reference_image": 3,
       "reference_row": 3,
       "reference_column": 4,
-      "sha256": "f430b99906ef85b67a6bb93baeee3998cc6af03c8ad922778a510bfa573ae445"
+      "sha256": "f430b99906ef85b67a6bb93baeee3998cc6af03c8ad922778a510bfa573ae445",
+      "effect_zh_TW": "暴擊率 +6%。"
     },
     {
       "name": "Wide Lens",
@@ -540,7 +606,8 @@
       "reference_image": 3,
       "reference_row": 4,
       "reference_column": 1,
-      "sha256": "de534ed9a2c2bd344f5130556c3e1146d022ef961baa91c56db2bdc27080688b"
+      "sha256": "de534ed9a2c2bd344f5130556c3e1146d022ef961baa91c56db2bdc27080688b",
+      "effect_zh_TW": "範圍 +10%。"
     },
     {
       "name": "Safety Goggles",
@@ -548,7 +615,8 @@
       "reference_image": 3,
       "reference_row": 4,
       "reference_column": 2,
-      "sha256": "71d8beba5fa184355a8f54bbe11749ef83bcf779892bcb520e6d9874b61fa7f4"
+      "sha256": "71d8beba5fa184355a8f54bbe11749ef83bcf779892bcb520e6d9874b61fa7f4",
+      "effect_zh_TW": "護甲 +5。"
     },
     {
       "name": "Nugget",
@@ -556,7 +624,8 @@
       "reference_image": 3,
       "reference_row": 4,
       "reference_column": 3,
-      "sha256": "6c660b1bf070e23766bcbb7f80503495a949ad5776bda59a67d81450a9151089"
+      "sha256": "6c660b1bf070e23766bcbb7f80503495a949ad5776bda59a67d81450a9151089",
+      "effect_zh_TW": "金幣 +15%。"
     },
     {
       "name": "Big Nugget",
@@ -564,7 +633,18 @@
       "reference_image": 3,
       "reference_row": 4,
       "reference_column": 4,
-      "sha256": "b86018ac01b111537c201b248a2d41dd477fcc21d8bea35a830fdb48de15d237"
+      "sha256": "b86018ac01b111537c201b248a2d41dd477fcc21d8bea35a830fdb48de15d237",
+      "effect_zh_TW": "精靈球價格降低 8%，最多 40%。"
     }
-  ]
+  ],
+  "effect_source": {
+    "type": "user-provided-game-screenshots",
+    "files": [
+      "image(20261022-154705).png",
+      "image(20261022-154729).png",
+      "image(20261022-154728).png"
+    ],
+    "scope": "依截圖記錄此遊戲顯示的道具能力；非寶可夢本傳效果，也未與執行中的程式驗證。",
+    "notes": "只記錄畫面明示的條件與數值；不推定疊加算法、觸發對象或未標明的持續時間。未記錄玩家解鎖進度與畫面數量。"
+  }
 }
