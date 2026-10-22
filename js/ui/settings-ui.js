@@ -17,13 +17,13 @@ G.SettingsUI = (() => {
     // Al conectar o quitar un mando con Controles abierto, se ve al momento.
     for (const ev of ['gamepadconnected', 'gamepaddisconnected']) addEventListener(ev, () => { if (isOpen() && tab === 'ctl') render(); });
     $('set-close').onclick = close;
-    $('btn-settings').innerHTML = G.Icons.html('gear', 20);
+    $('btn-settings').innerHTML = G.Icons.html('gear', 20) + ' <span>Ajustes</span>';
     $('btn-settings').onclick = () => open();
     $('btn-pause-settings').onclick = () => open('sound');
     // Pantalla completa (si el navegador la permite; en iPhone, cómo conseguirla).
     if (canFull() || iosTip()) {
       $('btn-full').classList.remove('hidden');
-      $('btn-full').innerHTML = G.Icons.html('full', 20);
+      $('btn-full').innerHTML = G.Icons.html('full', 20) + ' <span>Pantalla completa</span>';
       $('btn-full').onclick = toggleFull;
     }
   }
@@ -70,7 +70,11 @@ G.SettingsUI = (() => {
   }
 
   function render() {
-    document.querySelectorAll('#set-tabs .gen-tab').forEach(b => b.classList.toggle('on', b.dataset.t === tab));
+    document.querySelectorAll('#set-tabs .gen-tab').forEach(b => {
+      const on = b.dataset.t === tab;
+      b.classList.toggle('on', on);
+      if (on) b.scrollIntoView({ block: 'nearest' });
+    });
     const box = $('set-body');
     box.scrollTop = 0;
     if (tab === 'sound') {
@@ -78,8 +82,9 @@ G.SettingsUI = (() => {
       G.UI.soundControls($('set-sound'));
     } else if (tab === 'gfx') {
       const auto = ['baja', 'media', 'alta'][G.Settings.autoLevel];
+      const face = G.I18n.choices.filter(([v]) => v === 'es' || v === 'en' || v === 'zh-Hant');
       box.innerHTML = section('Idioma', 'El juego se recarga al cambiarlo.')
-        + `<div class="chips set-chips" translate="no">${G.I18n.choices.map(([v, l]) =>
+        + `<div class="chips set-chips" translate="no">${face.map(([v, l]) =>
              `<button class="chip ${G.I18n.lang === v ? 'on' : ''}" data-lang="${v}">${l}</button>`).join('')}</div>`
         + section('Calidad', 'Cuántos efectos y partículas se dibujan. <b>Auto</b> la baja sola si el juego va a tirones (ahora: ' + auto + ').')
         + choice('quality', [['auto', 'Auto'], ['high', 'Alta'], ['mid', 'Media'], ['low', 'Baja']])
@@ -134,8 +139,7 @@ G.SettingsUI = (() => {
     } else if (tab === 'acc') {
       renderAccount(box);
     } else if (tab === 'code') {
-      box.innerHTML = section('Código promocional', 'Estos códigos se pueden usar todas las veces que quieras.')
-        + `<form id="code-form" class="row" autocomplete="off">
+      box.innerHTML = `<form id="code-form" class="row" autocomplete="off">
              <input id="code-in" class="field grow" maxlength="24" spellcheck="false" placeholder="Código" autocapitalize="characters">
              <button class="btn gold" type="submit">Canjear</button>
            </form>
@@ -150,7 +154,7 @@ G.SettingsUI = (() => {
         if (r.ok) $('code-in').value = '';
       };
     } else {
-      box.innerHTML = '<p class="sub" translate="no">有問題 問小柯</p>';
+      box.innerHTML = '<p class="about-line" translate="no">這是給小柯的朋友玩的</p><p class="about-line" translate="no">有問題 問小柯</p>';
     }
     wire(box);
   }

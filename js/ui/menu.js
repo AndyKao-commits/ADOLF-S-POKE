@@ -9,12 +9,16 @@ G.MenuUI = (() => {
   let dexF = DEX0();
   const SORTS = [['num', 'Nº'], ['name', 'Nombre'], ['rar', 'Rareza'], ['new', 'Recién conseguidos'], ['used', 'Más usados']];
 
+  let dexDrawer = false, dexSheet = false;
+
   function init() {
     const ICON = { play: 'ball', dex: 'book', upgrades: 'up', shop: 'shop', bag: 'bag', gacha: 'ball4', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
+    const sheet = $('menu-sheet');
     document.querySelectorAll('#scr-menu [data-go]').forEach(b => {
       if (b.dataset.go !== 'play') b.insertAdjacentHTML('afterbegin', `<span class="mi-ico">${G.Icons.html(ICON[b.dataset.go], 22)}</span>`);
       b.dataset.sfx = b.dataset.go === 'play' ? 'confirm' : 'click';
       b.onclick = () => {
+        if (sheet) sheet.classList.add('hidden');
         const go = b.dataset.go;
         if (go === 'play') { if (G.Social.room) G.LobbyUI.open(); else G.Flow.play(); }
         else if (go === 'dex') openDex();
@@ -28,6 +32,14 @@ G.MenuUI = (() => {
         else if (go === 'settings') G.SettingsUI.open();
       };
     });
+    const moreBtn = $('menu-more-btn');
+    if (moreBtn && sheet) moreBtn.onclick = () => { sheet.classList.toggle('hidden'); G.Audio.sfx('click'); };
+    const fbtn = $('dex-filter-btn');
+    if (fbtn) fbtn.onclick = () => { dexDrawer = !dexDrawer; $('dex-drawer').classList.toggle('hidden', !dexDrawer); };
+    const dclose = $('dex-drawer-close');
+    if (dclose) dclose.onclick = () => { dexDrawer = false; $('dex-drawer').classList.add('hidden'); };
+    const sclose = $('dex-sheet-close');
+    if (sclose) sclose.onclick = () => { dexSheet = false; $('dex-sheet').classList.add('hidden'); };
     document.querySelectorAll('[data-back]').forEach(b => { b.onclick = open; });
     $('menu-code').onsubmit = e => { e.preventDefault(); joinByCode($('menu-code-in').value); };
     $('menu-code-new').onclick = () => G.SocialUI.withNick(async () => {
@@ -196,8 +208,13 @@ G.MenuUI = (() => {
     const req = fr.filter(f => f.status === 'in').length;
     const parts = [];
     if (req) parts.push(req + (req === 1 ? ' solicitud' : ' solicitudes'));
-    $('menu-friends-sub').textContent = parts.length ? parts.join(' · ') : 'Juega en grupo, de 1 a 10';
-    $('menu-friends-sub').classList.toggle('gold', req > 0);
+    const frSub = $('menu-friends-sub');
+    if (frSub) {
+      frSub.textContent = parts.length ? parts.join(' · ') : 'Juega en grupo, de 1 a 10';
+      frSub.classList.toggle('gold', req > 0);
+    }
+    const more = $('menu-more-btn');
+    if (more) more.classList.toggle('alert', req > 0);
   }
 
   // ---------------- colección ----------------
@@ -267,8 +284,11 @@ G.MenuUI = (() => {
     };
     q.onkeydown = e => { if (e.key === 'Escape') { e.stopPropagation(); q.blur(); } };
     $('dex-clear').onclick = () => { dexF = DEX0(); openDex(); };
+    const drawer = $('dex-drawer');
+    if (drawer) drawer.classList.toggle('hidden', !dexDrawer);
     renderGrid();
-    showDetail(dexSel);
+    if (dexSheet && dexSel != null) showDetail(dexSel);
+    else if ($('dex-sheet')) $('dex-sheet').classList.add('hidden');
   }
 
   /** Lo que se ve con la generación, los filtros y el orden de ahora. */
@@ -355,6 +375,7 @@ G.MenuUI = (() => {
     cell.insertAdjacentHTML('beforeend', `<b>${own ? p.name : '???'}</b>${G.UI.stars(p.rarity, 9)}`);
     cell.onclick = () => {
       dexSel = p.dex;
+      dexSheet = true;
       $('dex-grid').querySelectorAll('.cell').forEach(c => c.classList.remove('on'));
       cell.classList.add('on');
       showDetail(p.dex);
@@ -388,6 +409,8 @@ G.MenuUI = (() => {
       `<div class="stat${natCls(k)}"><span>${label}</span><div class="bar"><i style="width:${Math.min(100, v / m * 100)}%"></i></div><span>${txt}</span></div>`;
     const usingThis = isPartner && (!hasSh || !!s.partnerShiny === viewShiny);
 
+    const sheet = $('dex-sheet');
+    if (sheet) sheet.classList.remove('hidden');
     const box = $('dex-detail');
     box.innerHTML = `
       <canvas id="dex-big" class="stage" width="220" height="190"></canvas>
@@ -420,6 +443,12 @@ G.MenuUI = (() => {
       ` : `<p class="center" style="color:var(--muted)">Aún no lo tienes.<br>Consíguelo en el banner de <b class="gold">${GEN_NAMES[p.gen - 1]}</b>
             o derrotándolo cuando salga shiny.</p>`}
     `;
+    const actions = $('dex-actions');
+    if (actions) {
+      actions.replaceChildren();
+      const moved = box.querySelector('#dex-pick, button.btn.grow');
+      if (moved) actions.appendChild(moved);
+    }
     for (const [el, t] of scrolls) el.scrollTop = t;
     $('dex-big').style.setProperty('--stage-c', !own ? '#5b83d6' : viewShiny ? '#9ae6ff' : G.U.TYPE_COLOR[p.types[0]]);
     $('dex-big').classList.toggle('shiny', own && viewShiny);

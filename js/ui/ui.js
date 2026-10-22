@@ -98,7 +98,7 @@ G.UI = (() => {
   }
 
   function refreshSoundIcon() {
-    $('btn-sound').innerHTML = G.Icons.html(G.Audio.settings.muted ? 'mute' : 'sound', 20);
+    $('btn-sound').innerHTML = G.Icons.html(G.Audio.settings.muted ? 'mute' : 'sound', 20) + ' <span>Sonido</span>';
   }
 
   // ---------------- aviso legal ----------------
@@ -184,6 +184,16 @@ G.UI = (() => {
                     fail: 'No se pudo guardar. Vuelve a probar en un momento.' };
       toast(r.why === 'wait' ? `Se guarda en la nube en ${r.secs} s.` : r.why ? MSG[r.why] : '¡Partida guardada en la nube!', 3000);
     };
+    const ov = $('btn-overflow'), more = $('top-more');
+    if (ov && more) {
+      ov.onclick = e => { e.stopPropagation(); more.classList.toggle('hidden'); };
+      more.addEventListener('click', e => { if (!e.target.closest('#btn-sound')) more.classList.add('hidden'); });
+      document.addEventListener('click', e => {
+        if (more.classList.contains('hidden')) return;
+        if (e.target.closest('#top-more') || e.target.closest('#btn-overflow')) return;
+        more.classList.add('hidden');
+      });
+    }
     wireSounds();
     refreshSoundIcon();
     $('btn-sound').onclick = () => {

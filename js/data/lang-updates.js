@@ -723,6 +723,8 @@
     ["Asedio: derriba el castillo rival. El tuyo no se toca.", "Siège : abats le château rival. Le tien ne se touche pas.", "Assedio: abbatti il castello rivale. Il tuo non si tocca.", "Assédio: derrube o castelo rival. O seu não é atingido.", "攻防战：打倒敌方城堡。你的城堡不会被打到。", "攻防戰：打倒敵方城堡。你的城堡不會被打到。"],
     ["Jefes: {x}.", "Chefs : {x}.", "Boss: {x}.", "Chefes: {x}.", "首领：{x}。", "首領：{x}。"],
     ["Guardado en la nube: se sigue subiendo solo cada media hora, al cerrar la pestaña y con el botón Guardar. En este navegador se guarda todo al momento.", "Sauvegarde cloud : elle part toute seule toutes les demi-heures, en fermant l’onglet et avec le bouton Enregistrer. Dans ce navigateur, tout est enregistré tout de suite.", "Salvataggio cloud: si carica da solo ogni mezz’ora, chiudendo la scheda e con il pulsante Salva. In questo browser tutto si salva subito.", "Salvamento na nuvem: sobe sozinho a cada meia hora, ao fechar a aba e com o botão Salvar. Neste navegador, tudo é salvo na hora.", "云端存档：每半小时会自动上传，关闭分页和按下保存也会上传。在这台浏览器里会立刻保存。", "雲端存檔：每半小時會自動上傳，關閉分頁和按下儲存也會上傳。在這台瀏覽器裡會立刻儲存。"],
+    ["Más", "Plus", "Altro", "Mais", "更多", "更多"],
+    ["Filtros", "Filtres", "Filtri", "Filtros", "筛选", "篩選"],
   ];
   languages.forEach((lang, i) => G.I18n.add(Object.fromEntries(rows.map(r => [r[0], r[i + 1]])), lang));
   G.I18n.add({

@@ -78,7 +78,7 @@
   ]
 }
 </script>
-<link rel="stylesheet" href="css/style.css?v=kecleon">
+<link rel="stylesheet" href="css/style.css?v=mobileui">
 <script src="js/core/locales.js?v=b8a3ce7ae9"></script>
 </head>
 <body>
@@ -193,14 +193,17 @@
   <nav class="menu-dock box">
     <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
     <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
+    <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
+    <button class="menu-item" id="menu-more-btn" type="button"><span class="mi-ico" aria-hidden="true">☰</span>Más</button>
+  </nav>
+  <div id="menu-sheet" class="menu-sheet box hidden">
     <button class="menu-item" data-go="shop">Tienda Kecleon<small>Mentas, Cápsulas y MT</small></button>
     <button class="menu-item" data-go="bag">Mochila<small id="menu-bag-sub">Vacía</small></button>
-    <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
     <button class="menu-item" data-go="goals">Misiones<small id="menu-goals-sub">Misiones, logros y perfil</small></button>
     <button class="menu-item" data-go="friends">Amigos<small id="menu-friends-sub">Juega en grupo, de 1 a 10</small></button>
     <button class="menu-item" data-go="rank">Ranking<small>Quién aguanta más</small></button>
     <button class="menu-item" data-go="settings">Ajustes<small>Sonido, gráficos, controles y cuenta</small></button>
-  </nav>
+  </div>
 </section>
 
 <div id="topbar" class="topbar hidden">
@@ -208,12 +211,16 @@
   <div class="pill" id="tickets-pill" title="Tickets del gacha"></div>
   <div class="pill" id="user-pill"></div>
   <button id="btn-save" class="btn small gold save-btn hidden" title="Guardar la partida en la nube"></button>
-  <button id="btn-news" class="btn small ghost news-btn" title="Novedades"></button>
-  <span class="pill friend-note" translate="no">這是給小柯的朋友玩的</span>
-  <button id="btn-sound" class="btn small ghost" title="Sonido"></button>
-  <button id="btn-full" class="btn small ghost hidden" title="Pantalla completa"></button>
-  <button id="btn-settings" class="btn small ghost" title="Ajustes"></button>
-  <button id="btn-logout" class="btn small ghost">Salir</button>
+  <div class="top-tools">
+    <button id="btn-overflow" class="btn small ghost" type="button" title="Más">☰</button>
+    <div id="top-more" class="top-more box hidden">
+      <button id="btn-news" class="btn small ghost news-btn" title="Novedades"></button>
+      <button id="btn-sound" class="btn small ghost" title="Sonido"></button>
+      <button id="btn-full" class="btn small ghost hidden" title="Pantalla completa"></button>
+      <button id="btn-settings" class="btn small ghost" title="Ajustes"></button>
+      <button id="btn-logout" class="btn small ghost">Salir</button>
+    </div>
+  </div>
 </div>
 <div id="sound-panel" class="box sound-panel hidden"></div>
 <div id="credits-line" class="credits-line hidden">Proyecto de fan sin ánimo de lucro · Sprites: SpriteCollab (CC BY-NC 4.0) · Pokémon © Nintendo/Creatures/GAME FREAK · <a href="#" class="legal-link" data-legal>Aviso legal</a></div>
@@ -441,22 +448,26 @@
 
 <!-- ====== Colección ====== -->
 <section id="scr-dex" class="scr dim hidden">
-  <div class="box wide">
+  <div class="box wide dex-box">
     <div class="row between"><h2>Pokémon <span id="dex-total" class="sub" style="font-size:15px"></span></h2><button class="btn small ghost" data-back>Volver</button></div>
-    <div class="gen-tabs" id="dex-gens"></div>
-    <div class="split" style="margin-top:8px">
-      <div>
-        <div class="dex-tools">
-          <input id="dex-q" type="search" placeholder="Buscar por nombre o número" autocomplete="off" spellcheck="false">
-          <select id="dex-type" title="Tipo"></select>
-          <span id="dex-count" class="sub"></span>
-          <button class="btn small ghost hidden" id="dex-clear" type="button">Limpiar</button>
-        </div>
-        <div class="filters" id="dex-filters"></div>
-        <div class="filters dex-sort" id="dex-sort"></div>
-        <div class="grid" id="dex-grid"></div>
-      </div>
+    <div class="dex-tools">
+      <input id="dex-q" type="search" placeholder="Buscar por nombre o número" autocomplete="off" spellcheck="false" enterkeyhint="search">
+      <button id="dex-filter-btn" class="btn small" type="button">Filtros</button>
+      <span id="dex-count" class="sub"></span>
+      <button class="btn small ghost hidden" id="dex-clear" type="button">Limpiar</button>
+    </div>
+    <div class="grid" id="dex-grid"></div>
+    <div id="dex-drawer" class="dex-drawer box hidden">
+      <div class="row between"><b>Filtros</b><button id="dex-drawer-close" class="btn small ghost" type="button">Cerrar</button></div>
+      <div class="gen-tabs" id="dex-gens"></div>
+      <select id="dex-type" title="Tipo"></select>
+      <div class="filters" id="dex-filters"></div>
+      <div class="filters dex-sort" id="dex-sort"></div>
+    </div>
+    <div id="dex-sheet" class="dex-sheet hidden">
+      <div class="row between"><span></span><button id="dex-sheet-close" class="btn small ghost" type="button">Volver</button></div>
       <div class="panel" id="dex-detail"></div>
+      <div id="dex-actions"></div>
     </div>
   </div>
 </section>
