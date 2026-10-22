@@ -1,0 +1,393 @@
+{
+  "status": "specification-only; not implemented",
+  "sources": {
+    "desired": "image(20261022-165833).png",
+    "existing": "image(20261022-165853).png",
+    "price_code": "js/data/upgrades.js"
+  },
+  "pricing_rule": "full = Math.round(base * Math.pow(grow, currentLevel) / 10) * 10; cost = Math.max(10, Math.floor(full / 2 / 10) * 10)",
+  "items": [
+    {
+      "id": "hp",
+      "name": "生命力",
+      "max_level": 10,
+      "effect": "每級最大生命值 +8。",
+      "status": "existing",
+      "pricing": {
+        "source": "existing-runtime",
+        "base": 60,
+        "grow": 1.35,
+        "prices_by_current_level": [
+          30,
+          40,
+          50,
+          70,
+          100,
+          130,
+          180,
+          240,
+          330,
+          440
+        ]
+      },
+      "requires": null
+    },
+    {
+      "id": "atk",
+      "name": "力量",
+      "max_level": 10,
+      "effect": "每級傷害 +4%。",
+      "status": "existing",
+      "pricing": {
+        "source": "existing-runtime",
+        "base": 80,
+        "grow": 1.38,
+        "prices_by_current_level": [
+          40,
+          50,
+          70,
+          100,
+          140,
+          200,
+          270,
+          380,
+          520,
+          720
+        ]
+      },
+      "requires": null
+    },
+    {
+      "id": "spd",
+      "name": "步伐",
+      "max_level": 8,
+      "effect": "每級移動速度 +3%。",
+      "status": "existing",
+      "pricing": {
+        "source": "existing-runtime",
+        "base": 70,
+        "grow": 1.4,
+        "prices_by_current_level": [
+          30,
+          50,
+          70,
+          90,
+          130,
+          190,
+          260,
+          370
+        ]
+      },
+      "requires": null
+    },
+    {
+      "id": "cd",
+      "name": "反射",
+      "max_level": 8,
+      "effect": "每級冷卻時間 -3%。",
+      "status": "existing",
+      "pricing": {
+        "source": "existing-runtime",
+        "base": 90,
+        "grow": 1.42,
+        "prices_by_current_level": [
+          40,
+          60,
+          90,
+          130,
+          180,
+          260,
+          370,
+          520
+        ]
+      },
+      "requires": null
+    },
+    {
+      "id": "def",
+      "name": "護甲",
+      "max_level": 8,
+      "effect": "每級防禦 +2%。",
+      "status": "existing",
+      "pricing": {
+        "source": "existing-runtime",
+        "base": 80,
+        "grow": 1.4,
+        "prices_by_current_level": [
+          40,
+          50,
+          80,
+          110,
+          150,
+          210,
+          300,
+          420
+        ]
+      },
+      "requires": null
+    },
+    {
+      "id": "regen",
+      "name": "光合作用",
+      "max_level": 5,
+      "effect": "每級每秒恢復 0.2 HP。",
+      "status": "existing",
+      "pricing": {
+        "source": "existing-runtime",
+        "base": 120,
+        "grow": 1.5,
+        "prices_by_current_level": [
+          60,
+          90,
+          130,
+          200,
+          300
+        ]
+      },
+      "requires": null
+    },
+    {
+      "id": "magnet",
+      "name": "磁力",
+      "max_level": 6,
+      "effect": "每級拾取範圍 +12%。",
+      "status": "existing",
+      "pricing": {
+        "source": "existing-runtime",
+        "base": 50,
+        "grow": 1.4,
+        "prices_by_current_level": [
+          20,
+          30,
+          50,
+          70,
+          90,
+          130
+        ]
+      },
+      "requires": null
+    },
+    {
+      "id": "xp",
+      "name": "智慧",
+      "max_level": 8,
+      "effect": "每級經驗 +5%。",
+      "status": "existing",
+      "pricing": {
+        "source": "existing-runtime",
+        "base": 100,
+        "grow": 1.42,
+        "prices_by_current_level": [
+          50,
+          70,
+          100,
+          140,
+          200,
+          290,
+          410,
+          580
+        ]
+      },
+      "requires": null
+    },
+    {
+      "id": "coins",
+      "name": "幸運（金幣）",
+      "max_level": 8,
+      "effect": "每級金幣獲得量 +8%；與幸運屬性分開。",
+      "status": "existing",
+      "pricing": {
+        "source": "existing-runtime",
+        "base": 120,
+        "grow": 1.45,
+        "prices_by_current_level": [
+          60,
+          80,
+          120,
+          180,
+          260,
+          380,
+          560,
+          810
+        ]
+      },
+      "requires": null
+    },
+    {
+      "id": "moves",
+      "name": "招式庫",
+      "max_level": 1,
+      "effect": "開局招式由 1 個增加為 2 個。",
+      "status": "existing",
+      "pricing": {
+        "source": "existing-runtime",
+        "base": 1500,
+        "grow": 1,
+        "prices_by_current_level": [
+          750
+        ]
+      },
+      "requires": null
+    },
+    {
+      "id": "crit",
+      "name": "暴擊",
+      "max_level": 10,
+      "effect": "每級暴擊率 +3%；依圖一，暴擊傷害倍率改為 ×1.75。",
+      "status": "existing",
+      "pricing": {
+        "source": "existing-runtime",
+        "base": 90,
+        "grow": 1.4,
+        "prices_by_current_level": [
+          40,
+          60,
+          90,
+          120,
+          170,
+          240,
+          340,
+          470,
+          660,
+          930
+        ]
+      },
+      "requires": null
+    },
+    {
+      "id": "reroll",
+      "name": "卡片重抽",
+      "max_level": 5,
+      "effect": "每級每局卡片重抽額度 +1。",
+      "status": "existing",
+      "pricing": {
+        "source": "existing-runtime",
+        "base": 150,
+        "grow": 1.6,
+        "prices_by_current_level": [
+          70,
+          120,
+          190,
+          300,
+          490
+        ]
+      },
+      "requires": null
+    },
+    {
+      "id": "ban",
+      "name": "封禁",
+      "max_level": 3,
+      "effect": "每級增加 1 個招式封禁名額，封禁招式不出現在升級卡片中。",
+      "status": "existing",
+      "pricing": {
+        "source": "existing-runtime",
+        "base": 300,
+        "grow": 1.9,
+        "prices_by_current_level": [
+          150,
+          280,
+          540
+        ]
+      },
+      "requires": null
+    },
+    {
+      "id": "start",
+      "name": "初始招式",
+      "max_level": 1,
+      "effect": "購買一次後，可免費選擇第一個開局招式。",
+      "status": "existing",
+      "pricing": {
+        "source": "existing-runtime",
+        "base": 400,
+        "grow": 1,
+        "prices_by_current_level": [
+          200
+        ]
+      },
+      "requires": null
+    },
+    {
+      "id": "start2",
+      "name": "第二初始招式",
+      "max_level": 1,
+      "effect": "需要招式庫；購買一次後可免費選擇第二個開局招式，或保持隨機。",
+      "status": "existing",
+      "pricing": {
+        "source": "existing-runtime",
+        "base": 400,
+        "grow": 1,
+        "prices_by_current_level": [
+          200
+        ]
+      },
+      "requires": "moves"
+    },
+    {
+      "id": "luck",
+      "name": "幸運（稀有度）",
+      "max_level": 6,
+      "effect": "每級幸運 +5，使道具更稀有。",
+      "status": "new-from-image-1",
+      "pricing": {
+        "source": "not-present-in-image-2",
+        "prices_by_current_level": null,
+        "status": "pending"
+      },
+      "requires": null
+    },
+    {
+      "id": "skip",
+      "name": "跳過",
+      "max_level": 5,
+      "effect": "每級每局升級卡片跳過額度 +1。",
+      "status": "new-from-image-1",
+      "pricing": {
+        "source": "not-present-in-image-2",
+        "prices_by_current_level": null,
+        "status": "pending"
+      },
+      "requires": null
+    },
+    {
+      "id": "fourth_card",
+      "name": "第四張卡片",
+      "max_level": 1,
+      "effect": "升級時提供的候選卡片由 3 張增加為 4 張。",
+      "status": "new-from-image-1",
+      "pricing": {
+        "source": "not-present-in-image-2",
+        "prices_by_current_level": null,
+        "status": "pending"
+      },
+      "requires": null
+    },
+    {
+      "id": "revival",
+      "name": "重整旗鼓",
+      "max_level": 1,
+      "effect": "每局可用 50% HP 復活一次。",
+      "status": "new-from-image-1",
+      "pricing": {
+        "source": "not-present-in-image-2",
+        "prices_by_current_level": null,
+        "status": "pending"
+      },
+      "requires": null
+    },
+    {
+      "id": "seal",
+      "name": "封存",
+      "max_level": 2,
+      "effect": "每級增加 1 個道具封存名額，被封存道具不再掉落。",
+      "status": "new-from-image-1",
+      "pricing": {
+        "source": "not-present-in-image-2",
+        "prices_by_current_level": null,
+        "status": "pending"
+      },
+      "requires": null
+    }
+  ]
+}
