@@ -228,7 +228,8 @@
         // Un tercio: un jefe normal ya no suelta siempre la bola amarilla.
         if (Math.random() < (bossMode ? 0.2 : 1) / 3) G.Pickups.drop('ball', this.x - 26, this.y - 10, bossMode ? 2 : 3);
       }
-      G.Pickups.dropXp(this.x, this.y, this.xp, this.boss, !!this.legend, !!this.judge);
+      const spec = G.DEX_BY && G.DEX_BY[this.dex];
+      G.Pickups.dropXp(this.x, this.y, this.xp, this.boss, !!this.legend, !!this.judge, spec ? spec.rarity : 1);
       if (this.golden && Math.random() < 0.35) G.Pickups.drop('coin', this.x + 6, this.y - 4, 3);
       // Duende del tesoro: Meowth suelta monedas; Gholdengo, un ticket ×10.
       if (this.behavior === 'thief') {
@@ -243,6 +244,7 @@
         for (let i = 0; i < 3; i++) G.Pickups.drop('ticket', this.x + G.U.rand(-30, 30), this.y + G.U.rand(-20, 20), 1);
         for (let i = 0; i < 10; i++) G.Pickups.drop('coin', this.x + G.U.rand(-50, 50), this.y + G.U.rand(-35, 35), 8);
       }
+      if (this.eliteWave && G.Spawner.eliteDown) G.Spawner.eliteDown(this);
       G.Audio.sfx(this.boss ? 'bossDown' : 'faint');
       if (this.shiny) {
         // Modo shiny: no hay destello ni aviso de "está por ahí" en cada uno.

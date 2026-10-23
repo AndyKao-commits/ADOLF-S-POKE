@@ -152,6 +152,7 @@ G.Game = (() => {
     runReal = performance.now(); tampered = false;
 
     pl = new G.Player(mon, perks, !!save.partnerShiny && G.DB.ownsShiny(mon.dex));
+    if (G.Research) G.Research.apply(pl);
     pl.setAbility(G.Mons.abilityOf(mon.dex).id);
     banked = { t1: 0, t10: 0 };
     caught = [];
@@ -191,6 +192,11 @@ G.Game = (() => {
     deathT = 0;
 
     state = 'playing';
+    fieldT = 45;
+    if (!(G.Modes.is('siege') || G.Modes.is('castle')) && (!coop || G.Coop.isHost)) {
+      placeField();
+      placeField();
+    }
   }
 
   function quitRun() {
@@ -290,7 +296,7 @@ G.Game = (() => {
     },
     lost(msg) { G.UI.toast(msg, 3600); endRun(false); },
     ball(tier) { offerBall(tier); },
-    egg() { if (pl) { pl.eggs++; G.FX.dmgText(pl.x, pl.y - pl.bodyH - 8, '+蛋', '#ffe08a'); } },
+    egg(tier) { if (pl) takeEgg(tier); },
     coin(n) { if (pl) { pl.coins += n | 0; G.FX.dmgText(pl.x, pl.y - pl.bodyH - 6, '+' + (n | 0), '#ffd23f'); } },
     mateLeft() {},
     /** Grupo: quién está eligiendo fusión. Mientras haya alguien, todo parado. */
@@ -384,6 +390,7 @@ G.Game = (() => {
     save.pused = save.pused || {};
     save.pused[pl.dex] = (+save.pused[pl.dex] || 0) + 1;     // para "más usados" en la colección
     if (G.Mastery) G.Mastery.note(pl.dex, pl.kills, G.Modes.is('siege') ? null : time, pl.speciesEvo);
+    if (G.Hatch) G.Hatch.noteRun(pl);
     save.stats.totalKills += pl.kills;
     if (!G.Modes.is('siege')) {
       save.stats.bestTime = Math.max(save.stats.bestTime, Math.floor(time));
@@ -572,6 +579,7 @@ G.Game = (() => {
     if (!pl || !G.Items.BY[id]) return;
     if (state === 'levelup' || G.UI.isOpen('scr-levelup')) { laterItems.push(id); return; }
     if (G.Items.gain(pl, id)) {
+      pl.hatchItems = (pl.hatchItems || 0) + 1;
       G.Spawner.say(G.Items.text(G.Items.BY[id], 'name') + ' ×' + pl.stacks[id], 2.2, true);
       G.Progress.event('item', { id });
     }
@@ -588,6 +596,7 @@ G.Game = (() => {
     const take = id => {
       openItem = null;
       if (id && G.Items.gain(pl, id)) {
+        pl.hatchItems = (pl.hatchItems || 0) + 1;
         G.Spawner.say(G.Items.text(G.Items.BY[id], 'name') + ' ×' + pl.stacks[id], 2.2, true);
         G.Progress.event('item', { id });
       }
@@ -606,8 +615,16 @@ G.Game = (() => {
     G.RunUI.showBallChoice(tier, options, take);
   }
 
+  function takeEgg(tier) {
+    if (!pl) return;
+    pl.eggs++;
+    if (G.Hatch) G.Hatch.collect(tier || 1);
+    G.FX.dmgText(pl.x, pl.y - pl.bodyH - 8, '+Huevo', '#ffe08a');
+  }
+
   /** @param who  quien lo ha cogido (en cooperativo puede ser un compañero) */
   function onCollect(p, who = pl) {
+    if (p.kind === 'vend' || p.kind === 'curse') return;
     const mine = who === pl;
     if (G.Coop.active && !G.Coop.isHost) {
       // Copia de un objeto del anfitrión: el efecto lo decide él.
@@ -632,7 +649,7 @@ G.Game = (() => {
       return;
     }
     if (p.kind === 'egg') {
-      if (mine) { pl.eggs++; G.FX.dmgText(who.x, who.y - who.bodyH - 8, '+蛋', '#ffe08a'); }
+      if (mine) takeEgg(p.value);
       return;
     }
     if (p.kind === 'item') {
@@ -671,6 +688,85 @@ G.Game = (() => {
   // ---------------- teclado ----------------
 
   const SHOP_R = 86;
+  const FIELD_R = 70;
+  /** La siguiente bola de pago. 1.ª 30, luego 33, 39, 45, 51… (30, 30+3, 33+6, 36+9). */
+  function vendPrice() {
+    const n = ((pl && pl.vendN) || 0) + 1;
+    return n <= 1 ? 30 : 6 * n + 21;
+  }
+  function placeField() {
+    if (!pl) return;
+    const curse = Math.random() < 1 / 12;
+    for (let i = 0; i < 12; i++) {
+      const a = Math.random() * 6.2832;
+      const d = 240 + Math.random() * 280;
+      const x = pl.x + Math.cos(a) * d, y = pl.y + Math.sin(a) * d;
+      if (!G.World.isFree(x, y, 16)) continue;
+      G.Pickups.drop(curse ? 'curse' : 'vend', x, y, curse ? 0 : 1);
+      return;
+    }
+  }
+  function tickFields(dt) {
+    if (!pl || state === 'over' || state === 'ui') return;
+    if (G.Coop.active && !G.Coop.isHost) return;
+    if (G.Modes && (G.Modes.is('siege') || G.Modes.is('castle'))) return;
+    if (G.Rift.inArena || G.Judgment.active) return;
+    fieldT -= dt;
+    if (fieldT > 0) return;
+    fieldT = 45;
+    const n = G.Pickups.all().filter(p => p.kind === 'vend' || p.kind === 'curse').length;
+    if (n >= 4) return;
+    placeField();
+  }
+  function nearestField() {
+    if (!pl || pl.dead || state !== 'playing') return null;
+    let best = null, bd = FIELD_R * FIELD_R;
+    for (const p of G.Pickups.all()) {
+      if (p.kind !== 'vend' && p.kind !== 'curse') continue;
+      const d = G.U.dist2(pl.x, pl.y, p.x, p.y);
+      if (d <= bd) { bd = d; best = p; }
+    }
+    return best;
+  }
+  function takeField(p) {
+    G.Pickups.removeId(p.id);
+    if (G.Coop.active && !G.Coop.isHost) G.Coop.toHost(['ft', p.id]);
+    else if (G.Coop.isHost) G.Coop.pickupGone(p.id);
+  }
+  function useField(p) {
+    if (!p || !pl) return;
+    if (p.kind === 'curse') {
+      takeField(p);
+      if (!G.Coop.active || G.Coop.isHost) G.Spawner.eliteWave(pl);
+      else G.Coop.toHost(['cu', pl.x, pl.y]);
+      G.Audio.sfx('select');
+      return;
+    }
+    const price = vendPrice();
+    if (pl.coins < price) {
+      G.FX.dmgText(pl.x, pl.y - pl.bodyH - 8, 'Faltan monedas', '#ff6b7a', true);
+      G.Audio.sfx('error');
+      return;
+    }
+    pl.coins -= price;
+    pl.vendN = (pl.vendN || 0) + 1;
+    takeField(p);
+    offerBall(1);
+  }
+  function useNear() {
+    const shop = nearestShop();
+    const field = nearestField();
+    if (shop && field) {
+      const ds = G.U.dist2(pl.x, pl.y, shop.x, shop.y);
+      const df = G.U.dist2(pl.x, pl.y, field.x, field.y);
+      if (df < ds) { useField(field); return true; }
+      openStall();
+      return true;
+    }
+    if (field) { useField(field); return true; }
+    if (shop) { openStall(); return true; }
+    return false;
+  }
   function nearestShop() {
     if (!pl || pl.dead || state !== 'playing') return null;
     let best = null, bd = SHOP_R * SHOP_R;
@@ -718,6 +814,7 @@ G.Game = (() => {
     const price = stallPrice(it, stallShop);
     if ((pl.stacks && pl.stacks[id] || 0) >= it.max || pl.coins < price) return;
     if (!G.Items.gain(pl, id)) return;
+    pl.hatchItems = (pl.hatchItems || 0) + 1;
     pl.coins -= price;
     stallShop.markup = (stallShop.markup || 0) + 3;
     G.Audio.sfx('buy');
@@ -788,7 +885,7 @@ G.Game = (() => {
     if (G.Input.tap('keyx')) pl.toggleSlot(pl.focus || 0);
     // Caído en grupo: Q / E cambian a quién miras.
     if (pl.dead) { if (G.Input.tap('keyq')) cycleWatch(-1); if (G.Input.tap('keye') || G.Input.tap('tab')) cycleWatch(1); return; }
-    if (G.Input.tap('keye') && nearestShop()) { openStall(); return; }
+    if (G.Input.tap('keye') && useNear()) return;
     if (G.Input.tap('keyq')) pl.cycle(-1);
     if (G.Input.tap('keye') || G.Input.tap('tab')) pl.cycle(1);
   }
@@ -796,6 +893,7 @@ G.Game = (() => {
   // ---------------- bucle ----------------
 
   let deathT = 0;
+  let fieldT = 45;
 
   // Caído en grupo: puedes mirar a un compañero vivo. Sólo cambia a quién
   // sigue la cámara (y el anfitrión te manda los enemigos de allí).
@@ -932,6 +1030,7 @@ G.Game = (() => {
     if (G.Siege && G.Siege.up) G.Siege.tick(dt, pl, time);
     if (state === 'over') return;
     G.Pickups.update(dt, all, onCollect);
+    tickFields(dt);
     G.Hazards.update(dt);
     G.Interact.update(dt, pl);
     G.Rift.update(dt, pl, time);
@@ -982,6 +1081,7 @@ G.Game = (() => {
     for (const p of G.World.visibleProps(cam)) items.push({ y: p.flat ? p.y - 4000 : p.y, prop: p });
     for (const e of G.EnemyMgr.drawables(cam)) items.push({ y: e.y, ent: e });
     for (const e of extra) items.push({ y: e.y, ent: e });
+    if (G.World.shopCats) for (const c of G.World.shopCats()) items.push({ y: c.y, ent: c });
     const rift = G.Rift.drawable();
     if (rift) items.push({ y: rift.y, ent: rift });
     const arceus = pl && state !== 'ui' ? G.Judgment.drawable() : null;
@@ -1166,7 +1266,7 @@ G.Game = (() => {
 
   return {
     init, startRun, everyone, levelXp, flash, offerBond, siegeOver, castleClear, noteXp,
-    nearestShop, openStall, closeStall, stallPrice,
+    nearestShop, nearestField, useNear, vendPrice, openStall, closeStall, stallPrice,
     giveItem: offerItem,
     /** Para pruebas: salta el reloj de la run. */
     debugTime(t) { tampered = true; time = t; },
@@ -1188,7 +1288,7 @@ G.Game = (() => {
 G.Flow = {
   boot() {
     G.UI.initChrome();
-    G.LoginUI.init(); G.TestUI.init(); G.MenuUI.init(); G.RegionUI.init(); G.GachaUI.init();
+    G.LoginUI.init(); G.TestUI.init(); G.MenuUI.init(); G.Hatch.init(); G.RegionUI.init(); G.GachaUI.init();
     G.SocialUI.init(); G.RankingUI.init(); G.ModUI.init(); G.GoalsUI.init(); G.ProfileUI.init(); G.SettingsUI.init(); G.SupportUI.init(); G.NewsUI.init(); G.Updater.init();
     // Tu nombre arriba a la derecha abre tu perfil.
     document.getElementById('user-pill').onclick = () => G.GoalsUI.open('profile');

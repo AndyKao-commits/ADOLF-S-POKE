@@ -143,7 +143,7 @@ G.HUD = (() => {
   /** Color used when a map pin points at this kind of mark. */
   const MARK_COL = {
     enemy: '#ff4d5a', boss: '#e1061c', egg: '#fff1c2',
-    ball1: '#e23d3d', ball2: '#3a7ee0', ball3: '#f0d24a', ball4: '#7b4ec8',
+    ball1: '#e23d3d', ball2: '#3a7ee0', ball3: '#f0d24a', ball4: '#7b4ec8', curse: '#c47bff',
     shop: '#ffd23f', mate: '#5fd4ff'
   };
 
@@ -168,6 +168,13 @@ G.HUD = (() => {
     } else if (kind === 'ball1' || kind === 'ball2' || kind === 'ball3' || kind === 'ball4') {
       const tier = kind === 'ball4' ? 4 : kind === 'ball3' ? 3 : kind === 'ball2' ? 2 : 1;
       const img = G.Pickups.ballImg && G.Pickups.ballImg(tier);
+      const sz = 5.4 * s;
+      if (img) {
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, x - sz, y - sz, sz * 2, sz * 2);
+      }
+    } else if (kind === 'curse') {
+      const img = G.Pickups.curseImg && G.Pickups.curseImg();
       const sz = 5.4 * s;
       if (img) {
         ctx.imageSmoothingEnabled = false;
@@ -207,7 +214,8 @@ G.HUD = (() => {
     if (G.World.shops) for (const s of G.World.shops) blot(s.x, s.y, 'shop');
     for (const p of G.Pickups.all()) {
       if (p.kind === 'egg') blot(p.x, p.y, 'egg');
-      else if (p.kind === 'ball') blot(p.x, p.y, p.value >= 4 ? 'ball4' : p.value >= 3 ? 'ball3' : p.value === 2 ? 'ball2' : 'ball1');
+      else if (p.kind === 'ball' || p.kind === 'vend') blot(p.x, p.y, p.kind === 'vend' ? 'ball1' : p.value >= 4 ? 'ball4' : p.value >= 3 ? 'ball3' : p.value === 2 ? 'ball2' : 'ball1');
+      else if (p.kind === 'curse') blot(p.x, p.y, 'curse');
     }
     for (const e of G.EnemyMgr.all()) if (!e.dead) blot(e.x, e.y, e.boss ? 'boss' : 'enemy');
     if (G.Coop && G.Coop.active && G.Coop.puppets) {
@@ -253,7 +261,8 @@ G.HUD = (() => {
     if (G.World.shops) for (const s of G.World.shops) mark(s.x, s.y, 'shop');
     for (const p of G.Pickups.all()) {
       if (p.kind === 'egg') mark(p.x, p.y, 'egg');
-      else if (p.kind === 'ball') mark(p.x, p.y, p.value >= 4 ? 'ball4' : p.value >= 3 ? 'ball3' : p.value === 2 ? 'ball2' : 'ball1');
+      else if (p.kind === 'ball' || p.kind === 'vend') mark(p.x, p.y, p.kind === 'vend' ? 'ball1' : p.value >= 4 ? 'ball4' : p.value >= 3 ? 'ball3' : p.value === 2 ? 'ball2' : 'ball1');
+      else if (p.kind === 'curse') mark(p.x, p.y, 'curse');
     }
     for (const e of G.EnemyMgr.all()) if (!e.dead) mark(e.x, e.y, e.boss ? 'boss' : 'enemy');
     if (G.Coop && G.Coop.active && G.Coop.puppets) {
@@ -297,7 +306,9 @@ G.HUD = (() => {
   }
 
   function interactButton(ctx, w, h, touch) {
-    if (!G.Game.nearestShop || !G.Game.nearestShop()) return;
+    const shop = G.Game.nearestShop && G.Game.nearestShop();
+    const field = G.Game.nearestField && G.Game.nearestField();
+    if (!shop && !field) return;
     const dash = 54, bs = 46, gap = 14;
     const dashX = w - dash - 18;
     const dashY = h - dash - (touch ? 28 : 18);
@@ -309,7 +320,7 @@ G.HUD = (() => {
     ctx.lineWidth = 3; ctx.strokeStyle = '#ffd23f'; ctx.stroke();
     ctx.fillStyle = '#ffd23f'; ctx.font = F(800, 18); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.fillText('E', cx, cy + 1);
-    G.Touch.addButton(bx, by, bs, bs, () => { if (G.Game.openStall) G.Game.openStall(); }, 8);
+    G.Touch.addButton(bx, by, bs, bs, () => { if (G.Game.useNear) G.Game.useNear(); }, 8);
   }
 
   function dashButton(ctx, w, h, pl, touch) {

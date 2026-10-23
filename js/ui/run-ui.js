@@ -360,7 +360,7 @@ G.RunUI = (() => {
       rows: [
         { shapes: [['mk-enemy', '#ff4d5a']], text: t('敵人。紅點。', 'Enemies. A red dot.', 'Enemigos. Un punto rojo.') },
         { shapes: [['mk-boss', '#e1061c']], text: t('Boss。比較大的紅點。', 'Bosses. The bigger red dot.', 'Jefes. El punto rojo más grande.') },
-        { shapes: [['mk-egg', '#fff1c2']], text: t('精靈蛋。米色橢圓。走過去就撿起來。', 'Eggs. A cream oval. Walk over them.', 'Huevos. Un óvalo crema. Se cogen al pasar.') },
+        { shapes: [['mk-egg', '#fff1c2']], text: t('孵化蛋。走過去就撿起來，先放進背包。', 'Hatching eggs. Walk over them. They go into the bag first.', 'Huevos de incubar. Se cogen al pasar y van primero a la mochila.') },
         { shapes: [['img', 'assets/future-use/balls/poke-ball.png'], ['img', 'assets/future-use/balls/great-ball.png'], ['img', 'assets/future-use/balls/ultra-ball.png']], text: t('精靈球。走過去後三選一。紅是一般、藍是超級、黃是高級。', 'Poké Balls. Walk over one and choose 1 of 3. Red is normal, blue is super, yellow is ultra.', 'Poké Balls. Al pasar eliges 1 de 3. Roja normal, azul super, amarilla ultra.') },
         { shapes: [['img', 'assets/future-use/shop/shop-only.png']], text: t('商店。紅白條紋的攤位。', 'Shops. The red and white stall.', 'Tiendas. El puesto de rayas rojas y blancas.') },
         { shapes: [['mk-mate', '#5fd4ff']], text: t('隊友。青色菱形。聯機時才會出現。', 'Teammates. A cyan diamond, only in co-op.', 'Compañeros. Un rombo cian, sólo en cooperativo.') }

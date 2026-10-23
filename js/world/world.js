@@ -550,6 +550,7 @@ G.World = (() => {
     for (const [cx, cy] of visibleChunks(cam, 60)) {
       for (const p of chunkData(cx, cy).props) if (p.flash > 0) p.flash -= dt;
     }
+    for (const s of shops) if (s.cat) s.cat.anim.update(dt);
   }
 
   // ---------------- control ----------------
@@ -568,18 +569,36 @@ G.World = (() => {
     const spots = [[22, 8], [-16, 18], [12, -20], [28, -6]];
     for (const [tx, ty] of spots) {
       if (!walkable(tx, ty)) continue;
-      shops.push({ x: tx * TS + TS / 2, y: ty * TS + TS / 2 });
+      shops.push(shopAt(tx, ty));
       if (shops.length >= 2) break;
     }
     if (!shops.length) {
       for (let r = 8; r <= 36 && !shops.length; r += 4) {
         for (const [tx, ty] of [[r, 2], [-r, 2], [2, r], [2, -r]]) {
           if (!walkable(tx, ty)) continue;
-          shops.push({ x: tx * TS + TS / 2, y: ty * TS + TS / 2 });
+          shops.push(shopAt(tx, ty));
           break;
         }
       }
     }
+    G.Sprites.preload([52]);
+  }
+  function shopAt(tx, ty) {
+    const s = { x: tx * TS + TS / 2, y: ty * TS + TS / 2 };
+    const anim = new G.Sprites.Animator(52, 1.5, false);
+    anim.loop('Idle');
+    anim.dir = G.Sprites.dirFromAngle(Math.PI / 2);   // de frente, hacia el jugador
+    s.cat = {
+      x: s.x + 78, y: s.y, anim,
+      draw(ctx) {
+        G.Sprites.drawShadow(ctx, 52, this.x, this.y, 1.5);
+        const smooth = ctx.imageSmoothingEnabled;
+        ctx.imageSmoothingEnabled = false;
+        this.anim.draw(ctx, this.x, this.y);
+        ctx.imageSmoothingEnabled = smooth;
+      }
+    };
+    return s;
   }
   const shopPic = new Image();
   shopPic.src = 'assets/future-use/shop/shop-only.png';
@@ -649,6 +668,7 @@ G.World = (() => {
     },
     get arena() { return arena; }, drawGround, drawLiquid, visibleProps, drawProp, drawShops, drawVignette,
     get shops() { return shops; }, shopImg,
+    shopCats() { return shops.filter(s => s.cat).map(s => s.cat); },
     get biome() { return biome; }
   };
 })();

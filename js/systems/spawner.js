@@ -24,9 +24,11 @@ G.Spawner = (() => {
   const SHINY_RATE = 1 / 4096;
   let acc = 0, bossIdx = 0, surgeT = 32, announce = null, announceT = 0, preloadT = 0;
   let forceShiny = 0;           // para pruebas: los N próximos salen shiny
+  let eliteSeq = 0;
 
   function reset() {
     acc = 0; bossIdx = 0; surgeT = 32; announce = null; announceT = 0; preloadT = 0;
+    eliteSeq = 0;
     G.Enemies.rollRun();
     G.Sprites.preload(G.Enemies.upcomingDex(0, 80));
   }
@@ -47,6 +49,17 @@ G.Spawner = (() => {
   function seenByAnyone(x, y) {
     const r = G.Camera.outerRadius() - 30;
     return players.some(o => G.U.dist2(o.x, o.y, x, y) < r * r);
+  }
+
+  /** Cerca del jugador, para la oleada de la bola maldita. */
+  function nearPoint(pl, angle, flying) {
+    for (let i = 0; i < 8; i++) {
+      const a = angle + (i === 0 ? 0 : G.U.rand(-0.4, 0.4));
+      const d = 78 + i * 14;
+      const x = pl.x + Math.cos(a) * d, y = pl.y + Math.sin(a) * d * 0.9;
+      if (flying || G.World.isFree(x, y, 14)) return [x, y];
+    }
+    return [pl.x + Math.cos(angle) * 100, pl.y + Math.sin(angle) * 90];
   }
 
   /** Punto del anillo donde quepa: no dentro de paredes ni en el agua. */
@@ -94,7 +107,7 @@ G.Spawner = (() => {
     return full;
   }
 
-  function spawnOne(pl, t, angle) {
+  function spawnOne(pl, t, angle, opts) {
     let bag = G.Enemies.bagAt(t);
     if (G.Modes && G.Modes.is('shiny')) {
       const only = bag.filter(d => G.Sprites.hasShiny(d.dex));
@@ -109,7 +122,8 @@ G.Spawner = (() => {
         def = G.U.pick(rest);
       }
     }
-    const pt = freePoint(pl, angle == null ? Math.random() * 6.2832 : angle, isFlyer(def));
+    const ang = angle == null ? Math.random() * 6.2832 : angle;
+    const pt = opts && opts.near ? nearPoint(pl, ang, isFlyer(def)) : freePoint(pl, ang, isFlyer(def));
     if (!pt) return null;
     const forced = shinyLook(def);
     const shiny = forced || rollShiny(def.dex);
@@ -118,6 +132,13 @@ G.Spawner = (() => {
     if (G.EnemyMgr.count >= CAP * ELITE_FROM) { e.maxHp = e.hp = Math.round(e.maxHp * 1.6); e.dmg *= 1.25; e.xp = Math.round(e.xp * 1.6); }
     if (shiny) e.makeShiny(forced);
     if (G.Events.golden) e.makeGolden();
+    if (opts && opts.elite) {
+      e.maxHp = e.hp = Math.round(e.maxHp * 1.3);
+      e.dmg *= 1.3;
+      e.eliteWave = opts.elite;
+      e.eliteOwner = opts.owner || 'me';
+      e.ring = '#c47bff';
+    }
     G.EnemyMgr.add(e);
     if (shiny && !forced) {
       say('¡Un ' + e.name + ' shiny anda cerca!', 3.4);
@@ -220,6 +241,29 @@ G.Spawner = (() => {
     return true;
   }
 
+  /** Seis élites junto a quien usó la bola maldita. Un poco más fuertes que la horda de ese minuto. */
+  function eliteWave(center) {
+    if (!center) return;
+    if (!players.length) players = [center];
+    const id = ++eliteSeq;
+    const t = (G.Game.st && G.Game.st.time) || 0;
+    const owner = center.uid || 'me';
+    const base = Math.random() * 6.2832;
+    for (let i = 0; i < 6; i++) spawnOne(center, t, base + (i / 6) * 6.2832, { near: true, elite: id, owner });
+    say('¡Han salido élites: acaba con ellas!', 4);
+  }
+
+  /** Al caer la última de esa oleada, suelta una bola azul. Si quien la llamó ya cayó, no. */
+  function eliteDown(e) {
+    const id = e.eliteWave;
+    if (!id) return;
+    if (G.EnemyMgr.all().some(o => o !== e && !o.dead && o.eliteWave === id)) return;
+    const owner = e.eliteOwner || 'me';
+    const who = (G.Game.everyone ? G.Game.everyone() : []).find(p => (p.uid || 'me') === owner);
+    if (who && who.dead) return;
+    G.Pickups.drop('ball', e.x, e.y, 2);
+  }
+
   /** Aviso grande en pantalla (también lo usan el bioma y los shinies). */
   /** @param local  sólo en este ordenador (no se manda a los compañeros) */
   function say(text, secs = 2.6, local = false) {
@@ -232,6 +276,6 @@ G.Spawner = (() => {
   /** Invitado en cooperativo: sólo corre el reloj del aviso. */
   function tickBanner(dt) { if (announceT > 0) announceT -= dt; }
 
-  return { reset, update, ahead, burst, tickBanner, banner, say, rate, SHINY_RATE, CAP,
+  return { reset, update, ahead, burst, tickBanner, banner, say, eliteWave, eliteDown, rate, SHINY_RATE, CAP,
            debugForceShiny(n = 1) { forceShiny = n; } };
 })();

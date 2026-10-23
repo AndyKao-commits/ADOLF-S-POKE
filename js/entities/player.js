@@ -465,6 +465,10 @@ G.Player = class Player {
     }
     this.x += this.svx * dt;
     this.y += this.svy * dt;
+    if (!this.dead && G.Game && G.Game.player === this) {
+      const step = Math.hypot(this.svx || 0, this.svy || 0) * dt;
+      if (step > 0.4) this.hatchSteps = (this.hatchSteps || 0) + step / 18;
+    }
     G.World.collide(this);
     // --- terreno líquido ---
     // (Levitación: flota por encima del agua y la lava.)

@@ -2,7 +2,9 @@
 G.MenuUI = (() => {
   const $ = G.UI.$;
   const GEN_NAMES = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Teselia', 'Kalos', 'Alola', 'Galar', 'Paldea'];
+  const GEN_LABEL = ['Kanto', 'Johto', 'Hoenn', 'Sinnoh', 'Unova', 'Kalos', 'Alola', 'Galar', 'Paldea'];
   let dexGen = 1, dexSel = null;
+  let resOwn = 'all', resShiny = false, resSel = null;
   // Filtros de la colección (se combinan): tengo / me faltan, rarezas (varias),
   // shiny, favoritos, tipo y búsqueda; y el orden. Duran mientras no recargas.
   const DEX0 = () => ({ status: 'all', rar: new Set(), shiny: false, fav: false, type: '', q: '', sort: 'num' });
@@ -22,7 +24,7 @@ G.MenuUI = (() => {
   }
 
   function init() {
-    const ICON = { play: 'ball', dex: 'book', upgrades: 'up', shop: 'shop', bag: 'bag', gacha: 'ball4', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
+    const ICON = { play: 'ball', dex: 'book', upgrades: 'up', shop: 'shop', bag: 'bag', hatch: 'ball', gacha: 'ball4', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
     const sheet = $('menu-sheet');
     document.querySelectorAll('#scr-menu [data-go]').forEach(b => {
       if (b.dataset.go !== 'play') b.insertAdjacentHTML('afterbegin', `<span class="mi-ico">${G.Icons.html(ICON[b.dataset.go], 22)}</span>`);
@@ -39,6 +41,7 @@ G.MenuUI = (() => {
         else if (go === 'upgrades') openUpgrades();
         else if (go === 'shop') G.ShopUI.open();
         else if (go === 'bag') G.ShopUI.openBag();
+        else if (go === 'hatch') G.Hatch.open();
         else if (go === 'gacha') G.GachaUI.open();
         else if (go === 'goals') G.GoalsUI.open();
         else if (go === 'friends') G.FriendsUI.open();
@@ -51,8 +54,6 @@ G.MenuUI = (() => {
     document.querySelectorAll('#dex-tabs button').forEach(b => {
       b.onclick = () => { G.Audio.sfx('select'); setDexTab(b.dataset.dexTab); };
     });
-    const fbtn = $('dex-filter-btn');
-    if (fbtn) fbtn.onclick = () => { dexDrawer = !dexDrawer; $('dex-drawer').classList.toggle('hidden', !dexDrawer); };
     const dclose = $('dex-drawer-close');
     if (dclose) dclose.onclick = shutDrawer;
     const sclose = $('dex-sheet-close');
@@ -239,20 +240,21 @@ G.MenuUI = (() => {
   function openDex() {
     G.UI.show('scr-dex', true);
     const s = G.DB.save;
-    if (dexSel == null) { dexSel = s.partner; dexGen = G.DEX_BY[s.partner].gen; }
+    if (dexSel == null || !G.DEX_BY[dexSel]) { dexSel = s.partner; dexGen = G.DEX_BY[s.partner].gen; }
+    if (!dexGen) dexGen = G.DEX_BY[s.partner].gen || 1;
     const owned = Object.keys(s.owned).filter(d => G.DEX_BY[d]).length;
     $('dex-total').textContent = `${owned} / ${G.DEX.length}`;
 
-    // Pestañas de generación (y "Todas"), con cuántos tienes de cada una.
     const tabs = $('dex-gens');
     tabs.innerHTML = '';
-    ['Todas', ...GEN_NAMES].forEach((name, g) => {
-      const list = g ? G.DEX.filter(p => p.gen === g) : G.DEX;
+    GEN_LABEL.forEach((name, i) => {
+      const g = i + 1;
+      const list = G.DEX.filter(p => p.gen === g);
       const have = list.filter(p => s.owned[p.dex]).length;
       const b = document.createElement('button');
-      b.className = 'gen-tab' + (g === dexGen && !dexF.q ? ' on' : '');
-      b.innerHTML = `<b>${name}</b><small>${have}/${list.length}</small>`;
-      b.onclick = () => { dexGen = g; openDex(); };
+      b.className = 'gen-tab' + (g === dexGen ? ' on' : '');
+      b.innerHTML = `<b translate="no">${name}</b><small>${have}/${list.length}</small>`;
+      b.onclick = () => { dexGen = g; dexF.q = ''; openDex(); };
       tabs.appendChild(b);
     });
 
@@ -273,39 +275,19 @@ G.MenuUI = (() => {
       chip(G.Icons.rarity(r, 12) + ' ' + G.Gacha.RARITY_NAME[r], dexF.rar.has(r), () => { dexF.rar.has(r) ? dexF.rar.delete(r) : dexF.rar.add(r); });
     }
 
-    // Orden.
-    const sb = $('dex-sort');
-    sb.innerHTML = '<span class="sub">Orden:</span>';
-    for (const [k, label] of SORTS) {
-      const c = document.createElement('button');
-      c.className = 'chip' + (dexF.sort === k ? ' on' : '');
-      c.textContent = label;
-      c.onclick = () => { dexF.sort = k; openDex(); };
-      sb.appendChild(c);
-    }
-
-    // Tipo y búsqueda (la búsqueda mira en todas las generaciones).
-    const ts = $('dex-type');
-    ts.innerHTML = `<option value="">Todos los tipos</option>` +
-      Object.keys(G.U.TYPE_NAME).map(t => `<option value="${t}">${G.U.TYPE_NAME[t]}</option>`).join('');
-    ts.value = dexF.type;
-    ts.onchange = () => { dexF.type = ts.value; openDex(); };
     const q = $('dex-q');
     if (q.value !== dexF.q) q.value = dexF.q;
     q.oninput = () => {
       clearTimeout(qT);
       qT = setTimeout(() => {
         dexF.q = q.value; renderGrid();
-        $('dex-gens').querySelectorAll('.gen-tab').forEach((b, g) => b.classList.toggle('on', g === dexGen && !dexF.q));
+        $('dex-gens').querySelectorAll('.gen-tab').forEach((b, i) => b.classList.toggle('on', i + 1 === dexGen));
       }, 150);
     };
     q.onkeydown = e => { if (e.key === 'Escape') { e.stopPropagation(); q.blur(); } };
     $('dex-clear').onclick = () => { dexF = DEX0(); openDex(); };
-    const drawer = $('dex-drawer');
-    if (drawer) drawer.classList.toggle('hidden', !dexDrawer);
     renderGrid();
-    if (dexSheet && dexSel != null) showDetail(dexSel);
-    else if ($('dex-sheet')) $('dex-sheet').classList.add('hidden');
+    if (dexSel != null) showDetail(dexSel);
     setDexTab(dexTab);
   }
 
@@ -316,15 +298,96 @@ G.MenuUI = (() => {
       if (pane) pane.classList.toggle('hidden', id !== dexTab);
     }
     document.querySelectorAll('#dex-tabs button').forEach(b => b.classList.toggle('on', b.dataset.dexTab === dexTab));
+    const scr = $('scr-dex');
+    if (scr) scr.classList.toggle('side-off', dexTab !== 'col');
     if (dexTab !== 'col') { shutDrawer(); shutSheet(); }
     if (dexTab === 'res') renderResearch();
     if (dexTab === 'mas') renderMastery();
   }
 
+  function starGlyph(n) {
+    const on = Math.max(0, Math.min(4, n | 0));
+    return `<i>${'★'.repeat(on)}</i>${'☆'.repeat(4 - on)}`;
+  }
+
   function renderResearch() {
     const host = $('dex-res');
-    if (!host) return;
-    host.innerHTML = '<p class="sub">Las estrellas de cada Pokémon se suben en Investigación. Todavía no hay reglas.</p>';
+    if (!host || !G.Research) return;
+    const scroll = $('res-grid');
+    const keep = scroll ? scroll.scrollTop : 0;
+    const region = (G.DEX || []).filter(p => p.gen === dexGen);
+    const list = region.filter(p => {
+      const own = G.DB.owns(p.dex);
+      if (resOwn === 'own' && !own) return false;
+      if (resOwn === 'miss' && own) return false;
+      if (resShiny && !G.DB.ownsShiny(p.dex)) return false;
+      return true;
+    });
+    let researched = 0, caught = 0;
+    for (const p of region) {
+      if (G.DB.owns(p.dex)) caught++;
+      if (Math.floor(G.Research.view(p.dex).t / 100) >= 1) researched++;
+    }
+    const gens = [1, 2, 3, 4, 5, 6, 7, 8, 9].map(g =>
+      `<button type="button" class="gen-tab${g === dexGen ? ' on' : ''}" data-rg="${g}"><b translate="no">${GEN_LABEL[g - 1]}</b></button>`).join('');
+    const cells = list.map(p => {
+      const v = G.Research.view(p.dex);
+      const done = Math.floor(v.t / 100) >= 1;
+      const badge = v.frags > 0 ? `<span class="res-x">×${v.frags}</span>` : '';
+      return `<button type="button" class="cell res-cell${p.dex === resSel ? ' on' : ''}${done ? '' : ' locked'}" data-pick="${p.dex}">
+        <canvas data-dex="${p.dex}" data-done="${done ? 1 : 0}" width="64" height="64"></canvas>
+        ${badge}
+        <b>${p.name}</b>
+        <span class="res-bar"><i style="width:${Math.max(0, Math.min(100, v.pct)).toFixed(1)}%"></i></span>
+      </button>`;
+    }).join('');
+    const sel = resSel && G.DEX_BY[resSel] && G.DEX_BY[resSel].gen === dexGen ? G.DEX_BY[resSel] : null;
+    let detail = '';
+    if (sel) {
+      const v = G.Research.view(sel.dex);
+      const pct = (Math.round(v.pct * 10) / 10).toString().replace(/\.0$/, '');
+      const where = GEN_LABEL[sel.gen - 1];
+      const line = sel.rarity >= 5
+        ? 'Solo aparece en grietas. Cada derrota suma un 34 %.'
+        : G.I18n.f('Aparece como enemigo en {x}. Derrota {x} veces para completar la investigación.', '\uE000', G.Research.need(sel.rarity))
+            .split('\uE000').join(`<span translate="no">${where}</span>`);
+      const can = v.frags >= 2 && v.stars < 4;
+      detail = `<div class="res-detail">
+        <button type="button" class="res-close" id="res-close">×</button>
+        <b>${sel.name}</b>
+        <div>${G.I18n.f('Investigación {x}% · Derrotas {x}', pct, v.k)}</div>
+        <p>${line}</p>
+        <p>${G.I18n.f('Fragmentos: {x}', v.frags)} · <span class="dex-stars">${starGlyph(v.stars)}</span> ${v.stars}/4</p>
+        <p>${starBuffLine(v.stars)}</p>
+        <button type="button" class="btn" id="res-star" ${can ? '' : 'disabled'}>Usar dos fragmentos</button>
+      </div>`;
+    }
+    host.innerHTML = `
+      <div class="gen-tabs">${gens}</div>
+      <div class="filters">
+        <button type="button" class="chip${resOwn === 'all' && !resShiny ? ' on' : ''}" data-ro="all">Todos</button>
+        <button type="button" class="chip${resOwn === 'own' ? ' on' : ''}" data-ro="own">Poseídos</button>
+        <button type="button" class="chip${resOwn === 'miss' ? ' on' : ''}" data-ro="miss">No poseídos</button>
+        <button type="button" class="chip${resShiny ? ' on' : ''}" data-ro="shiny">Shiny</button>
+      </div>
+      <div id="res-grid" class="grid">${cells || '<p class="empty">Nada por aquí.</p>'}</div>
+      <p class="res-foot"><span translate="no">${GEN_LABEL[dexGen - 1]}</span>：${G.I18n.f('Investigado {x}/{x} · Conseguidos {x}/{x}', researched, region.length, caught, region.length)}</p>
+      ${detail}`;
+    host.querySelectorAll('canvas[data-dex]').forEach(cv => G.UI.sprite(cv, +cv.dataset.dex, { scale: 1, silhouette: cv.dataset.done !== '1', ink: cv.dataset.done !== '1' }));
+    const grid = $('res-grid');
+    if (grid) grid.scrollTop = keep;
+    host.querySelectorAll('[data-rg]').forEach(b => b.onclick = () => { dexGen = +b.dataset.rg; resSel = null; renderResearch(); });
+    host.querySelectorAll('[data-ro]').forEach(b => b.onclick = () => {
+      const k = b.dataset.ro;
+      if (k === 'shiny') resShiny = !resShiny;
+      else { resOwn = k; resShiny = false; }
+      renderResearch();
+    });
+    host.querySelectorAll('[data-pick]').forEach(b => b.onclick = () => { resSel = +b.dataset.pick; renderResearch(); });
+    const close = $('res-close');
+    if (close) close.onclick = () => { resSel = null; renderResearch(); };
+    const star = $('res-star');
+    if (star) star.onclick = () => { if (resSel && G.Research.raise(resSel)) renderResearch(); };
   }
 
   function renderMastery() {
@@ -426,17 +489,23 @@ G.MenuUI = (() => {
   let qT = 0, gridList = [], gridShown = 0, gridIO = null;
   function renderGrid(keep = false) {
     const grid = $('dex-grid');
-    const want = keep ? Math.max(PAGE, gridShown) : PAGE;
+    gridList = dexList();
+    const selAt = gridList.findIndex(p => p.dex === dexSel);
+    const want = keep ? Math.max(PAGE, gridShown) : Math.max(PAGE, selAt >= 0 ? selAt + 1 : PAGE);
     const top = grid.scrollTop;
     grid.innerHTML = '';
-    gridList = dexList();
     gridShown = 0;
     const f = dexF, busy = f.q || f.status !== 'all' || f.shiny || f.fav || f.rar.size || f.type || f.sort !== 'num';
-    $('dex-count').textContent = gridList.length === 1 ? '1 Pokémon' : gridList.length + ' Pokémon';
+    const count = $('dex-count');
+    if (count) count.textContent = gridList.length === 1 ? '1 Pokémon' : gridList.length + ' Pokémon';
     $('dex-clear').classList.toggle('hidden', !busy);
     if (!gridList.length) { grid.innerHTML = '<p class="sub" style="grid-column:1/-1">Ninguno con estos filtros.</p>'; return; }
     moreCells(want);
     if (keep) grid.scrollTop = top;
+    else {
+      const on = grid.querySelector('.cell.on');
+      if (on) on.scrollIntoView({ block: 'nearest' });
+    }
   }
 
   function moreCells(n = PAGE) {
@@ -462,15 +531,14 @@ G.MenuUI = (() => {
     const cell = document.createElement('div');
     cell.className = 'cell' + (own ? '' : ' locked') + (p.dex === dexSel ? ' on' : '');
     cell.dataset.pad = '1';
-    cell.insertAdjacentHTML('beforeend', `<span class="no">${String(p.dex).padStart(3, '0')}${G.DB.isFav(p.dex) ? ' ' + G.Icons.html('star', 10) : ''}</span>`);
-    if (p.dex === s.partner) cell.insertAdjacentHTML('beforeend', `<span class="badge-r" title="Compañero">${G.Icons.html('crown', 14)}</span>`);
-    else if (sh) cell.insertAdjacentHTML('beforeend', `<span class="badge-r" title="Tienes su shiny">${G.Icons.html('shiny', 12)}</span>`);
+    cell.insertAdjacentHTML('beforeend', `<span class="no">${String(p.dex).padStart(3, '0')}</span>`);
+    if (sh) cell.insertAdjacentHTML('beforeend', `<span class="badge-r" title="Tienes su shiny">${G.Icons.html('shiny', 12)}</span>`);
     const useShiny = sh && p.dex === s.partner && s.partnerShiny;
-    cell.appendChild(G.UI.spriteCanvas(p.dex, 92, 80, { scale: 2, silhouette: !own, shadow: own, shiny: useShiny }));
-    cell.insertAdjacentHTML('beforeend', `<b>${own ? p.name : '???'}</b>${G.UI.stars(p.rarity, 9)}`);
+    cell.appendChild(G.UI.spriteCanvas(p.dex, 72, 64, { scale: 2, silhouette: !own, shadow: own, shiny: useShiny }));
+    const st = G.Research ? G.Research.view(p.dex).stars : 0;
+    cell.insertAdjacentHTML('beforeend', `<b>${own ? p.name : '???'}</b><span class="dex-stars">${starGlyph(st)}</span><span class="dex-ball">${G.UI.stars(p.rarity, 14)}</span>`);
     cell.onclick = () => {
       dexSel = p.dex;
-      dexSheet = true;
       $('dex-grid').querySelectorAll('.cell').forEach(c => c.classList.remove('on'));
       cell.classList.add('on');
       showDetail(p.dex);
@@ -480,6 +548,24 @@ G.MenuUI = (() => {
 
   // Variante que se está viendo en la ficha (normal o shiny).
   let viewShiny = false;
+
+  function starBuffLine(stars) {
+    const n = (stars | 0) * 3;
+    if (!n) return 'Cada estrella, como compañero: daño +3 % y PS máximos +3 %.';
+    return G.I18n.f('Como compañero: daño +{x} % y PS máximos +{x} %.', n, n);
+  }
+
+  function starBox(dex) {
+    const v = G.Research ? G.Research.view(dex) : { frags: 0, stars: 0 };
+    const can = v.frags >= 2 && v.stars < 4;
+    return `<p class="dex-copies">${G.I18n.f('Fragmentos: {x}', v.frags)}</p>
+      <div class="dex-starbox">
+        <div class="dex-starhead"><span>Estrellas</span><span class="dex-rank">${starGlyph(v.stars)} ${v.stars}/4</span></div>
+        <p class="sub dex-starbuff">${starBuffLine(v.stars)}</p>
+        <button id="dex-star" class="btn" type="button" ${can ? '' : 'disabled'}>Usar dos fragmentos</button>
+        <p class="sub">Dos fragmentos suben una estrella. Las estrellas son de esta especie.</p>
+      </div>`;
+  }
 
   function showDetail(dex) {
     const s = G.DB.save;
@@ -492,8 +578,8 @@ G.MenuUI = (() => {
     if (dex !== showDetail.last) extraOpen = '';
     // Al redibujar el mismo Pokémon (abrir el selector de Menta, enseñar una MT...)
     // no se vuelve arriba: se quedaba fuera de la vista lo que acababas de abrir.
-    const sameMon = dex === showDetail.last, d0 = $('dex-detail');
-    const scrolls = sameMon && d0 ? [d0, d0.closest('.box')].filter(Boolean).map(el => [el, el.scrollTop]) : [];
+    const sameMon = dex === showDetail.last, side = $('dex-side');
+    const keepScroll = sameMon && side ? side.scrollTop : 0;
     showDetail.last = dex;
 
     const max = { hp: 183, atk: 1.55, spd: 137, def: 160 };
@@ -504,47 +590,43 @@ G.MenuUI = (() => {
       `<div class="stat${natCls(k)}"><span>${label}</span><div class="bar"><i style="width:${Math.min(100, v / m * 100)}%"></i></div><span>${txt}</span></div>`;
     const usingThis = isPartner && (!hasSh || !!s.partnerShiny === viewShiny);
 
-    const sheet = $('dex-sheet');
-    if (sheet) sheet.classList.remove('hidden');
     const box = $('dex-detail');
+    const num = String(p.dex).padStart(3, '0');
+    const mas = G.Mastery ? G.Mastery.row(dex) : null;
+    const masPts = mas ? G.Mastery.points(mas) : 0;
+    const masNext = G.Mastery ? G.Mastery.nextRank(masPts) : null;
+    const masTxt = !G.Mastery ? '' : masNext
+      ? G.I18n.f('Hacia {x}: {x}/{x}', G.T(masNext.name), masPts, masNext.at)
+      : G.I18n.f('Diamante · {x}', masPts);
     box.innerHTML = `
       <canvas id="dex-big" class="stage" width="220" height="190"></canvas>
       ${hasSh ? `<div class="seg">
           <button class="${viewShiny ? '' : 'on'}" data-v="0">Normal</button>
           <button class="${viewShiny ? 'on' : ''}" data-v="1">${G.Icons.html('shiny', 12)} Shiny</button></div>` : ''}
-      <div class="center">
-        <div style="color:var(--muted);font-size:13px">Nº ${String(p.dex).padStart(3, '0')} · ${GEN_NAMES[p.gen - 1]}</div>
+      <div class="center dex-id">
+        <div class="dex-no">${G.I18n.f('Nº {x}', num)} · <span translate="no">${GEN_LABEL[p.gen - 1]}</span></div>
         <h3>${own ? p.name : '???'}</h3>
-        ${own ? `<button id="dex-fav" class="chip${G.DB.isFav(dex) ? ' on' : ''}" type="button">${G.Icons.html(G.DB.isFav(dex) ? 'star' : 'starDim', 12)} ${G.DB.isFav(dex) ? 'Favorito' : 'Marcar como favorito'}</button>` : ''}
-        <div style="color:${G.Gacha.RARITY_COLOR[p.rarity]}">${G.UI.stars(p.rarity, 24)} ${G.Gacha.RARITY_NAME[p.rarity]}</div>
-        <div style="margin:6px 0">${own ? G.UI.typeChips(p.types) : ''}</div>
-      </div>
-      ${own ? `
-        ${bar('Vida', q.hp, max.hp, q.hp)}
+        <div class="dex-types">${G.UI.stars(p.rarity, 16)}${own ? G.UI.typeChips(p.types) : ''}</div>
+      </div>`;
+    const rest = $('dex-rest');
+    if (rest) rest.innerHTML = own ? `
+        ${bar('HP', q.hp, max.hp, q.hp)}
         ${bar('Ataque', q.pa, max.atk, '×' + q.pa.toFixed(2), 'pa')}
-        ${bar('At. Esp.', q.sa, max.atk, '×' + q.sa.toFixed(2), 'sa')}
-        ${bar('Defensa', q.df, max.def, Math.round(q.df), 'df')}
-        ${bar('Def. Esp.', q.sd, max.def, Math.round(q.sd), 'sd')}
         ${bar('Velocidad', q.spd, max.spd, Math.round(q.spd), 'spd')}
-        <p class="sub center" style="margin:6px 0 0">Pega mejor con ataques <b class="gold">${G.Stats.sideOf(q) === 'special' ? 'especiales' : 'físicos'}</b></p>
-        ${monExtras(dex)}
-        ${p.types.length === 1 ? `<p class="sub center" style="margin:2px 0 0">Monotipo: +20 % de daño con sus ataques de tipo ${G.U.TYPE_NAME[p.types[0]]}</p>` : ''}
-        <p style="font-size:14px;margin:10px 0 4px">Empieza con <b class="gold">${G.T(G.Moves.BY_ID[G.startMoveOf(dex)].name, 'move')}</b></p>
+        <p class="dex-move">Empieza con <b class="gold">${G.T(G.Moves.BY_ID[G.startMoveOf(dex)].name, 'move')}</b></p>
         <p class="move-icons" title="Movimientos que puede aprender">
           ${G.Moves.poolFor(p).map(id => `<span title="${G.T(G.Moves.BY_ID[id].name, 'move')}">${G.Icons.html('move:' + id, 16)}</span>`).join('')}</p>
         ${usingThis
-          ? '<button class="btn grow" disabled style="width:100%">Es tu compañero</button>'
-          : `<button id="dex-pick" class="btn gold" data-sfx="confirm" style="width:100%">Elegir de compañero${viewShiny ? ' (shiny)' : ''}</button>`}
+          ? '<button class="btn gold grow" disabled>Es tu compañero</button>'
+          : `<button id="dex-pick" class="btn gold" data-sfx="confirm">${G.I18n.f('Elegir de compañero{x}', viewShiny ? ' (shiny)' : '')}</button>`}
+        ${starBox(dex)}
+        <p class="dex-masline"><span>Maestría</span> · ${masTxt}</p>
+        ${monExtras(dex)}
       ` : `<p class="center" style="color:var(--muted)">Aún no lo tienes.<br>Consíguelo en el banner de <b class="gold">${GEN_NAMES[p.gen - 1]}</b>
-            o derrotándolo cuando salga shiny.</p>`}
-    `;
+            o derrotándolo cuando salga shiny.</p>`;
     const actions = $('dex-actions');
-    if (actions) {
-      actions.replaceChildren();
-      const moved = box.querySelector('#dex-pick, button.btn.grow');
-      if (moved) actions.appendChild(moved);
-    }
-    for (const [el, t] of scrolls) el.scrollTop = t;
+    if (actions) actions.replaceChildren();
+    if (side) side.scrollTop = keepScroll;
     $('dex-big').style.setProperty('--stage-c', !own ? '#5b83d6' : viewShiny ? '#9ae6ff' : G.U.TYPE_COLOR[p.types[0]]);
     $('dex-big').classList.toggle('shiny', own && viewShiny);
     G.UI.sprite($('dex-big'), dex, { lively: own, spin: own, silhouette: !own, scale: 3, hero: true, shiny: own && viewShiny });
@@ -553,6 +635,8 @@ G.MenuUI = (() => {
     });
     const fav = $('dex-fav');
     if (fav) fav.onclick = () => { G.DB.setFav(dex, !G.DB.isFav(dex)); renderGrid(true); showDetail(dex); };
+    const starBtn = $('dex-star');
+    if (starBtn) starBtn.onclick = () => { if (G.Research && G.Research.raise(dex)) showDetail(dex); };
     const pick = $('dex-pick');
     if (pick) pick.onclick = () => {
       s.partner = dex;
@@ -561,7 +645,7 @@ G.MenuUI = (() => {
       G.UI.toast(p.name + (s.partnerShiny ? ' shiny' : '') + ' es ahora tu compañero');
       renderGrid(true); showDetail(dex);
     };
-    if (own) wireExtras(dex, box);
+    if (own) wireExtras(dex, rest || box);
   }
 
   // ---------------- naturaleza, habilidad y MT (Tienda Kecleon, 20-10-2026) ----------------

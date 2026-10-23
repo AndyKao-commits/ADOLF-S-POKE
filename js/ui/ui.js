@@ -8,7 +8,7 @@
 G.UI = (() => {
   const $ = id => document.getElementById(id);
   const SCREENS = ['scr-login', 'scr-test', 'scr-result', 'scr-starters', 'scr-menu',
-                   'scr-dex', 'scr-upgrades', 'scr-shop', 'scr-bag', 'scr-gacha', 'scr-levelup', 'scr-pause', 'scr-over',
+                   'scr-dex', 'scr-upgrades', 'scr-shop', 'scr-bag', 'scr-hatch', 'scr-gacha', 'scr-levelup', 'scr-pause', 'scr-over',
                    'scr-nick', 'scr-friends', 'scr-lobby', 'scr-rank', 'scr-item', 'scr-stall', 'scr-goals', 'scr-bond', 'scr-mod', 'scr-region', 'scr-map'];
 
   function show(id, keepMenu = false) {
@@ -307,7 +307,7 @@ G.UI = (() => {
       if (s.opts.silhouette) {
         ctx.save();
         ctx.filter = 'brightness(0)';
-        ctx.globalAlpha = 0.55;
+        ctx.globalAlpha = s.opts.ink ? 1 : 0.55;
         s.a.draw(ctx, fx, fy);
         ctx.restore();
       } else {

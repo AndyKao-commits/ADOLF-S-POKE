@@ -84,6 +84,8 @@ G.DB = (() => {
       dfav: {},               // dex -> fecha: favorito de la colección (negativa = quitado entonces)
       pused: {},              // dex -> partidas jugadas con él (orden "más usados")
       pmas: {},               // dex -> { r, k, b, e }: maestría (partidas, derrotas, mejor tiempo, evoluciones)
+      hatch: { bag: {}, slots: [null, null, null] },  // huevos de incubar (no el objeto Huevo Suerte)
+      res: {},                                         // investigación: { k, t, s } por especie
       pstart: {},             // dex -> movimiento inicial elegido (Mejoras → Movimiento inicial)
       pstart2: {},            // dex -> segundo movimiento inicial (Mejoras → Segundo movimiento inicial)
       // Tienda Kecleon (20-10-2026, ver data/shop.js y systems/mons.js):
@@ -132,6 +134,82 @@ G.DB = (() => {
    * máximo y Pokémon que no existen. Lo que sí sea posible lo frena el
    * servidor (firestore.rules, saves).
    */
+  const HATCH_TIERS = { common: 1, rare: 1, legendary: 1, epic: 1 };
+  function cleanHatch(s) {
+    const n = v => (Number.isFinite(+v) && +v > 0 ? Math.floor(+v) : 0);
+    const bag = {};
+    const src = isObj(s.hatch) ? s.hatch : {};
+    if (isObj(src.bag)) for (const k of Object.keys(HATCH_TIERS)) {
+      const c = Math.min(99, n(src.bag[k]));
+      if (c) bag[k] = c;
+    }
+    const slots = [null, null, null];
+    const list = Array.isArray(src.slots) ? src.slots : [];
+    for (let i = 0; i < 3; i++) {
+      const e = list[i];
+      if (!isObj(e) || !HATCH_TIERS[e.tier]) continue;
+      const dex = n(e.dex);
+      const cond = e.cond === 'kills' || e.cond === 'items' || e.cond === 'steps' ? e.cond : 'steps';
+      slots[i] = {
+        tier: e.tier,
+        steps: Math.min(1000000, n(e.steps)),
+        kills: Math.min(1000000, n(e.kills)),
+        items: Math.min(100000, n(e.items)),
+        dex: dex && (!G.DEX_BY || G.DEX_BY[dex]) ? dex : 0,
+        cond
+      };
+    }
+    s.hatch = { bag, slots };
+  }
+  function mergeHatch(r, older) {
+    const A = r.hatch || { bag: {}, slots: [null, null, null] };
+    const B = older.hatch || { bag: {}, slots: [null, null, null] };
+    const bag = {};
+    for (const t of Object.keys(HATCH_TIERS)) {
+      const c = Math.max(+(A.bag && A.bag[t]) || 0, +(B.bag && B.bag[t]) || 0);
+      if (c) bag[t] = c;
+    }
+    const slots = [null, null, null];
+    const score = e => e ? (+e.steps || 0) + (+e.kills || 0) + (+e.items || 0) : -1;
+    for (let i = 0; i < 3; i++) {
+      const a = (A.slots || [])[i] || null, b = (B.slots || [])[i] || null;
+      let win = score(a) >= score(b) ? a : b;
+      const other = win === a ? b : a;
+      if (win && other && !win.dex && other.dex && other.tier === win.tier) win = Object.assign({}, win, { dex: other.dex });
+      slots[i] = win;
+    }
+    r.hatch = { bag, slots };
+  }
+
+  function cleanRes(s) {
+    const out = {};
+    const src = isObj(s.res) ? s.res : {};
+    for (const d of Object.keys(src)) {
+      if (G.DEX_BY && !G.DEX_BY[d]) continue;
+      const m = src[d];
+      if (!isObj(m)) continue;
+      const k = Math.max(0, Math.min(1e9, Math.floor(+m.k || 0)));
+      const t = Math.max(0, Math.min(1e7, +m.t || 0));
+      const st = Math.max(0, Math.min(4, Math.floor(+m.s || 0)));
+      if (!k && !t && !st) continue;
+      out[d] = { k, t: Math.round(t * 100) / 100, s: st };
+    }
+    s.res = out;
+  }
+  function mergeRes(r, older) {
+    const A = isObj(r.res) ? r.res : {};
+    const B = isObj(older.res) ? older.res : {};
+    const out = {};
+    for (const d of new Set([...Object.keys(A), ...Object.keys(B)])) {
+      const a = A[d] || {}, b = B[d] || {};
+      const k = Math.max(+a.k || 0, +b.k || 0);
+      const t = Math.max(+a.t || 0, +b.t || 0);
+      const st = Math.min(4, Math.max(+a.s || 0, +b.s || 0));
+      if (k || t || st) out[d] = { k, t, s: st };
+    }
+    r.res = out;
+  }
+
   function sanitize(s) {
     const n = v => (Number.isFinite(+v) && +v > 0 ? Math.floor(+v) : 0);
     s.coins = n(s.coins);
@@ -155,6 +233,8 @@ G.DB = (() => {
       if (!isObj(s[coll])) { s[coll] = {}; continue; }
       for (const d of Object.keys(s[coll])) if (!Number.isFinite(+s[coll][d])) delete s[coll][d];
     }
+    cleanHatch(s);
+    cleanRes(s);
     if (!isObj(s.pmas)) s.pmas = {};
     for (const d of Object.keys(s.pmas)) {
       const m = s.pmas[d];
@@ -351,6 +431,8 @@ G.DB = (() => {
     for (const d in older.dfav || {}) if (Math.abs(+older.dfav[d] || 0) > Math.abs(+r.dfav[d] || 0)) r.dfav[d] = older.dfav[d];
     r.pused = r.pused || {};
     for (const d in older.pused || {}) r.pused[d] = Math.max(+r.pused[d] || 0, +older.pused[d] || 0);
+    mergeHatch(r, older);
+    mergeRes(r, older);
     r.pmas = r.pmas || {};
     for (const d in older.pmas || {}) {
       const a = r.pmas[d] || {}, b = older.pmas[d] || {};

@@ -398,6 +398,12 @@ G.Coop = (() => {
         case 'he': holdOff(from); break;
         case 're': G.Rift.enterRequest(); break;
         case 'bye': mateGone(from); break;
+        case 'ft':
+          if (G.Pickups.removeId(ev[1])) pickupGone(ev[1]);
+          break;
+        case 'cu':
+          if (m && m.pl) G.Spawner.eliteWave(m.pl);
+          break;
         case 'sg':
           if (G.Siege && G.Siege.up) G.Siege.applyHit(ev[1], ev[2], ev[3] || from);
           break;
@@ -493,7 +499,7 @@ G.Coop = (() => {
       case 'c': { const m = mates.get(ev[1]); if (m) G.Combat.ghostCast(m.pl, ev[2], ev[3], ev[4], ev[5]); break; }
       case 'item': api.item(ev[1]); break;
       case 'ball': if (api.ball) api.ball(ev[1]); break;
-      case 'egg': if (api.egg) api.egg(); break;
+      case 'egg': if (api.egg) api.egg(ev[1]); break;
       case 'coin': if (api.coin) api.coin(ev[1]); break;
       case 'pk': G.Pickups.addRemote(ev[1], ev[2], ev[3], ev[4], ev[5]); break;
       case 'pc': G.Pickups.removeId(ev[1]); break;
@@ -584,7 +590,7 @@ G.Coop = (() => {
       if (m && p.kind === 'heal') m.q.push(['heal', 0.3]);
       else if (m && p.kind === 'item') m.q.push(['item', p.value]);
       else if (m && p.kind === 'ball') m.q.push(['ball', p.value]);
-      else if (m && p.kind === 'egg') m.q.push(['egg']);
+      else if (m && p.kind === 'egg') m.q.push(['egg', p.value]);
       else if (m && p.kind === 'coin') m.q.push(['coin', p.value]);
     }
   }

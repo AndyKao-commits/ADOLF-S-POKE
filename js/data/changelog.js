@@ -7,15 +7,35 @@
  */
 G.CHANGELOG = [
   { d: '2026-10-23', title: ['Barras y mapa', 'Bars and the map'], new: [
+    ['En el mapa salen Poké Balls de pago. Te acercas y pulsas E: la primera cuesta 30 monedas de la partida y luego 33, 39, 45, 51… Si no llegas, no se abre. Al pagarla eliges 1 de 3 objetos, como con la bola roja.',
+     'Paid Poké Balls appear on the map. Walk up and press E: the first costs 30 run coins, then 33, 39, 45, 51… If you are short, it does not open. After you pay, you pick 1 of 3 items, as with the red ball.'],
+    ['A veces sale una bola maldita. E la usa sin pagar y aparecen élites cerca, un poco más fuertes. Si acabas con esa oleada, cae una bola azul gratis. Si caes antes, no.',
+     'Sometimes a cursed ball appears. E uses it for free and elites show up nearby, a little stronger. Clear that wave and a free blue ball drops. If you fall first, it does not.'],
+    ['Los huevos del suelo usan el dibujo del huevo de la suerte. Junto a cada puesto hay un Meowth. En el menú, tu compañero sale en un marco, con el nombre debajo y sus tipos bajo el nombre.',
+     'Eggs on the ground use the lucky egg picture. A Meowth stands beside each stall. On the menu, your partner sits in a frame, with the name under it and its types under the name.'],
+    ['Los huevos que caen al derrotar Pokémon son huevos de incubar: común, raro, legendario o épico, según el rival. No es el objeto Huevo Suerte. Se cogen al pasar y se guardan abajo. En la incubadora hay 3 huecos. Al meter un huevo le toca una sola condición al azar: 2000 pasos, 2000 derrotas o 30 objetos. Se abre cuando tú pulsas.',
+     'Eggs dropped by defeating Pokémon are hatching eggs: common, rare, legendary or epic, matching the foe. This is not the Lucky Egg item. Walk over them and they go into the bag below. The incubator has 3 slots. Placing an egg rolls one condition: 2000 steps, 2000 defeats or 30 items. It opens when you press.'],
+    ['Lo que sale de un huevo suma un 5 % a la investigación de esa especie. Al 100 % se convierte en un fragmento. Dos fragmentos suben una estrella, hasta 4. Derrotar también llena la investigación: 40 veces un común, 80 un poco común, 150 un raro y 300 un épico. Un legendario sólo cuenta en la grieta, y cada vez suma un 34 %.',
+     'What hatches adds 5% to that species\' research. At 100% it becomes a fragment. Two fragments raise one star, up to 4. Defeats fill research too: 40 for a common, 80 for an uncommon, 150 for a rare and 300 for an epic. A legendary only counts in the rift, and each defeat adds 34%.'],
+    ['Cada estrella refuerza a esa especie cuando sale de compañero: daño +3 % y PS máximos +3 %. Con 4 estrellas es +12 % y +12 %.',
+     'Each star reinforces that species when it is your partner: damage +3% and max HP +3%. At 4 stars that is +12% and +12%.'],
+    ['En Investigación quedan Todos, Tengo, Me faltan y Shiny. Hasta completar la investigación una vez, el Pokémon sale en negro. En Maestría no se muestra la ficha de la derecha.',
+     'Research keeps All, Owned, Missing and Shiny. Until you finish the research once, the Pokémon is shown in black. Mastery no longer shows the card on the right.'],
+    ['La ficha del Pokémon ocupa toda la columna derecha. Las regiones y los filtros se desplazan de lado si no caben.',
+     'The Pokémon card fills the whole right column. Regions and filters scroll sideways when they do not fit.'],
     ['Cada compañero tiene maestría. Jugar con él suma 10 por partida, 1 por cada 100 derrotas, 5 por minuto de su mejor tiempo y 15 por evolución. Bronce, plata, oro y diamante (100, 400, 1200 y 2000) son un recuerdo: no cambian la partida.',
      'Each partner has mastery. Playing as them adds 10 per run, 1 per 100 defeats, 5 per minute of their best time and 15 per evolution. Bronze, silver, gold and diamond (100, 400, 1200 and 2000) are a keepsake: they do not change the run.']
   ], chg: [
+    ['Un Pokémon normal suelta una Poké Ball el 1 % de las veces. Los jefes y los cofres siguen como estaban.',
+     'A normal Pokémon drops a Poké Ball 1% of the time. Bosses and chests stay as they were.'],
     ['Arriba a la izquierda, la vida es la barra verde de rayas y la experiencia es la barra azul. El relleno sigue la vida y la experiencia de la partida.',
      'At the top left, HP is the striped green bar and experience is the blue bar. The fill follows this run\'s HP and experience.'],
     ['La tienda del mapa es el puesto de rayas rojas y blancas. Las Poké Balls del suelo son la roja, la azul y la amarilla.',
      'The shop on the map is the red and white stall. The Poké Balls on the ground are the red, the blue and the yellow one.'],
     ['Los objetos de la partida usan los iconos nuevos. Cada uno hace lo que dice su ficha: el daño, la vida, la suerte y el resto salen de esa lista, y ya no valen los efectos viejos.',
      'Items in a run use the new icons. Each one does what its card says: damage, HP, luck and the rest come from that list, and the old effects no longer apply.'],
+    ['El Meowth de cada puesto mira de frente.',
+     'The Meowth at each stall faces the front.'],
     ['Junto a un puesto, E (o el botón E de la derecha) abre la tienda de Meowth. Vende 3 objetos de la partida. Cada compra sube los precios 3 monedas, y cambiar el género cuesta 15.',
      'Next to a stall, E (or the E button on the right) opens Meowth\'s shop. It sells 3 items for this run. Each purchase raises prices by 3 coins, and refreshing the stock costs 15.'],
     ['El golpe crítico de las mejoras hace ×1,75 de daño. Cinco mejoras nuevas aparecen en la lista, pero aún no tienen precio y no se pueden comprar.',
@@ -25,6 +45,10 @@ G.CHANGELOG = [
     ['En Amigos, el punto verde ya no sale en todo el mundo. Verde es quien tiene el juego abierto; gris es quien no está.',
      'In Friends, the green dot is no longer on everyone. Green means the game is open; grey means they are not.']
   ], fix: [
+    ['En la colección no se dibuja la barra de desplazamiento. Las regiones, los filtros y la ficha se siguen moviendo igual.',
+     'The collection no longer draws scrollbars. Regions, filters and the card still move the same way.'],
+    ['En la ficha de la colección, la imagen sube junto con el resto: se puede ver la vida, el ataque y las estrellas.',
+     'On the collection card, the picture scrolls up with the rest, so HP, attack and the stars can be seen.'],
     ['En la leyenda del mapa, las marcas de las Poké Balls tapaban la palabra. Cada cosa queda ahora en su sitio, y en el mapa se ven más grandes.',
      'In the map legend, the Poké Ball marks covered the words. Each mark now stays in its place, and the marks on the map are larger.'],
     ['Si dos redes no se ven directamente, la sala ya no se queda en «conectando». A los pocos segundos sigue por el servidor y se puede empezar.',

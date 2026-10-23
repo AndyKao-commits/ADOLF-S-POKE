@@ -83,7 +83,7 @@
 }
 </script>
 <!-- seo:end -->
-<link rel="stylesheet" href="css/style.css?v=map27">
+<link rel="stylesheet" href="css/style.css?v=map36">
 <script src="js/core/locales.js"></script>
 </head>
 <body>
@@ -203,6 +203,7 @@
   <div id="menu-sheet" class="menu-sheet box hidden">
     <button class="menu-item" data-go="shop">Tienda Kecleon<small>Mentas, Cápsulas y MT</small></button>
     <button class="menu-item" data-go="bag">Mochila<small id="menu-bag-sub">Vacía</small></button>
+    <button class="menu-item" data-go="hatch">Incubadora<small>Huevos de incubar</small></button>
     <button class="menu-item" data-go="goals">Misiones<small id="menu-goals-sub">Misiones, logros y perfil</small></button>
     <button class="menu-item" data-go="friends">Amigos<small id="menu-friends-sub">Juega en grupo, de 1 a 10</small></button>
     <button class="menu-item" data-go="rank">Ranking<small>Quién aguanta más</small></button>
@@ -467,36 +468,51 @@
 </div>
 
 <!-- ====== Colección ====== -->
+<section id="scr-hatch" class="scr dim hidden">
+  <div class="box hatch-box">
+    <div class="row between"><h2>Incubadora</h2><button class="btn small ghost" id="hatch-back" type="button">Volver</button></div>
+    <p class="sub">Al meter un huevo, recibe una sola condición al azar: 2000 pasos, 2000 derrotas o 30 objetos. Cumple esa y se puede incubar. Lo que sale suma un 5 % a la investigación de esa especie.</p>
+    <div id="hatch-slots" class="hatch-slots"></div>
+    <div class="hatch-bag-label">Mochila</div>
+    <div id="hatch-bag" class="hatch-bag"></div>
+    <div id="hatch-fx" class="hatch-fx hidden">
+      <canvas id="hatch-canvas" width="280" height="220"></canvas>
+      <p id="hatch-result"></p>
+      <button id="hatch-skip" class="btn" type="button">Saltar</button>
+    </div>
+  </div>
+</section>
+
 <section id="scr-dex" class="scr dim hidden">
   <div class="box wide dex-box">
-    <div class="row between"><h2>Pokémon <span id="dex-total" class="sub" style="font-size:15px"></span></h2><button class="btn small ghost" data-back>Volver</button></div>
-    <div class="seg dex-tabs" id="dex-tabs">
-      <button type="button" class="on" data-dex-tab="col">Colección</button>
-      <button type="button" data-dex-tab="res">Investigación</button>
-      <button type="button" data-dex-tab="mas">Maestría</button>
-    </div>
-    <div id="dex-col">
-    <div class="dex-tools">
-      <input id="dex-q" type="search" placeholder="Buscar por nombre o número" autocomplete="off" spellcheck="false" enterkeyhint="search">
-      <button id="dex-filter-btn" class="btn small" type="button">Filtros</button>
-      <span id="dex-count" class="sub"></span>
-      <button class="btn small ghost hidden" id="dex-clear" type="button">Limpiar</button>
-    </div>
-    <div class="grid" id="dex-grid"></div>
-    </div>
-    <div id="dex-res" class="dex-pane hidden"></div>
-    <div id="dex-mas" class="dex-pane hidden"></div>
-    <div id="dex-drawer" class="dex-drawer box hidden">
-      <div class="row between"><b>Filtros</b><button id="dex-drawer-close" class="btn small ghost" type="button">Cerrar</button></div>
-      <div class="gen-tabs" id="dex-gens"></div>
-      <select id="dex-type" title="Tipo"></select>
-      <div class="filters" id="dex-filters"></div>
-      <div class="filters dex-sort" id="dex-sort"></div>
-    </div>
-    <div id="dex-sheet" class="dex-sheet hidden">
-      <div class="row between"><span></span><button id="dex-sheet-close" class="btn small ghost" type="button">Volver</button></div>
-      <div class="panel" id="dex-detail"></div>
-      <div id="dex-actions"></div>
+    <div class="dex-layout">
+      <div class="dex-main">
+        <div class="dex-tabrow">
+          <div class="seg dex-tabs" id="dex-tabs">
+            <button type="button" class="on" data-dex-tab="col">Colección</button>
+            <button type="button" data-dex-tab="res">Investigación</button>
+            <button type="button" data-dex-tab="mas">Maestría</button>
+          </div>
+          <b class="dex-count">Pokémon <span id="dex-total" class="sub"></span></b>
+          <button class="btn small ghost" data-back>Volver</button>
+        </div>
+        <div id="dex-col">
+          <div class="gen-tabs" id="dex-gens"></div>
+          <div class="dex-filter-row">
+            <div class="filters" id="dex-filters"></div>
+            <input id="dex-q" type="search" placeholder="Buscar por nombre o número" autocomplete="off" spellcheck="false" enterkeyhint="search">
+            <button class="btn small ghost hidden" id="dex-clear" type="button">Limpiar</button>
+          </div>
+          <div class="grid" id="dex-grid"></div>
+        </div>
+        <div id="dex-res" class="dex-pane hidden"></div>
+        <div id="dex-mas" class="dex-pane hidden"></div>
+      </div>
+      <aside class="dex-side" id="dex-side">
+        <div id="dex-detail"></div>
+        <div id="dex-actions"></div>
+        <div id="dex-rest"></div>
+      </aside>
     </div>
   </div>
 </section>
@@ -741,6 +757,9 @@
 <script defer src="js/ui/login.js"></script>
 <script defer src="js/ui/test.js"></script>
 <script defer src="js/systems/mastery.js"></script>
+<script defer src="assets/future-use/egg-hatching/egg-hatching.js"></script>
+<script defer src="js/systems/research.js"></script>
+<script defer src="js/systems/hatch.js"></script>
 <script defer src="js/ui/menu.js"></script>
 <script defer src="js/ui/slots.js"></script>
 <script defer src="js/ui/region-ui.js"></script>
