@@ -3,7 +3,7 @@
   "runtimeIntegrated": false,
   "assets": [
     {
-      "label": "普通幸運蛋",
+      "label": "普通孵化蛋",
       "level": 1,
       "path": "assets/future-use/eggs/egg-level-1.png",
       "width": 40,
@@ -11,10 +11,10 @@
       "sha256": "491e8033cf83c8e47ec5951d74a92035248b23269069777670cbf38f7a323627",
       "tier": "common",
       "palette": "red-white",
-      "named_path": "assets/future-use/lucky-eggs/lucky-egg-common.png"
+      "named_path": "assets/future-use/hatching-eggs/hatching-egg-common.png"
     },
     {
-      "label": "稀有幸運蛋",
+      "label": "稀有孵化蛋",
       "level": 2,
       "path": "assets/future-use/eggs/egg-level-2.png",
       "width": 40,
@@ -22,10 +22,10 @@
       "sha256": "f2facb88c9de49b6dd55b5de0fe395401005aebead739caefe25da62a3d7fbcb",
       "tier": "rare",
       "palette": "blue-red",
-      "named_path": "assets/future-use/lucky-eggs/lucky-egg-rare.png"
+      "named_path": "assets/future-use/hatching-eggs/hatching-egg-rare.png"
     },
     {
-      "label": "傳說幸運蛋",
+      "label": "傳說孵化蛋",
       "level": 3,
       "path": "assets/future-use/eggs/egg-level-3.png",
       "width": 40,
@@ -33,10 +33,10 @@
       "sha256": "78c6fd09d5970dc1df10746c2bac7b20283ddb9fc5138f31cc86f4fad166594c",
       "tier": "legendary",
       "palette": "black-gold",
-      "named_path": "assets/future-use/lucky-eggs/lucky-egg-legendary.png"
+      "named_path": "assets/future-use/hatching-eggs/hatching-egg-legendary.png"
     },
     {
-      "label": "史詩幸運蛋",
+      "label": "史詩孵化蛋",
       "level": 4,
       "path": "assets/future-use/eggs/egg-level-4.png",
       "width": 40,
@@ -44,7 +44,7 @@
       "sha256": "ec2bb0f4de194b13feab703be0eabb9d618c8e1944366da63ceedff2d2ec41a6",
       "tier": "epic",
       "palette": "purple-pink",
-      "named_path": "assets/future-use/lucky-eggs/lucky-egg-epic.png"
+      "named_path": "assets/future-use/hatching-eggs/hatching-egg-epic.png"
     },
     {
       "label": "店鋪",
@@ -108,7 +108,7 @@
       "rules_status": "能力、價格、稀有度與持有上限未設定"
     },
     {
-      "label": "四級幸運蛋共用孵化動畫",
+      "label": "四級孵化蛋共用孵化動畫",
       "path": "assets/future-use/egg-hatching/egg-hatching.js",
       "type": "Canvas JavaScript module",
       "playback_seconds": 1.8,
@@ -121,7 +121,7 @@
       ],
       "recommended": true,
       "runtimeIntegrated": false,
-      "sha256": "969e8d26ac861869a07aa64ceb02c4470fac0bd85de2b2f5cb7ac44ac21d08e8"
+      "sha256": "b20c5d1f3feb91be17584f2c2d5bbde2c7f3032f5f829a41f6c2c78e6d95bcdf"
     }
   ]
 }

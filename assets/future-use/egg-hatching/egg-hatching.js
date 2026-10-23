@@ -18,7 +18,7 @@
     function start(config){
       if(phase==='playing')return false;
       config=config||{};
-      if(!Object.hasOwn(TIERS,config.tier))throw new RangeError('Unknown lucky egg tier');
+      if(!Object.hasOwn(TIERS,config.tier))throw new RangeError('Unknown hatching egg tier');
       tier=config.tier;reduced=!!config.reducedMotion;elapsed=0;notified=false;phase='playing';return true;
     }
     function update(dt){

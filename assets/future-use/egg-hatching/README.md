@@ -1,6 +1,6 @@
-# 共用孵化動畫（四級幸運蛋）
+# 共用孵化動畫（四級孵化蛋）
 
-`egg-hatching.js` 是可執行的 Canvas 共用模組，直接使用 `../lucky-eggs/` 的四張 40×48 透明蛋圖。無額外套件、不需四份 GIF。四級名稱順序：普通 common、稀有 rare、傳說 legendary、史詩 epic。
+`egg-hatching.js` 是可執行的 Canvas 共用模組，直接使用 `../hatching-eggs/` 的四張 40×48 透明蛋圖。無額外套件、不需四份 GIF。四級名稱順序：普通 common、稀有 rare、傳說 legendary、史詩 epic。
 
 ## 執行預覽
 
