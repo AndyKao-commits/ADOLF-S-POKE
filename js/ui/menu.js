@@ -9,7 +9,7 @@ G.MenuUI = (() => {
   let dexF = DEX0();
   const SORTS = [['num', 'Nº'], ['name', 'Nombre'], ['rar', 'Rareza'], ['new', 'Recién conseguidos'], ['used', 'Más usados']];
 
-  let dexDrawer = false, dexSheet = false;
+  let dexDrawer = false, dexSheet = false, dexTab = 'col';
   function shutDrawer() {
     dexDrawer = false;
     const d = $('dex-drawer');
@@ -48,6 +48,9 @@ G.MenuUI = (() => {
     });
     const moreBtn = $('menu-more-btn');
     if (moreBtn && sheet) moreBtn.onclick = () => { sheet.classList.toggle('hidden'); G.Audio.sfx('click'); };
+    document.querySelectorAll('#dex-tabs button').forEach(b => {
+      b.onclick = () => { G.Audio.sfx('select'); setDexTab(b.dataset.dexTab); };
+    });
     const fbtn = $('dex-filter-btn');
     if (fbtn) fbtn.onclick = () => { dexDrawer = !dexDrawer; $('dex-drawer').classList.toggle('hidden', !dexDrawer); };
     const dclose = $('dex-drawer-close');
@@ -303,6 +306,84 @@ G.MenuUI = (() => {
     renderGrid();
     if (dexSheet && dexSel != null) showDetail(dexSel);
     else if ($('dex-sheet')) $('dex-sheet').classList.add('hidden');
+    setDexTab(dexTab);
+  }
+
+  function setDexTab(tab) {
+    dexTab = tab || 'col';
+    for (const id of ['col', 'res', 'mas']) {
+      const pane = $('dex-' + id);
+      if (pane) pane.classList.toggle('hidden', id !== dexTab);
+    }
+    document.querySelectorAll('#dex-tabs button').forEach(b => b.classList.toggle('on', b.dataset.dexTab === dexTab));
+    if (dexTab !== 'col') { shutDrawer(); shutSheet(); }
+    if (dexTab === 'res') renderResearch();
+    if (dexTab === 'mas') renderMastery();
+  }
+
+  function renderResearch() {
+    const host = $('dex-res');
+    if (!host) return;
+    host.innerHTML = '<p class="sub">Las estrellas de cada Pokémon se suben en Investigación. Todavía no hay reglas.</p>';
+  }
+
+  function renderMastery() {
+    const host = $('dex-mas');
+    if (!host || !G.Mastery) return;
+    const save = G.DB.save;
+    const rows = Object.keys(save.pmas || {}).map(d => ({ dex: +d, m: save.pmas[d], p: G.DEX_BY[d] })).filter(x => x.p);
+    rows.sort((a, b) => G.Mastery.points(b.m) - G.Mastery.points(a.m) || a.dex - b.dex);
+    const counts = { bronze: 0, silver: 0, gold: 0, diamond: 0 };
+    for (const row of rows) { const id = G.Mastery.rankId(row.m); if (id) counts[id]++; }
+    host.replaceChildren();
+    const sum = document.createElement('p');
+    sum.className = 'sub mas-sum';
+    sum.textContent = G.I18n.f('Especies usadas: {x} · Bronce {x} · Plata {x} · Oro {x} · Diamante {x}', rows.length, counts.bronze, counts.silver, counts.gold, counts.diamond);
+    const rule = document.createElement('p');
+    rule.className = 'sub mas-rule';
+    rule.textContent = 'Jugar con un compañero sube su maestría: 10 por partida, 1 por cada 100 derrotas, 5 por minuto de su mejor tiempo y 15 por evolución. Bronce 100, plata 400, oro 1200 y diamante 2000. Las placas no cambian la partida.';
+    host.append(sum, rule);
+    if (!rows.length) {
+      const empty = document.createElement('p');
+      empty.className = 'sub';
+      empty.textContent = 'Aún no has jugado con ningún compañero.';
+      host.append(empty);
+      return;
+    }
+    const list = document.createElement('div');
+    list.className = 'mas-list';
+    for (const row of rows) list.appendChild(masCard(row));
+    host.append(list);
+  }
+
+  function masCard(row) {
+    const pts = G.Mastery.points(row.m);
+    const next = G.Mastery.nextRank(pts);
+    const card = document.createElement('div');
+    card.className = 'mas-card';
+    const art = document.createElement('div');
+    art.appendChild(G.UI.spriteCanvas(row.dex, 72, 64, { scale: 2, shadow: true }));
+    const body = document.createElement('div');
+    const top = document.createElement('div');
+    top.className = 'mas-top';
+    const name = document.createElement('b');
+    name.textContent = row.p.name;
+    const prog = document.createElement('span');
+    prog.textContent = next
+      ? G.I18n.f('Hacia {x}: {x}/{x}', G.T(next.name), pts, next.at)
+      : G.I18n.f('Diamante · {x}', pts);
+    top.append(name, prog);
+    const bar = document.createElement('div');
+    bar.className = 'mas-bar';
+    const fill = document.createElement('i');
+    fill.style.width = (next ? Math.min(100, pts / next.at * 100) : 100) + '%';
+    bar.append(fill);
+    const meta = document.createElement('div');
+    meta.className = 'mas-meta';
+    meta.textContent = G.I18n.f('Partidas {x} · Derrotas {x} · Mejor {x} · Evoluciones {x}', row.m.r, row.m.k, G.Mastery.clock(row.m.b), row.m.e);
+    body.append(top, bar, meta);
+    card.append(art, body);
+    return card;
   }
 
   /** Lo que se ve con la generación, los filtros y el orden de ahora. */

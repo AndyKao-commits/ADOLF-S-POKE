@@ -83,6 +83,7 @@ G.Player = class Player {
     this.item = null;          // último objeto cogido (data/items.js)
     this.stacks = {};          // id → cuántos llevas esta partida
     this.eggs = 0;             // huevos recogidos (aún no se incuban)
+    this.speciesEvo = 0;       // evoluciones de especie esta partida (la maestría suma 15 cada una)
     this.typeBonus = {};
     this.dashT = 0;
     this.dashCd = 0;

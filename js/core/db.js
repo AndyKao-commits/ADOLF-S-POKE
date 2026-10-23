@@ -83,6 +83,7 @@ G.DB = (() => {
       pupg: {},               // dex -> { id -> nivel }: mejoras de cada Pokémon
       dfav: {},               // dex -> fecha: favorito de la colección (negativa = quitado entonces)
       pused: {},              // dex -> partidas jugadas con él (orden "más usados")
+      pmas: {},               // dex -> { r, k, b, e }: maestría (partidas, derrotas, mejor tiempo, evoluciones)
       pstart: {},             // dex -> movimiento inicial elegido (Mejoras → Movimiento inicial)
       pstart2: {},            // dex -> segundo movimiento inicial (Mejoras → Segundo movimiento inicial)
       // Tienda Kecleon (20-10-2026, ver data/shop.js y systems/mons.js):
@@ -153,6 +154,14 @@ G.DB = (() => {
     for (const coll of ['dfav', 'pused']) {
       if (!isObj(s[coll])) { s[coll] = {}; continue; }
       for (const d of Object.keys(s[coll])) if (!Number.isFinite(+s[coll][d])) delete s[coll][d];
+    }
+    if (!isObj(s.pmas)) s.pmas = {};
+    for (const d of Object.keys(s.pmas)) {
+      const m = s.pmas[d];
+      if (!isObj(m) || (G.DEX_BY && !G.DEX_BY[d])) { delete s.pmas[d]; continue; }
+      const cap = (v, max) => Math.min(max, n(v));
+      s.pmas[d] = { r: cap(m.r, 100000), k: cap(m.k, 1e9), b: cap(m.b, 864000), e: cap(m.e, 100000) };
+      if (!s.pmas[d].r && !s.pmas[d].k && !s.pmas[d].b && !s.pmas[d].e) delete s.pmas[d];
     }
     for (const k of ['pstart', 'pstart2']) {
       if (!isObj(s[k])) s[k] = {};
@@ -342,6 +351,14 @@ G.DB = (() => {
     for (const d in older.dfav || {}) if (Math.abs(+older.dfav[d] || 0) > Math.abs(+r.dfav[d] || 0)) r.dfav[d] = older.dfav[d];
     r.pused = r.pused || {};
     for (const d in older.pused || {}) r.pused[d] = Math.max(+r.pused[d] || 0, +older.pused[d] || 0);
+    r.pmas = r.pmas || {};
+    for (const d in older.pmas || {}) {
+      const a = r.pmas[d] || {}, b = older.pmas[d] || {};
+      r.pmas[d] = {
+        r: Math.max(+a.r || 0, +b.r || 0), k: Math.max(+a.k || 0, +b.k || 0),
+        b: Math.max(+a.b || 0, +b.b || 0), e: Math.max(+a.e || 0, +b.e || 0)
+      };
+    }
     // Movimiento inicial: el de la versión más reciente; si no lo tenía elegido, el de la otra.
     for (const k of ['pstart', 'pstart2']) {
       r[k] = r[k] || {};

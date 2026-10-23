@@ -1046,5 +1046,14 @@ G.I18n.add({
   // ---------------- Tienda Kecleon, naturalezas y habilidades (20-10-2026) ----------------
   "Objetos: {x} · MT: {x}": "Items: {x} · TMs: {x}",
   // ---------------- Cooperativo: mirar a un compañero estando caído (21-10-2026) ----------------
-  "Ver a un compañero": "Watch a teammate", "Viendo a {x}": "Watching {x}", "cambiar": "switch"
+  "Ver a un compañero": "Watch a teammate", "Viendo a {x}": "Watching {x}", "cambiar": "switch",
+  "Colección": "Collection", "Investigación": "Research", "Maestría": "Mastery",
+  "Bronce": "Bronze", "Plata": "Silver", "Oro": "Gold", "Diamante": "Diamond",
+  "Especies usadas: {x} · Bronce {x} · Plata {x} · Oro {x} · Diamante {x}": "Species used: {x} · Bronze {x} · Silver {x} · Gold {x} · Diamond {x}",
+  "Hacia {x}: {x}/{x}": "Toward {x}: {x}/{x}",
+  "Diamante · {x}": "Diamond · {x}",
+  "Partidas {x} · Derrotas {x} · Mejor {x} · Evoluciones {x}": "Runs {x} · Defeats {x} · Best {x} · Evolutions {x}",
+  "Jugar con un compañero sube su maestría: 10 por partida, 1 por cada 100 derrotas, 5 por minuto de su mejor tiempo y 15 por evolución. Bronce 100, plata 400, oro 1200 y diamante 2000. Las placas no cambian la partida.": "Playing as a partner raises their mastery: 10 per run, 1 per 100 defeats, 5 per minute of their best time and 15 per evolution. Bronze 100, silver 400, gold 1200 and diamond 2000. The plates do not change the run.",
+  "Aún no has jugado con ningún compañero.": "You have not played as any partner yet.",
+  "Las estrellas de cada Pokémon se suben en Investigación. Todavía no hay reglas.": "Each Pokémon's stars are raised in Research. There are no rules yet."
 });

@@ -83,7 +83,7 @@
 }
 </script>
 <!-- seo:end -->
-<link rel="stylesheet" href="css/style.css?v=map26">
+<link rel="stylesheet" href="css/style.css?v=map27">
 <script src="js/core/locales.js"></script>
 </head>
 <body>
@@ -470,6 +470,12 @@
 <section id="scr-dex" class="scr dim hidden">
   <div class="box wide dex-box">
     <div class="row between"><h2>Pokémon <span id="dex-total" class="sub" style="font-size:15px"></span></h2><button class="btn small ghost" data-back>Volver</button></div>
+    <div class="seg dex-tabs" id="dex-tabs">
+      <button type="button" class="on" data-dex-tab="col">Colección</button>
+      <button type="button" data-dex-tab="res">Investigación</button>
+      <button type="button" data-dex-tab="mas">Maestría</button>
+    </div>
+    <div id="dex-col">
     <div class="dex-tools">
       <input id="dex-q" type="search" placeholder="Buscar por nombre o número" autocomplete="off" spellcheck="false" enterkeyhint="search">
       <button id="dex-filter-btn" class="btn small" type="button">Filtros</button>
@@ -477,6 +483,9 @@
       <button class="btn small ghost hidden" id="dex-clear" type="button">Limpiar</button>
     </div>
     <div class="grid" id="dex-grid"></div>
+    </div>
+    <div id="dex-res" class="dex-pane hidden"></div>
+    <div id="dex-mas" class="dex-pane hidden"></div>
     <div id="dex-drawer" class="dex-drawer box hidden">
       <div class="row between"><b>Filtros</b><button id="dex-drawer-close" class="btn small ghost" type="button">Cerrar</button></div>
       <div class="gen-tabs" id="dex-gens"></div>
@@ -731,6 +740,7 @@
 <script defer src="js/ui/hud.js"></script>
 <script defer src="js/ui/login.js"></script>
 <script defer src="js/ui/test.js"></script>
+<script defer src="js/systems/mastery.js"></script>
 <script defer src="js/ui/menu.js"></script>
 <script defer src="js/ui/slots.js"></script>
 <script defer src="js/ui/region-ui.js"></script>

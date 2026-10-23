@@ -6,7 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
-  { d: '2026-10-23', title: ['Barras y mapa', 'Bars and the map'], chg: [
+  { d: '2026-10-23', title: ['Barras y mapa', 'Bars and the map'], new: [
+    ['Cada compañero tiene maestría. Jugar con él suma 10 por partida, 1 por cada 100 derrotas, 5 por minuto de su mejor tiempo y 15 por evolución. Bronce, plata, oro y diamante (100, 400, 1200 y 2000) son un recuerdo: no cambian la partida.',
+     'Each partner has mastery. Playing as them adds 10 per run, 1 per 100 defeats, 5 per minute of their best time and 15 per evolution. Bronze, silver, gold and diamond (100, 400, 1200 and 2000) are a keepsake: they do not change the run.']
+  ], chg: [
     ['Arriba a la izquierda, la vida es la barra verde de rayas y la experiencia es la barra azul. El relleno sigue la vida y la experiencia de la partida.',
      'At the top left, HP is the striped green bar and experience is the blue bar. The fill follows this run\'s HP and experience.'],
     ['La tienda del mapa es el puesto de rayas rojas y blancas. Las Poké Balls del suelo son la roja, la azul y la amarilla.',

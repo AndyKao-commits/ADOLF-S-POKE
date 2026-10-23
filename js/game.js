@@ -383,6 +383,7 @@ G.Game = (() => {
     save.stats.runs++;
     save.pused = save.pused || {};
     save.pused[pl.dex] = (+save.pused[pl.dex] || 0) + 1;     // para "más usados" en la colección
+    if (G.Mastery) G.Mastery.note(pl.dex, pl.kills, G.Modes.is('siege') ? null : time, pl.speciesEvo);
     save.stats.totalKills += pl.kills;
     if (!G.Modes.is('siege')) {
       save.stats.bestTime = Math.max(save.stats.bestTime, Math.floor(time));

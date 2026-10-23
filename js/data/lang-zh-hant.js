@@ -1200,5 +1200,14 @@ G.I18n.add({
   "Amigos: si tu móvil u ordenador tiene la hora (o la zona horaria) mal puesta, tus amigos ya no salen siempre desconectados y sus invitaciones te llegan.": "好友：即使手機或電腦的時間或時區設定錯誤，好友也不再一直顯示離線，且能正常收到邀請。",
   "Jugar en dos aparatos (PC y móvil) ya no hace perder monedas ni tickets: antes, si uno tenía la partida abierta con datos viejos y guardaba, borraba lo ganado en el otro. Ahora se suma lo de los dos. Y al volver al juego tras un rato fuera, se trae lo conseguido en el otro aparato (Pokémon, shinies...) sin recargar.": "在電腦與手機兩台裝置遊玩時，金幣與票券不再遺失。先前若其中一台保留舊資料並儲存，會覆蓋另一台獲得的成果；現在會合併兩台裝置的資源變動。離開一段時間再回到遊戲時，也會自動同步另一台取得的寶可夢與異色寶可夢等成果，不必重新載入。",
   "Los avisos grandes de la partida (un Gholdengo cerca, una marea...) ya salen siempre centrados.": "局內大型公告（例如附近出現賽富豪、敵人大軍來襲等）現在都會置中顯示。",
-  "{x}).": "{x}）。"
+  "{x}).": "{x}）。",
+  "Colección": "收藏", "Investigación": "研究", "Maestría": "精通",
+  "Bronce": "銅", "Plata": "銀", "Oro": "金", "Diamante": "鑽石",
+  "Especies usadas: {x} · Bronce {x} · Plata {x} · Oro {x} · Diamante {x}": "已用物種：{x} · 銅 {x} · 銀 {x} · 金 {x} · 鑽石 {x}",
+  "Hacia {x}: {x}/{x}": "距{x}：{x}/{x}",
+  "Diamante · {x}": "鑽石 · {x}",
+  "Partidas {x} · Derrotas {x} · Mejor {x} · Evoluciones {x}": "局數 {x} · 擊敗 {x} · 最佳 {x} · 進化 {x}",
+  "Jugar con un compañero sube su maestría: 10 por partida, 1 por cada 100 derrotas, 5 por minuto de su mejor tiempo y 15 por evolución. Bronce 100, plata 400, oro 1200 y diamante 2000. Las placas no cambian la partida.": "使用夥伴遊玩可提升精通：每局 10 分，每擊敗 100 隻 1 分，最佳時間每分鐘 5 分，每次進化 15 分。銅 100、銀 400、金 1200、鑽石 2000。牌位不改變對戰。",
+  "Aún no has jugado con ningún compañero.": "還沒有用夥伴玩過。",
+  "Las estrellas de cada Pokémon se suben en Investigación. Todavía no hay reglas.": "每隻寶可夢的升星在研究。規則還沒有。"
 }, 'zh-Hant');
