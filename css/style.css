@@ -337,20 +337,36 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
 
 /* ---------- menú principal ---------- */
 #scr-menu {
+  --menu-top-h: clamp(48px, 7dvh, 64px);
+  --menu-dock-h: clamp(62px, 10dvh, 86px);
+  --menu-gap: clamp(8px, 2vw, 24px);
+  --menu-panel-pad: clamp(12px, 1.5vw, 16px);
   display: grid;
-  grid-template-columns: minmax(230px, 300px) minmax(0, 1fr) minmax(240px, 300px);
+  width: min(100%, 1360px);
+  margin-inline: auto;
+  min-height: 100dvh;
+  grid-template-columns: clamp(200px, 22vw, 300px) minmax(0, 1fr) clamp(200px, 22vw, 300px);
   grid-template-rows: auto minmax(0, 1fr) auto;
-  grid-template-areas: ". logo logo" "modes stage room" "dock dock dock";
-  gap: 12px 14px;
-  padding: 8px max(12px, env(safe-area-inset-right, 0px)) 10px max(12px, env(safe-area-inset-left, 0px));
-  align-items: stretch;
-  justify-content: stretch;
+  grid-template-areas: "logo logo logo" "modes stage room" "dock dock dock";
+  column-gap: clamp(16px, 3vw, 48px);
+  row-gap: var(--menu-gap);
+  padding:
+    max(8px, env(safe-area-inset-top, 0px))
+    max(var(--menu-gap), env(safe-area-inset-right, 0px))
+    max(8px, env(safe-area-inset-bottom, 0px))
+    max(var(--menu-gap), env(safe-area-inset-left, 0px));
+  align-items: start;
+  justify-content: center;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 #scr-menu .logo {
   grid-area: logo; text-align: right; width: max-content; max-width: 100%;
   justify-self: end; align-self: end;
-  margin: 0 54px 0 0;
+  margin: calc(var(--menu-top-h) - 36px) 54px 0 0;
 }
+#scr-menu button,
+#scr-menu input { min-height: 44px; }
 #scr-menu .box {
   overflow: visible; max-height: none;
   background: linear-gradient(180deg, rgba(14, 32, 64, .58), rgba(8, 18, 40, .46));
@@ -358,7 +374,11 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
 #scr-menu .setup-row { background: rgba(6, 18, 48, .4); }
 #scr-menu .field { background: rgba(6, 16, 40, .42); }
 #menu-code-msg:empty { display: none; margin: 0; }
-.menu-modes { grid-area: modes; display: flex; flex-direction: column; justify-content: flex-start; gap: 10px; padding: 12px; min-height: 0; align-self: stretch; height: auto; }
+.menu-modes {
+  grid-area: modes; display: flex; flex-direction: column; justify-content: flex-start; gap: 10px;
+  padding: var(--menu-panel-pad); min-height: 0; width: 100%; height: max-content;
+  align-self: start; justify-self: center;
+}
 .menu-head { display: flex; align-items: center; gap: 6px; color: var(--gold); font-size: 15px; margin: 0 2px 2px; }
 .menu-head .mi-ico { height: 20px; display: flex; }
 .setup-row {
@@ -376,18 +396,25 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
 .setup-row .mode-ico { width: 36px; height: 28px; flex-basis: 36px; }
 .setup-row .mode-ico canvas, .setup-row .mode-ico img { width: 36px; height: 28px; }
 .menu-stage {
-  grid-area: stage; min-width: 0; min-height: 0;
+  grid-area: stage; min-width: 0; min-height: 0; width: min(100%, 560px); justify-self: center;
+  align-self: center;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   text-align: center; padding: 2px 8px 0; gap: 8px;
 }
-.menu-room { grid-area: room; display: flex; flex-direction: column; justify-content: flex-start; gap: 10px; padding: 12px; min-height: 0; align-self: stretch; height: auto; }
-.menu-room .code-join { display: flex; flex-direction: column; justify-content: flex-start; flex: 1; gap: 10px; margin: 0; min-height: 0; }
-.menu-room .code-join .field { width: 100%; flex: 1 1 auto; max-height: 56px; }
-.menu-room .code-join .btn { width: 100%; flex: 1 1 auto; max-height: 64px; padding: 8px 4px; font-size: 16px; }
+.menu-room {
+  grid-area: room; display: flex; flex-direction: column; justify-content: flex-start; gap: 10px;
+  padding: var(--menu-panel-pad); min-height: 0; width: 100%; height: max-content;
+  align-self: start; justify-self: center;
+}
+.menu-room .code-join { display: flex; flex-direction: column; justify-content: flex-start; gap: 10px; margin: 0; min-height: 0; }
+.menu-room .code-join .field { width: 100%; min-height: 44px; }
+.menu-room .code-join .btn { width: 100%; min-height: 44px; padding: 8px 4px; font-size: 16px; }
 .menu-dock {
   grid-area: dock; display: flex; align-items: stretch; justify-content: flex-start;
-  padding: 4px 8px; gap: 4px; overflow-x: auto; scrollbar-width: none;
+  width: 100%; min-width: 0; align-self: end;
+  padding: 4px 8px; gap: 4px; overscroll-behavior-x: contain; scrollbar-width: none;
 }
+#scr-menu .menu-dock { overflow-x: auto; overflow-y: hidden; }
 .menu-dock::-webkit-scrollbar { display: none; width: 0; height: 0; }
 .menu-dock .menu-item {
   flex: 1 0 68px; display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -841,13 +868,26 @@ kbd {
 ::-webkit-scrollbar-thumb { background: rgba(244,248,255,.3); border-radius: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
-@media (max-width: 760px) and (min-height: 521px) {
+@media (max-width: 899px) {
   #scr-menu {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto;
     grid-template-areas: "logo" "stage" "modes" "room" "dock";
+    width: 100%;
+    column-gap: 0;
+    row-gap: clamp(10px, 3vw, 18px);
     overflow-y: auto;
+    overscroll-behavior-y: contain;
+    justify-content: stretch;
   }
+  .menu-stage, .menu-modes, .menu-room {
+    width: min(100%, 560px); height: max-content; max-height: none;
+    margin-inline: auto; align-self: start; justify-self: center;
+  }
+  #scr-menu .logo { justify-self: center; margin: 8px auto 0; text-align: center; }
+  #scr-menu .logo-img { margin-inline: auto; }
+  #scr-menu .brand-name { text-align: center; }
+  .menu-dock .menu-item { flex: 0 0 clamp(68px, 18vw, 92px); }
   .split { grid-template-columns: 1fr; }
   .logo .t1 { font-size: 34px; }
 }
@@ -1194,23 +1234,26 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   .sound-panel { top: 40px; }
 
   #scr-menu {
-    padding: 6px
-             calc(10px + env(safe-area-inset-right, 0px))
-             max(6px, env(safe-area-inset-bottom, 0px))
-             calc(10px + env(safe-area-inset-left, 0px));
-    gap: 8px 10px; overflow: visible;
+    --menu-gap: 6px;
+    padding: 4px
+             max(6px, env(safe-area-inset-right, 0px))
+             max(4px, env(safe-area-inset-bottom, 0px))
+             max(6px, env(safe-area-inset-left, 0px));
+    row-gap: 6px;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
   body:has(#scr-menu:not(.hidden)) .topbar {
     left: calc(8px + env(safe-area-inset-left, 0px));
     right: calc(8px + env(safe-area-inset-right, 0px));
   }
-  .menu-modes, .menu-room { align-self: stretch; height: auto; }
-  .setup-row { min-height: 36px; }
+  .menu-modes, .menu-room { align-self: start; height: max-content; padding: 8px; }
+  .setup-row { min-height: 44px; }
   .menu-stage { justify-content: center; gap: 4px; overflow: visible; padding: 0 2px; }
   #scr-menu .logo { margin: 0 50px 0 0; }
   #scr-menu .logo-img { height: min(52px, 10vh); }
   #scr-menu .brand-name { font-size: 12px; margin-top: 0; line-height: 1.15; }
-  .menu-play { min-width: 148px; font-size: 17px; padding: 8px 16px; }
+  .menu-play { min-width: 0; width: min(100%, 240px); font-size: 17px; padding: 8px 16px; }
   .menu-play small { display: none; }
   .menu-go { flex: 0 0 auto; gap: 6px; width: min(100%, 440px); }
   #mode-help {
@@ -1226,7 +1269,7 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
     overflow: visible;
   }
   #menu-partner {
-    width: min(220px, 32vh); max-width: 100%; height: auto; aspect-ratio: 320 / 248; flex: 0 0 auto;
+    width: clamp(112px, 24dvh, 170px); max-width: 100%; height: auto; aspect-ratio: 320 / 248; flex: 0 0 auto;
   }
   .partner-card .nm {
     flex: 0 0 auto; font-size: 14px; line-height: 1.15;
@@ -1248,47 +1291,28 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   }
   .box.settings { max-height: calc(100dvh - 12px); }
 }
-@media (max-height: 400px) {
-  #scr-menu .logo-img { height: 44px; }
-  #menu-partner { width: min(160px, 28vh); max-width: 100%; height: auto; flex: 0 0 auto; }
-  #mode-help { max-height: 42px; line-height: 14px; padding: 0 8px; }
-}
-/* iPhone SE y móviles en horizontal: tres columnas iguales.
-   Si los lados piden 300px, el centro queda en una rendija. */
-@media (max-width: 960px) and (max-height: 500px) {
+/* Horizontal bajo: tres columnas compactas si caben. Si no, se queda
+   la columna única de la regla estrecha para no desbordar. */
+@media (orientation: landscape) and (max-height: 520px) and (min-width: 660px) {
   #scr-menu {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
-    gap: 6px;
-    padding: 4px max(6px, env(safe-area-inset-right, 0px)) 4px max(6px, env(safe-area-inset-left, 0px));
+    grid-template-columns: minmax(200px, 30vw) minmax(220px, 1fr) minmax(210px, 32vw);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: "logo logo logo" "modes stage room" "dock dock dock";
+    width: 100%;
+    column-gap: 8px;
+    row-gap: 6px;
+    align-items: start;
   }
-  .menu-modes, .menu-stage, .menu-room { min-width: 0; max-width: 100%; }
-  .menu-modes, .menu-room { padding: 6px; gap: 6px; overflow: hidden; }
-  .menu-head { font-size: 12px; min-width: 0; }
-  .setup-row {
-    min-height: 30px; padding: 2px 4px; gap: 4px;
-    grid-template-columns: 22px auto minmax(0, 1fr) auto;
+  .menu-modes, .menu-room {
+    width: 100%; height: max-content; max-height: none; margin: 0;
+    align-self: start; padding: 8px;
   }
-  .setup-row .setup-k, .setup-row .setup-v {
-    font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  .setup-row .mode-ico { width: 22px; height: 18px; flex-basis: 22px; }
-  .setup-row .mode-ico canvas, .setup-row .mode-ico img { width: 22px; height: 18px; }
-  #setup-map-thumb, .setup-ball { width: 22px; height: 16px; }
-  .menu-stage { padding: 0 2px; gap: 2px; overflow: hidden; justify-content: center; }
-  #scr-menu .partner-card { width: 100%; max-width: 100%; min-width: 0; }
-  #menu-partner { width: auto; height: min(108px, 26vh); max-width: 100%; }
-  #scr-menu .partner-card .nm, #scr-menu .menu-sum {
-    max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  .menu-go { width: 100%; min-width: 0; }
-  .menu-play { min-width: 0; width: 100%; font-size: 15px; padding: 6px 8px; }
-  .menu-room .code-join { gap: 6px; }
-  #scr-menu .field { min-height: 32px; max-height: 36px; font-size: 14px; flex: 0 0 auto; }
-  .menu-room .code-join .btn { max-height: 40px; font-size: 14px; flex: 0 0 auto; padding: 6px 4px; }
-  #scr-menu .logo { margin: 0 54px 0 0; }
-  #scr-menu .logo-img { height: 36px; max-width: 42%; }
-  #scr-menu .brand-name { font-size: 9px; line-height: 1.1; }
-  .menu-dock .menu-item { min-width: 52px; flex-basis: 52px; font-size: 11px; min-height: 40px; }
+  .menu-stage { width: 100%; max-width: none; margin: 0; align-self: center; }
+  #scr-menu .logo { justify-self: end; margin: 0 48px 0 0; text-align: right; }
+  #scr-menu .logo-img { height: 36px; max-width: 42%; margin: 0 0 0 auto; }
+  #scr-menu .brand-name { text-align: right; font-size: 10px; line-height: 1.1; }
+  .menu-play { min-width: 0; width: 100%; }
+  .setup-row .setup-k, .setup-row .setup-v { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 
 /* ---------- pantalla de carga (lo primero que se ve y lo que lee Google) ---------- */
