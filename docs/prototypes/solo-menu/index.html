@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PokéTide 單人出戰設定原型</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand"><span>POKÉ</span><b>TIDE</b><small>寶可夢生存戰</small></div>
+      <div class="resources"><span>💎 0</span><span>🪙 12,460</span><button aria-label="設定">⚙</button></div>
+    </header>
+
+    <section class="stage">
+      <aside class="panel setup">
+        <div class="panel-title"><span>單人出戰設定</span><em>SOLO</em></div>
+        <button class="select-row" data-picker="mode"><span class="row-icon red">◈</span><span><small>模式</small><strong data-value="mode">一般</strong></span><i>›</i></button>
+        <button class="select-row" data-picker="map"><span class="row-icon blue">⌖</span><span><small>地圖</small><strong data-value="map">隨機</strong></span><i>›</i></button>
+        <button class="select-row" data-picker="difficulty"><span class="row-icon gold">✦</span><span><small>難度</small><strong data-value="difficulty">普通</strong></span><i>›</i></button>
+        <div class="tip"><b>如何使用</b><p>點選上方欄位開啟宮格，選中後會自動保存。按「開始遊戲」可查看本局設定。</p></div>
+      </aside>
+
+      <section class="hero" aria-label="夥伴展示">
+        <div class="clouds"></div><div class="mountain"></div>
+        <div class="rank"><span>夥伴等級</span><b>Lv. 12</b></div>
+        <div class="sprite-wrap"><canvas id="partner" width="256" height="256"></canvas><div class="shadow"></div></div>
+        <div class="partner-name"><small>YOUR PARTNER</small><strong>卡比獸</strong><span>一般</span></div>
+        <div class="summary" id="summary">一般 ・ 隨機地圖 ・ 普通</div>
+        <button class="start" id="start">開始遊戲 <span>▶</span></button>
+      </section>
+
+      <aside class="panel room">
+        <div class="panel-title"><span>多人房間</span><em>CO-OP</em></div>
+        <div class="room-art"><img src="../../../assets/future-use/balls/great-ball.png" alt="高級球"><span></span><img src="../../../assets/future-use/balls/ultra-ball.png" alt="究極球"></div>
+        <label for="room-code">輸入房間代碼</label>
+        <div class="code"><input id="room-code" maxlength="6" placeholder="A1B2C3"><button id="join">加入</button></div>
+        <button class="create" id="create">＋ 建立新房間</button>
+        <p class="room-note">這個原型示範入口與輸入檢查；連線仍使用現有多人系統。</p>
+      </aside>
+    </section>
+
+    <nav class="dock" aria-label="主功能">
+      <button data-info="寶可夢"><img src="../../../assets/pokemon/143/Idle.png"><span>寶可夢</span></button>
+      <button data-info="強化"><b>⬆</b><span>強化</span></button>
+      <button data-info="商店"><img src="../../../assets/future-use/shop/shop-only.png"><span>商店</span></button>
+      <button data-info="背包"><b>🎒</b><span>背包</span></button>
+      <button data-info="扭蛋"><img src="../../../assets/future-use/balls/master-ball.png"><span>扭蛋</span></button>
+      <button data-info="任務"><b>▣</b><span>任務</span></button>
+      <button data-info="好友"><b>♟</b><span>好友</span></button>
+      <button data-info="排行"><b>♛</b><span>排行</span></button>
+      <button data-info="設定"><b>⚙</b><span>設定</span></button>
+    </nav>
+  </main>
+
+  <dialog id="picker"><div class="dialog-head"><div><small id="picker-kicker"></small><h2 id="picker-title"></h2><p id="picker-help"></p></div><button class="close" aria-label="關閉">×</button></div><div class="grid" id="picker-grid"></div></dialog>
+  <dialog id="notice"><div class="notice-icon">✓</div><h2 id="notice-title"></h2><p id="notice-body"></p><div id="notice-details"></div><button class="ok">知道了</button></dialog>
+  <div class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
