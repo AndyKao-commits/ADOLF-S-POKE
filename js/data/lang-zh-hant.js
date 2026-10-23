@@ -1264,6 +1264,11 @@ G.I18n.add({
   "Difícil": "困難",
   "Reto": "挑戰",
   "Pesadilla": "惡夢",
+  "El ranking separa Corriente, Difícil, Reto y Pesadilla. Cada una tiene sus marcas.": "排行榜分成普通、困難、挑戰和惡夢，每一種各自排名。",
+  "Una partida con muchas derrotas o un nivel muy alto también entra en el ranking, si es la mejor marca.": "擊殺很多或等級很高的一局，只要是最強紀錄，也會進排行榜。",
+  "Los huevos de incubar caen menos: común 0,8 %, poco común y raro 0,5 %, épico 0,3 % y legendario 0,4 %.": "孵化蛋掉得比較少：普通 0.8%、不太常見和稀有 0.5%、史詩 0.3%、傳說 0.4%。",
+  "Un Pokémon normal suelta una Poké Ball el 0,2 % de las veces. Los jefes y los cofres también sueltan objeto menos a menudo.": "一般寶可夢掉精靈球的機率改成 0.2%。頭目和寶箱也比較少掉道具。",
+  "Veto, Suerte, Saltar, Cuarta carta, Reponerse y Sellar ya se compran. El primer nivel cuesta 300, 140, 80, 3000, 5000 y 800. El siguiente cuesta 570, 200, 120 y 1280.": "封鎖、幸運、跳過、第四張卡片、重整旗鼓和封存可以買了。第一級是 300、140、80、3000、5000 和 800。下一級是 570、200、120 和 1280。",
   "Tienda": "商店",
   "Esta dificultad todavía no cambia la partida.": "這個難度這一版還沒有改變對局。"
 }, 'zh-Hant');

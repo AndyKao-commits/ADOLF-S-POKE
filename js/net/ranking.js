@@ -87,6 +87,11 @@ G.Ranking = (() => {
 
   /** Trozo del nombre de la tabla según el modo de partida. Vacío = mazmorra normal (las tablas de siempre). */
   const RUN_TAG = { shiny: 'sh_', boss: 'bo_', castle: 'ca_', siege: 'sg_', siegeParty: 'sgp_' };
+  // Dificultad de la salida. Vacío = Corriente: las marcas de antes siguen en esa tabla.
+  const DIFF_TAG = { hard: 'hd_', challenge: 'ch_', nightmare: 'nm_' };
+  const DIFF_TAGS = ['', ...Object.values(DIFF_TAG)];
+  function rankDiff(v) { return Object.prototype.hasOwnProperty.call(DIFF_TAG, v) ? v : 'normal'; }
+  function diffTag(d) { return DIFF_TAG[rankDiff(d)] || ''; }
   const fastBoard = b => { const s = String(b); return s.includes('_sg_') || s.includes('_sgp_'); };
   function runTag(rm) { return RUN_TAG[rm] || ''; }
   /** siegeParty no está en Modes.IDS: idOf() lo convertiría en mazmorra normal. */
@@ -95,9 +100,9 @@ G.Ranking = (() => {
     return G.Modes ? G.Modes.idOf(v) : 'normal';
   }
 
-  /** El filtro por Pokémon sólo existe en el histórico. */
-  function board(mode, period, dex, rm) {
-    return mode + '_' + runTag(rm) + boardIds()[period] + (dex && period === 'a' ? '_p' + dex : '');
+  /** El filtro por Pokémon sólo existe en el histórico. La dificultad va en el nombre de la tabla. */
+  function board(mode, period, dex, rm, diff) {
+    return mode + '_' + runTag(rm) + diffTag(diff) + boardIds()[period] + (dex && period === 'a' ? '_p' + dex : '');
   }
 
   const col = b => fbx().fs.collection('lb').doc(b).collection('e');
@@ -333,8 +338,9 @@ G.Ranking = (() => {
     flushDeferred();
     const entry = { t: r.t, uids: [fb.uid], names: [G.Social.me.name], dex: [r.dex], shiny: [!!r.shiny], lv: r.lv, kills: r.kills };
     const rm = rm0;
-    const boards = PERIODS.map(([p]) => [board('s', p, null, rm), p]);
-    boards.push([board('s', 'a', r.dex, rm), 'p']);
+    const diff = rankDiff(r.diff);
+    const boards = PERIODS.map(([p]) => [board('s', p, null, rm, diff), p]);
+    boards.push([board('s', 'a', r.dex, rm, diff), 'p']);
     const better = await store(boards, fb.uid, entry);
     announce(better);
     return better;
@@ -350,8 +356,9 @@ G.Ranking = (() => {
     const entry = { t: r.t, uids: ms.map(m => m.uid), names: ms.map(m => m.name), dex: ms.map(m => m.dex),
                     shiny: ms.map(m => !!m.shiny), lv: r.lv, kills: r.kills };
     const rm = rankRm(r.runMode);
-    const boards = PERIODS.map(([p]) => [board('g', p, null, rm), p]);
-    for (const d of new Set(entry.dex)) boards.push([board('g', 'a', d, rm), 'p']);
+    const diff = rankDiff(r.diff);
+    const boards = PERIODS.map(([p]) => [board('g', p, null, rm, diff), p]);
+    for (const d of new Set(entry.dex)) boards.push([board('g', 'a', d, rm, diff), 'p']);
     const better = await store(boards, id, entry);
     announce(better);
     return better;
@@ -379,10 +386,10 @@ G.Ranking = (() => {
    * Mejores marcas de una tabla.
    * @param friendsOnly  sólo tú y tus amigos
    */
-  async function top(mode, period, dex, friendsOnly, rm) {
+  async function top(mode, period, dex, friendsOnly, rm, diff) {
     const fb = fbx();
     if (!fb) return [];
-    const b = board(mode, period, dex, rm);
+    const b = board(mode, period, dex, rm, diff);
     const fast = fastBoard(b);
     const rows = sorted(await summary(b), fast);
     if (!friendsOnly) return rows.slice(0, TOP);
@@ -411,10 +418,10 @@ G.Ranking = (() => {
   }
 
   /** Tu puesto en la tabla (aunque no salgas en el top). → { pos, t, row } | null */
-  async function myRank(mode, period, dex, rm) {
+  async function myRank(mode, period, dex, rm, diff) {
     const fb = fbx();
     if (!fb) return null;
-    const b = board(mode, period, dex, rm);
+    const b = board(mode, period, dex, rm, diff);
     const fast = fastBoard(b);
     // ¿Estás en el top 50? Entonces el puesto sale del resumen, sin gastar nada.
     const rows = sorted(await summary(b), fast);
@@ -478,7 +485,7 @@ G.Ranking = (() => {
     if (!fb) return;
     const ids = boardIds();
     const boards = new Set();
-    for (const m of ['s', 'g']) for (const tag of ['', ...Object.values(RUN_TAG)]) for (const [p] of PERIODS) boards.add(m + '_' + tag + ids[p]);
+    for (const m of ['s', 'g']) for (const tag of ['', ...Object.values(RUN_TAG)]) for (const df of DIFF_TAGS) for (const [p] of PERIODS) boards.add(m + '_' + tag + df + ids[p]);
     for (const k of Object.keys(bests())) boards.add(k.split(':')[0]);
     await Promise.all([...boards].map(b => fb.fs.runTransaction(async tx => {
       const s = await tx.get(sumRef(b));
@@ -556,9 +563,9 @@ G.Ranking = (() => {
   async function removeEverywhere(e, mode, dexes = [], also = null) {
     const ids = boardIds();
     const boards = new Set();
-    for (const tag of ['', ...Object.values(RUN_TAG)]) {
-      for (const [p] of PERIODS) boards.add(mode + '_' + tag + ids[p]);
-      for (const d of dexes) boards.add(mode + '_' + tag + ALL + '_p' + d);
+    for (const tag of ['', ...Object.values(RUN_TAG)]) for (const df of DIFF_TAGS) {
+      for (const [p] of PERIODS) boards.add(mode + '_' + tag + df + ids[p]);
+      for (const d of dexes) boards.add(mode + '_' + tag + df + ALL + '_p' + d);
     }
     if (also) boards.add(also);
     await Promise.all([...boards].map(b => removeEntry(b, e)));

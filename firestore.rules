@@ -151,7 +151,8 @@ service cloud.firestore {
     // Una entrada sólo se puede mejorar, nunca empeorar. Anti-trampas:
     //   - no más de 45 min (desde el 18-10-2026 la Sentencia de Arceus deja KO
     //     de un toque hacia el minuto 40; antes era 1 h y se llegaba huyendo)
-    //   - nivel y derrotados con margen de sobra (un grupo de 4 muy bueno)
+    //   - nivel y derrotas: sin tope por minuto (23-10-2026). La mejor marca entra
+    //     aunque supere lo de antes. El techo alto sólo frena un número imposible.
     //   - la cuenta no puede estar baneada por el admin (saves/{uid}.ban)
     function castleBoard(board) {
       return board.matches('.*_ca_.*');
@@ -173,8 +174,8 @@ service cloud.firestore {
         && d.t is int && d.t > 0
         && (castleBoard(board) ? (d.t >= 10000 && d.t <= 520000) : d.t <= 2700)
         && secs <= (request.time - run.startedAt).seconds() + 30
-        && d.lv is int && d.lv >= 1 && d.lv <= 20 + secs / 3
-        && d.kills is int && d.kills >= 0 && d.kills <= 100 + secs * 12
+        && d.lv is int && d.lv >= 1 && d.lv <= 9999
+        && d.kills is int && d.kills >= 0 && d.kills <= 9999999
         && (!exists(/databases/$(database)/documents/saves/$(me())) || get(/databases/$(database)/documents/saves/$(me())).data.get('ban', false) == false)
         && d.uids is list && me() in d.uids
         && d.names is list && d.names.size() == d.uids.size()

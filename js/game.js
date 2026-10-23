@@ -129,6 +129,8 @@ G.Game = (() => {
     if (G.Castle) G.Castle.end();
     if (G.Siege) G.Siege.end();
     G.Modes.lock(coop && coop.mode ? coop.mode : G.Settings.get('runMode'));
+    const pickedDiff = G.Settings.get('soloDiff');
+    runDiff = pickedDiff === 'hard' || pickedDiff === 'challenge' || pickedDiff === 'nightmare' ? pickedDiff : 'normal';
     G.UI.hideAll();
     G.UI.chrome(false);
     G.FX.clear();
@@ -414,7 +416,7 @@ G.Game = (() => {
     if (G.Social.me) G.Social.publishProfile();
 
     // Ranking: en solitario cada uno lo suyo; en grupo lo sube el anfitrión.
-    const mark = { t: waveMark || Math.floor(time), lv: pl.level, kills: pl.kills };
+    const mark = { t: waveMark || Math.floor(time), lv: pl.level, kills: pl.kills, diff: runDiff };
     // Si la partida se ha tocado (ver clean()), no sube al ranking (sin avisar); lo demás, sí.
     const ok = clean();
     // Una sala con una sola persona cuenta como solo: si no, ni solo ni grupo la guardan.
@@ -444,15 +446,16 @@ G.Game = (() => {
    *   - funciones de tu Pokémon sustituidas (así se hace uno invencible)
    *   - vida, ataque, velocidad o recarga muy por encima de lo posible
    *   - se han usado las funciones de pruebas (saltar el reloj...)
+   * El nivel y las derrotas no bloquean la marca: la mejor entra aunque sean altos.
    * Si algo salta, esa partida no sube al ranking (sin avisar) y nada más.
    */
-  let runReal = 0, tampered = false;
+  let runReal = 0, tampered = false, runDiff = 'normal';
   function clean() {
     if (tampered) return false;
     if (time > (performance.now() - runReal) / 1000 + 10) return false;
     for (const k of ['hurt', 'update', 'heal', 'gainXp']) if (Object.prototype.hasOwnProperty.call(pl, k)) return false;
     if (!isFinite(pl.hp) || !isFinite(pl.maxHp) || pl.hp > pl.maxHp + 1 || pl.maxHp > 50000) return false;
-    if (pl.atkMul > 2000 || pl.spdMul > 25 || pl.cdMul < 0.03 || pl.level > 20 + time / 3) return false;
+    if (pl.atkMul > 2000 || pl.spdMul > 25 || pl.cdMul < 0.03) return false;
     return true;
   }
 

@@ -26,8 +26,16 @@ G.CHANGELOG = [
     ['Cada compañero tiene maestría. Jugar con él suma 10 por partida, 1 por cada 100 derrotas, 5 por minuto de su mejor tiempo y 15 por evolución. Bronce, plata, oro y diamante (100, 400, 1200 y 2000) son un recuerdo: no cambian la partida.',
      'Each partner has mastery. Playing as them adds 10 per run, 1 per 100 defeats, 5 per minute of their best time and 15 per evolution. Bronze, silver, gold and diamond (100, 400, 1200 and 2000) are a keepsake: they do not change the run.']
   ], chg: [
-    ['Un Pokémon normal suelta una Poké Ball el 1 % de las veces. Los jefes y los cofres siguen como estaban.',
-     'A normal Pokémon drops a Poké Ball 1% of the time. Bosses and chests stay as they were.'],
+    ['Veto, Suerte, Saltar, Cuarta carta, Reponerse y Sellar ya se compran. El primer nivel cuesta 300, 140, 80, 3000, 5000 y 800. El siguiente cuesta 570, 200, 120 y 1280.',
+     'Ban, Luck, Skip, Fourth card, Revival and Seal can now be bought. The first level costs 300, 140, 80, 3000, 5000 and 800. The next costs 570, 200, 120 and 1280.'],
+    ['El ranking separa Corriente, Difícil, Reto y Pesadilla. Cada una tiene sus marcas.',
+     'The ranking splits Normal, Hard, Challenge and Nightmare. Each one has its own records.'],
+    ['Una partida con muchas derrotas o un nivel muy alto también entra en el ranking, si es la mejor marca.',
+     'A run with many defeats or a very high level still enters the ranking, when it is the best record.'],
+    ['Los huevos de incubar caen menos: común 0,8 %, poco común y raro 0,5 %, épico 0,3 % y legendario 0,4 %.',
+     'Hatching eggs drop less often: common 0.8%, uncommon and rare 0.5%, epic 0.3% and legendary 0.4%.'],
+    ['Un Pokémon normal suelta una Poké Ball el 0,2 % de las veces. Los jefes y los cofres también sueltan objeto menos a menudo.',
+     'A normal Pokémon drops a Poké Ball 0.2% of the time. Bosses and chests also drop an item less often.'],
     ['Arriba a la izquierda, la vida es la barra verde de rayas y la experiencia es la barra azul. El relleno sigue la vida y la experiencia de la partida.',
      'At the top left, HP is the striped green bar and experience is the blue bar. The fill follows this run\'s HP and experience.'],
     ['La tienda del mapa es el puesto de rayas rojas y blancas. Las Poké Balls del suelo son la roja, la azul y la amarilla.',

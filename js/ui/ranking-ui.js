@@ -6,7 +6,8 @@
 G.RankingUI = (() => {
   const $ = G.UI.$;
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  let mode = 's', period = 'w', scope = 'all', dex = null, runMode = 'normal', siegeSide = 'solo';
+  let mode = 's', period = 'w', scope = 'all', dex = null, runMode = 'normal', siegeSide = 'solo', diff = 'normal';
+  const DIFFS = [['normal', 'Corriente'], ['hard', 'Difícil'], ['challenge', 'Reto'], ['nightmare', 'Pesadilla']];
   let token = 0;
 
   function init() {
@@ -78,6 +79,18 @@ G.RankingUI = (() => {
         runBox.appendChild(b);
       }
     }
+    const diffBox = $('rk-diff');
+    if (diffBox) {
+      diffBox.innerHTML = '';
+      for (const [id, label] of DIFFS) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'chip' + (id === diff ? ' on' : '');
+        b.textContent = label;
+        b.onclick = () => { if (diff === id) return; diff = id; G.Audio.sfx('click'); tabs(); load(); };
+        diffBox.appendChild(b);
+      }
+    }
   }
 
   function shownRm() { return runMode === 'siege' && siegeSide === 'party' ? 'siegeParty' : runMode; }
@@ -100,8 +113,8 @@ G.RankingUI = (() => {
     let rows = [], me = null;
     try {
       [rows, me] = await Promise.all([
-        G.Ranking.top(mode, period, dex, scope === 'friends', shownRm()),
-        G.Social.me ? G.Ranking.myRank(mode, period, dex, shownRm()) : Promise.resolve(null)
+        G.Ranking.top(mode, period, dex, scope === 'friends', shownRm(), diff),
+        G.Social.me ? G.Ranking.myRank(mode, period, dex, shownRm(), diff) : Promise.resolve(null)
       ]);
     } catch (e) {
       if (my !== token) return;
@@ -114,7 +127,7 @@ G.RankingUI = (() => {
       list.innerHTML = '<p class="sub">Todavía no hay marcas aquí. ¡Sé el primero!</p>';
     }
     const uid = G.Social.uid;
-    const b = G.Ranking.board(mode, period, dex, shownRm()), done = G.Ranking.reported();
+    const b = G.Ranking.board(mode, period, dex, shownRm(), diff), done = G.Ranking.reported();
     rows.forEach((r, i) => list.appendChild(rowEl(r, i + 1, r.uids.includes(uid), b, done)));
 
     // La frase se monta en cada idioma (traducirla por trozos sale rara).

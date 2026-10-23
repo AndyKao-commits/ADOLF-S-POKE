@@ -21,6 +21,7 @@
  *   diffXp      número                            entre cuántos se reparte la experiencia, si es 'custom'
  *   bossN       0..10                             cuántos jefes salen (5 es lo de siempre, uno cada 3 minutos)
  *   runMode     normal | shiny | boss | castle | siege    modo de la próxima partida
+ *   soloDiff    normal | hard | challenge | nightmare     dificultad de la salida (cada una, su ranking)
  *   region      kanto … paldea                    mapa de la próxima partida en solitario
  *
  *   G.Settings.get('quality')  ·  G.Settings.set('fps', true)  ·  G.Settings.on(fn)
@@ -28,7 +29,7 @@
  */
 G.Settings = (() => {
   const KEY = 'ps.settings';
-  const DEF = { quality: 'auto', dmgNumbers: true, calm: false, fps: false, stick: 1, stickMode: 'float', pad: null, gamepad: true, padRumble: true, aimManual: false, partyCap: 10, diffMode: 'auto', diffN: 4, diffRate: 3.25, diffHp: 1.9, diffXp: 2.8, bossN: 5, runMode: 'normal', region: 'kanto' };
+  const DEF = { quality: 'auto', dmgNumbers: true, calm: false, fps: false, stick: 1, stickMode: 'float', pad: null, gamepad: true, padRumble: true, aimManual: false, partyCap: 10, diffMode: 'auto', diffN: 4, diffRate: 3.25, diffHp: 1.9, diffXp: 2.8, bossN: 5, runMode: 'normal', soloDiff: 'normal', region: 'kanto' };
   let s = Object.assign({}, DEF);
   try { Object.assign(s, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* nada */ }
   const fns = new Set();

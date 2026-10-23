@@ -223,10 +223,9 @@
         for (let i = 0; i < 10; i++) G.Pickups.drop('coin', this.x + G.U.rand(-40, 40), this.y + G.U.rand(-30, 30), 5);
         // Mazmorra: el jefe de cada asalto sí suelta objeto.
         // Desafío de jefes: cada baja es un jefe, y elegir objeto paraba la partida.
-        // Una de cada cinco suelta objeto.
+        // Una de cada quince suelta objeto (antes, una de cada tres).
         const bossMode = G.Modes && G.Modes.is('boss');
-        // Un tercio: un jefe normal ya no suelta siempre la bola amarilla.
-        if (Math.random() < (bossMode ? 0.2 : 1) / 3) G.Pickups.drop('ball', this.x - 26, this.y - 10, bossMode ? 2 : 3);
+        if (Math.random() < (bossMode ? 0.2 : 1) / 15) G.Pickups.drop('ball', this.x - 26, this.y - 10, bossMode ? 2 : 3);
       }
       const spec = G.DEX_BY && G.DEX_BY[this.dex];
       G.Pickups.dropXp(this.x, this.y, this.xp, this.boss, !!this.legend, !!this.judge, spec ? spec.rarity : 1);

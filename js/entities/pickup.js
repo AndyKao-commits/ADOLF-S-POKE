@@ -97,8 +97,8 @@ G.Pickups = (() => {
     if (Math.random() < TICKET_RATE) push(orb('ticket', x + G.U.rand(-6, 6), y, 1));
     if (Math.random() < 0.08) push(orb('coin', x + G.U.rand(-8, 8), y, 2));
     const lk = G.Items && G.Items.luckMul ? G.Items.luckMul(G.Game && G.Game.player) : 1;
-    // 1 % al derrotar un Pokémon normal. El nivel 1 y el 2 siguen en la misma proporción.
-    if (Math.random() < 0.01 * lk) push(orb('ball', x + G.U.rand(-10, 10), y, Math.random() < 0.82 ? 1 : 2));
+    // 0,2 % al derrotar un Pokémon normal (antes 1 %). El nivel 1 y el 2 siguen en la misma proporción.
+    if (Math.random() < 0.002 * lk) push(orb('ball', x + G.U.rand(-10, 10), y, Math.random() < 0.82 ? 1 : 2));
     hatchRoll(x, y, rarity);
 
     // Drops ocasionales.
@@ -110,12 +110,13 @@ G.Pickups = (() => {
 
   // 1 común, 2 raro, 3 legendario, 4 épico. El poco común cae como raro.
   const HATCH_TIER = { 1: 1, 2: 2, 3: 2, 4: 4, 5: 3 };
-  const HATCH_RATE = { 1: 0.04, 2: 0.03, 3: 0.03, 4: 0.02, 5: 0.025 };
+  // 23-10-2026: común 0,8 %, raro 0,5 %, épico 0,3 %, legendario 0,4 %. La suerte no pasa del 2 %.
+  const HATCH_RATE = { 1: 0.008, 2: 0.005, 3: 0.005, 4: 0.003, 5: 0.004 };
   function hatchRoll(x, y, rarity) {
     const tier = HATCH_TIER[rarity];
     if (!tier) return;
     const lk = G.Items && G.Items.luckMul ? G.Items.luckMul(G.Game && G.Game.player) : 1;
-    if (Math.random() < Math.min(0.12, HATCH_RATE[rarity] * lk)) push(orb('egg', x + G.U.rand(-12, 12), y, tier));
+    if (Math.random() < Math.min(0.02, HATCH_RATE[rarity] * lk)) push(orb('egg', x + G.U.rand(-12, 12), y, tier));
   }
 
   /** Suelta un objeto suelto: 'heal' | 'magnet' | 'bomb' | 'coin'. */
