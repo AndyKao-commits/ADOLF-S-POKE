@@ -31,6 +31,8 @@ G.RunUI = (() => {
     $('cards').classList.remove('done');
     renderCards(list);
     $('lvl-reroll').onclick = reroll;
+    const sk = $('lvl-skip');
+    if (sk) sk.onclick = skipCard;
     G.UI.show('scr-levelup');
     guard($('cards'));
     armClock();
@@ -95,6 +97,26 @@ G.RunUI = (() => {
     $('lvl-reroll').classList.toggle('hidden', left <= 0);
     const box = $('cards');
     box.innerHTML = '';
+    box.classList.toggle('n4', list.length >= 4);
+    const sub = document.querySelector('#scr-levelup .sub');
+    if (sub) {
+      let k4 = sub.querySelector('[data-k4]');
+      if (list.length >= 4) {
+        if (!k4) {
+          k4 = document.createElement('kbd');
+          k4.dataset.k4 = '1';
+          k4.textContent = '4';
+          sub.appendChild(document.createTextNode(' '));
+          sub.appendChild(k4);
+        }
+      } else if (k4) k4.remove();
+    }
+    const sk = $('lvl-skip'), leftSk = skipsLeft();
+    if (sk) {
+      sk.classList.toggle('hidden', leftSk <= 0);
+      const n = $('lvl-sk-n');
+      if (n) n.textContent = leftSk;
+    }
     list.forEach((c, i) => {
       const el = document.createElement('div');
       el.className = 'card';
@@ -114,12 +136,36 @@ G.RunUI = (() => {
     });
   }
 
+  function skipsLeft() {
+    const p = G.Game.player;
+    return p ? Math.max(0, (p.skipBonus || 0) - (p.skips || 0)) : 0;
+  }
+
+  /** Cierra las cartas sin aprender ninguna. El nivel ya está subido. */
+  function skipCard() {
+    if (!offers || skipsLeft() <= 0 || guarded()) return;
+    const p = G.Game.player;
+    if (p) p.skips = (p.skips || 0) + 1;
+    G.Audio.sfx('back');
+    stopClock();
+    const cb = offerCb;
+    offers = null; offerCb = null;
+    $('lvl-reroll').classList.add('hidden');
+    const sk = $('lvl-skip');
+    if (sk) sk.classList.add('hidden');
+    if (coopMode) $('cards').classList.add('done');
+    else G.UI.hide('scr-levelup');
+    if (cb) cb(null);
+  }
+
   function pick(i, force) {
     if (!offers || !offers[i] || (!force && guarded())) return;
     stopClock();
     const c = offers[i], cb = offerCb;
     offers = null; offerCb = null;
     $('lvl-reroll').classList.add('hidden');
+    const sk = $('lvl-skip');
+    if (sk) sk.classList.add('hidden');
     if (coopMode) {
       // Se queda la carta elegida a la vista mientras eligen los demás.
       $('cards').querySelectorAll('.card').forEach((el, j) => el.classList.toggle('picked', j === i));
@@ -448,5 +494,5 @@ G.RunUI = (() => {
     G.UI.show('scr-stall');
   }
 
-  return { showLevelUp, reroll, showItemChoice, showBallChoice, showBond, pickBond, bondBack, pick, setWaiting, closeLevelUp, showOver, wirePause, showPause, showMap, showStall };
+  return { showLevelUp, reroll, showItemChoice, showBallChoice, showBond, pickBond, bondBack, pick, skip: skipCard, setWaiting, closeLevelUp, showOver, wirePause, showPause, showMap, showStall };
 })();

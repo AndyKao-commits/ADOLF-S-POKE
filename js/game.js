@@ -169,6 +169,7 @@ G.Game = (() => {
     pl.addMove(G.startMoveOf(mon.dex));
     // Mejora "Veto": movimientos que no quieres que te salgan.
     pl.banned = new Set((save.pban && save.pban[mon.dex] || []).slice(0, perks.bans));
+    pl.sealed = new Set(((save.pseal && save.pseal[mon.dex]) || []).slice(0, perks.seals || 0));
     // Mejora "Repertorio": un segundo movimiento de ataque, el elegido con
     // "Segundo movimiento inicial" o, si no, al azar.
     if (perks.startMoves >= 2) {
@@ -271,8 +272,7 @@ G.Game = (() => {
       G.UI.hide('scr-pause');
       G.Audio.sfx('levelup');
       G.RunUI.showLevelUp(level, G.LevelUp.offer(pl), card => {
-        G.Audio.sfx('confirm');
-        card.apply(pl);
+        if (card) { G.Audio.sfx('confirm'); card.apply(pl); }
         G.Coop.localPicked();
       }, true);
     },
@@ -498,8 +498,7 @@ G.Game = (() => {
       pl.frozen = true;
       G.Audio.sfx('levelup');
       G.RunUI.showLevelUp(pl.level, G.LevelUp.offer(pl), card => {
-        G.Audio.sfx('confirm');
-        card.apply(pl);
+        if (card) { G.Audio.sfx('confirm'); card.apply(pl); }
         if (state === 'levelup') state = 'playing';
       });
       return;
@@ -517,8 +516,7 @@ G.Game = (() => {
     state = 'levelup';
     G.Audio.sfx('levelup');
     G.RunUI.showLevelUp(pl.level, G.LevelUp.offer(pl), card => {
-      G.Audio.sfx('confirm');
-      card.apply(pl);
+      if (card) { G.Audio.sfx('confirm'); card.apply(pl); }
       state = 'playing';
     });
   }
@@ -786,7 +784,7 @@ G.Game = (() => {
   }
   function rollStall(shop) {
     const have = id => (pl.stacks && pl.stacks[id]) || 0;
-    const pool = G.Items.LIST.filter(i => have(i.id) < i.max);
+    const pool = G.Items.LIST.filter(i => have(i.id) < i.max && !(pl.sealed && pl.sealed.has(i.id)));
     shop.stock = G.U.pickN(pool, Math.min(3, pool.length)).map(i => i.id);
   }
   function stallPrice(it, shop) {
@@ -854,10 +852,11 @@ G.Game = (() => {
       return;
     }
     if (state === 'levelup') {
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 4; i++) {
         if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) G.RunUI.pick(i);
       }
       if (G.Input.tap('keyr')) G.RunUI.reroll();
+      if (G.Input.tap('keyf')) G.RunUI.skip();
       return;
     }
     if (G.UI.isOpen('scr-bond')) {

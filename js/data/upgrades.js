@@ -22,7 +22,7 @@ G.Upgrades = (() => {
     { id: 'start',  icon: 'cursor', name: 'Movimiento inicial', unit: 'Eliges con qué ataque empiezas la partida', max: 1, base: 400, grow: 1 },
     // 20-10-2026: igual, para el segundo de Repertorio (save.pstart2, ver G.startMove2Of). Sin Repertorio no se compra.
     { id: 'start2', icon: 'cursor', name: 'Segundo movimiento inicial', unit: 'Eliges el segundo ataque con el que empiezas (necesita Repertorio)', max: 1, base: 400, grow: 1, needs: 'moves' },
-    { id: 'luck', icon: 'star', name: 'Suerte', unit: '+5 de suerte por nivel. Hace más raros los objetos. El cambio de rareza aún no tiene precio.', max: 6, base: 280, grow: 10 / 7 },
+    { id: 'luck', icon: 'star', name: 'Suerte', unit: '+5 de suerte por nivel. En las Poké Balls salen objetos de rareza más alta.', max: 6, base: 280, grow: 10 / 7 },
     { id: 'skip', icon: 'cards', name: 'Saltar', unit: '+1 salto de carta de nivel por partida.', max: 5, base: 160, grow: 1.5 },
     { id: 'fourth', icon: 'cards', name: 'Cuarta carta', unit: 'Al subir de nivel salen 4 cartas en vez de 3.', max: 1, base: 6000, grow: 1 },
     { id: 'revival', icon: 'heart', name: 'Reponerse', unit: 'Una vez por partida, revives con el 50 % de vida.', max: 1, base: 10000, grow: 1 },
@@ -56,7 +56,12 @@ G.Upgrades = (() => {
       startMoves: 1 + L('moves'),
       crit: L('crit') * 0.03,
       rerolls: L('reroll'),
-      bans: L('ban')
+      bans: L('ban'),
+      luck: L('luck') * 5,
+      skips: L('skip'),
+      fourth: L('fourth') > 0 ? 1 : 0,
+      revival: L('revival') > 0 ? 1 : 0,
+      seals: L('seal')
     };
   }
 

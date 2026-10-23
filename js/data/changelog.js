@@ -6,6 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-24', title: ['Mejoras', 'Upgrades'], chg: [
+    ['Suerte, Saltar, Cuarta carta, Reponerse y Sellar ya hacen lo que dice su carta. Suerte sube la rareza de los objetos de las Poké Balls. Saltar deja pasar una carta de nivel. Cuarta carta ofrece 4. Reponerse te levanta una vez con el 50 % de vida. Sellar quita de las Poké Balls y del puesto los objetos que elijas.',
+     'Luck, Skip, Fourth card, Revival and Seal now do what their cards say. Luck raises the rarity of Poké Ball items. Skip passes a level-up card. Fourth card offers 4. Revival gets you up once at 50% HP. Seal removes the items you choose from Poké Balls and the stall.']
+  ] },
   { d: '2026-10-23', title: ['Barras y mapa', 'Bars and the map'], new: [
     ['En el mapa salen Poké Balls de pago. Te acercas y pulsas E: la primera cuesta 30 monedas de la partida y luego 33, 39, 45, 51… Si no llegas, no se abre. Al pagarla eliges 1 de 3 objetos, como con la bola roja.',
      'Paid Poké Balls appear on the map. Walk up and press E: the first costs 30 run coins, then 33, 39, 45, 51… If you are short, it does not open. After you pay, you pick 1 of 3 items, as with the red ball.'],

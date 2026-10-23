@@ -818,6 +818,8 @@ G.I18n.add({
   'Golpe Crítico': 'Critical Hit', '+3% de críticos (x1,75 de daño)': '+3% critical chance (x1.75 damage)',
   'Suerte': 'Luck (rarity)', 'Saltar': 'Skip', 'Cuarta carta': 'Fourth card', 'Reponerse': 'Revival', 'Sellar': 'Seal', 'Sin precio': 'Not priced',
   '+5 de suerte por nivel. Hace más raros los objetos. El cambio de rareza aún no tiene precio.': '+5 luck per level. It makes items rarer. The rarity change has no price yet.',
+  '+5 de suerte por nivel. En las Poké Balls salen objetos de rareza más alta.': '+5 luck per level. Poké Balls offer higher-rarity items.',
+  'Toca los objetos que no quieres que te salgan en las Poké Balls ni en el puesto.': 'Tap the items you do not want in Poké Balls or at the stall.',
   '+1 salto de carta de nivel por partida.': '+1 level-up card skip per run.',
   'Al subir de nivel salen 4 cartas en vez de 3.': 'Level-ups offer 4 cards instead of 3.',
   'Una vez por partida, revives con el 50 % de vida.': 'Once per run, you revive at 50% HP.',

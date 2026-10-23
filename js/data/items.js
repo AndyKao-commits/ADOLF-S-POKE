@@ -411,13 +411,29 @@ G.Items = (() => {
   }
   function held(pl, id) { return !!(pl && pl.hasItem && pl.hasItem(id)); }
 
+  const RAR_W = { common: 0, uncommon: 1, rare: 2, legendary: 3, mythic: 4 };
+  function sealed(pl, id) { return !!(pl && pl.sealed && pl.sealed.has(id)); }
+  /** Sin suerte, todos pesan igual. Cada punto hace más probable la rareza de encima. */
+  function takeWeighted(bag, n, luck) {
+    const pool = bag.slice(), out = [];
+    const lk = Math.max(0, luck || 0);
+    while (out.length < n && pool.length) {
+      let sum = 0;
+      const w = pool.map(it => { const v = 1 + (RAR_W[it.rarity] || 0) * lk / 10; sum += v; return v; });
+      let x = Math.random() * sum, i = 0;
+      for (; i < pool.length - 1; i++) { x -= w[i]; if (x <= 0) break; }
+      out.push(pool.splice(i, 1)[0]);
+    }
+    return out;
+  }
   function rollChoices(tier, pl, n = 3) {
     const have = id => (pl && pl.stacks && pl.stacks[id]) || 0;
-    const pool = t => LIST.filter(i => i.tier === t && have(i.id) < i.max);
+    const ok = i => have(i.id) < i.max && !sealed(pl, i.id);
+    const pool = t => LIST.filter(i => i.tier === t && ok(i));
     let bag = pool(tier);
     if (bag.length < n) bag = bag.concat(pool(Math.max(1, tier - 1)).filter(i => !bag.includes(i)));
-    if (bag.length < n) bag = bag.concat(LIST.filter(i => have(i.id) < i.max && !bag.includes(i)));
-    return G.U.pickN(bag, Math.min(n, bag.length));
+    if (bag.length < n) bag = bag.concat(LIST.filter(i => ok(i) && !bag.includes(i)));
+    return takeWeighted(bag, Math.min(n, bag.length), pl && pl.itemLuck);
   }
   function choices(pl) { return held(pl, 'honey') ? 4 : 3; }
 

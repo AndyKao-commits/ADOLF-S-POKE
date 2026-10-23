@@ -889,12 +889,14 @@ G.MenuUI = (() => {
         </div>
         <div class="upg-btns">
           ${u.id === 'ban' && lvl > 0 ? `<button class="btn small" data-ban>Elegir (${banList().length}/${lvl})</button>` : ''}
+          ${u.id === 'seal' && lvl > 0 ? `<button class="btn small" data-seal>Elegir (${sealList().length}/${lvl})</button>` : ''}
           ${u.id === 'start' && lvl > 0 ? `<button class="btn small" data-start>Elegir: ${G.Moves.BY_ID[G.startMoveOf(upgDex)].name}</button>` : ''}
           ${u.id === 'start2' && lvl > 0 ? `<button class="btn small" data-start2>Elegir: ${pick2 ? G.Moves.BY_ID[pick2].name : G.T('Al azar')}</button>` : ''}
           <button class="btn small ${maxed || unpriced ? '' : 'gold'}" data-buy data-sfx="none" ${maxed || locked || unpriced || cost == null || s.coins < cost ? 'disabled' : ''}
             ${locked ? `title="${G.T('Primero compra Repertorio')}"` : ''}>
           ${maxed ? 'Máx.' : unpriced ? G.T('Sin precio') : locked ? G.T('Necesita Repertorio') : `<span class="coin"></span> ${cost}`}</button></div>`;
       if (u.id === 'ban' && lvl > 0) el.querySelector('[data-ban]').onclick = () => { banOpen = !banOpen; renderUpgrades(); };
+      if (u.id === 'seal' && lvl > 0) el.querySelector('[data-seal]').onclick = () => { sealOpen = !sealOpen; renderUpgrades(); };
       if (u.id === 'start' && lvl > 0) el.querySelector('[data-start]').onclick = () => { startOpen = !startOpen; renderUpgrades(); };
       if (u.id === 'start2' && lvl > 0) el.querySelector('[data-start2]').onclick = () => { start2Open = !start2Open; renderUpgrades(); };
       el.querySelector('[data-buy]').onclick = () => {
@@ -913,6 +915,7 @@ G.MenuUI = (() => {
       };
       box.appendChild(el);
       if (u.id === 'ban' && lvl > 0 && banOpen) box.appendChild(banPicker(lvl));
+      if (u.id === 'seal' && lvl > 0 && sealOpen) box.appendChild(sealPicker(lvl));
       if (u.id === 'start' && lvl > 0 && startOpen) box.appendChild(startPicker());
       if (u.id === 'start2' && lvl > 0 && start2Open) box.appendChild(start2Picker());
     }
@@ -1035,6 +1038,36 @@ G.MenuUI = (() => {
         const l = banList(), id = b.dataset.id, i = l.indexOf(id);
         if (i >= 0) l.splice(i, 1);
         else if (l.length >= max) { G.UI.toast('Ya tienes ' + max + ' vetados: quita uno primero'); return; }
+        else l.push(id);
+        G.DB.commit();
+        G.Audio.sfx('select');
+        renderUpgrades();
+      };
+    });
+    return el;
+  }
+
+  // ---------------- sellar: objetos que dejan de salir ----------------
+  // Lista por Pokémon en save.pseal[dex]; con N niveles de Sellar, N objetos.
+  let sealOpen = false;
+  function sealList() {
+    const s = G.DB.save;
+    s.pseal = s.pseal || {};
+    return s.pseal[upgDex] || (s.pseal[upgDex] = []);
+  }
+  function sealPicker(max) {
+    const ids = G.Items.LIST.map(i => i.id).sort((a, b) => G.Items.BY[a].name.localeCompare(G.Items.BY[b].name, 'es'));
+    const list = sealList();
+    const el = document.createElement('div');
+    el.className = 'panel ban-picker seal-picker';
+    el.innerHTML = `<p class="sub" style="margin:0 0 8px">Toca los objetos que no quieres que te salgan en las Poké Balls ni en el puesto.</p>
+      <div class="ban-moves">${ids.map(id => { const it = G.Items.BY[id]; const on = list.includes(id);
+        return `<button class="chip ${on ? 'on ban' : ''}" data-id="${id}">${G.Items.text(it, 'name')}${on ? ' ' + G.Icons.html('ban', 14) : ''}</button>`; }).join('')}</div>`;
+    el.querySelectorAll('[data-id]').forEach(b => {
+      b.onclick = () => {
+        const l = sealList(), id = b.dataset.id, i = l.indexOf(id);
+        if (i >= 0) l.splice(i, 1);
+        else if (l.length >= max) { G.UI.toast('Ya tienes ' + max + ' sellados: quita uno primero'); return; }
         else l.push(id);
         G.DB.commit();
         G.Audio.sfx('select');

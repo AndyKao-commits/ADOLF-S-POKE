@@ -1269,6 +1269,9 @@ G.I18n.add({
   "Los huevos de incubar caen menos: común 0,8 %, poco común y raro 0,5 %, épico 0,3 % y legendario 0,4 %.": "孵化蛋掉得比較少：普通 0.8%、不太常見和稀有 0.5%、史詩 0.3%、傳說 0.4%。",
   "Un Pokémon normal suelta una Poké Ball el 0,2 % de las veces. Los jefes y los cofres también sueltan objeto menos a menudo.": "一般寶可夢掉精靈球的機率改成 0.2%。頭目和寶箱也比較少掉道具。",
   "Veto, Suerte, Saltar, Cuarta carta, Reponerse y Sellar ya se compran. El primer nivel cuesta 300, 140, 80, 3000, 5000 y 800. El siguiente cuesta 570, 200, 120 y 1280.": "封鎖、幸運、跳過、第四張卡片、重整旗鼓和封存可以買了。第一級是 300、140、80、3000、5000 和 800。下一級是 570、200、120 和 1280。",
+  "Suerte, Saltar, Cuarta carta, Reponerse y Sellar ya hacen lo que dice su carta. Suerte sube la rareza de los objetos de las Poké Balls. Saltar deja pasar una carta de nivel. Cuarta carta ofrece 4. Reponerse te levanta una vez con el 50 % de vida. Sellar quita de las Poké Balls y del puesto los objetos que elijas.": "幸運、跳過、第四張卡片、重整旗鼓和封存現在會照卡片上的說明生效。幸運會讓精靈球裡的道具比較容易出高稀有度。跳過可以放掉一張升級卡片。第四張卡片會給 4 張。重整旗鼓會在一局裡用 50% 生命站起來一次。封存會讓你選的道具不再出現在精靈球和攤販。",
+  "+5 de suerte por nivel. En las Poké Balls salen objetos de rareza más alta.": "+5 幸運／級。精靈球裡比較容易出現稀有度更高的道具。",
+  "Toca los objetos que no quieres que te salgan en las Poké Balls ni en el puesto.": "點你不想再出現在精靈球和攤販裡的道具。",
   "Tienda": "商店",
   "Esta dificultad todavía no cambia la partida.": "這個難度這一版還沒有改變對局。"
 }, 'zh-Hant');

@@ -63,7 +63,13 @@ G.Player = class Player {
     this.rerolls = 0;          // veces que ha cambiado las cartas de nivel en esta run
     this.rerollBonus = perks.rerolls || 0;   // cambios comprados en Mejoras (más el gratis)
     this.critChance = perks.crit || 0;       // probabilidad de golpe crítico (Mejoras)
+    this.itemLuck = perks.luck || 0;         // Suerte: rareza de los objetos, no cuántos caen
+    this.skipBonus = perks.skips || 0;       // saltos de carta de nivel en esta run
+    this.skips = 0;
+    this.fourthCard = perks.fourth || 0;
+    this.revival = perks.revival || 0;       // una vez: te levantas con el 50 %
     this.banned = new Set();                 // movimientos vetados (Mejoras → Veto): no salen en las cartas
+    this.sealed = new Set();                 // objetos que dejas de ver (Mejoras → Sellar)
     this.bind = {};                          // movimiento -> hueco fijo (0-3), elegido en Mejoras
     this.coins = 0;            // monedas recogidas en esta run
     this.t1 = 0; this.t10 = 0; // tickets del gacha recogidos en esta run
@@ -343,6 +349,14 @@ G.Player = class Player {
       G.FX.ring(this.x, this.y, 6, 70, '#c9b48a', 0.5, 4);
     }
     if (this.hp <= 0) G.Items.revive(this);
+    if (this.hp <= 0 && !this.remote && this.revival && !this._upgRev) {
+      this._upgRev = true;
+      this.hp = this.maxHp * 0.5;
+      this.dead = false;
+      this.invuln = Math.max(this.invuln || 0, 1.2);
+      G.FX.dmgText(this.x, this.y - this.bodyH - 16, '50%', '#7dffb3', true);
+      G.FX.ring(this.x, this.y, 6, 70, '#7dffb3', 0.5, 4);
+    }
     if (ab && ab.hurt && this.hp > 0) ab.hurt(this, type, cls);
     G.Items.onDamaged(this);
     if (this.hp <= 0) {

@@ -126,8 +126,9 @@ G.LevelUp = (() => {
     return out;
   }
 
-  /** Devuelve 3 cartas distintas, elegidas por peso. */
-  function offer(pl, n = 3) {
+  /** 3 cartas, o 4 con la mejora Cuarta carta. */
+  function offer(pl, n) {
+    if (n == null) n = 3 + (pl && pl.fourthCard ? 1 : 0);
     const pool = candidates(pl);
     const picked = [];
     const used = new Set();

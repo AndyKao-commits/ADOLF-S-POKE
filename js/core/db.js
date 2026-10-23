@@ -292,6 +292,13 @@ G.DB = (() => {
         s.pban[d] = [...new Set(l.filter(id => typeof id === 'string' && (!G.Moves || G.Moves.BY_ID[id])))].slice(0, 3);
       }
     } else s.pban = {};
+    // Sellar: objetos que existen, sin repetir, como mucho 2.
+    if (s.pseal && typeof s.pseal === 'object') {
+      for (const d of Object.keys(s.pseal)) {
+        const l = Array.isArray(s.pseal[d]) ? s.pseal[d] : [];
+        s.pseal[d] = [...new Set(l.filter(id => typeof id === 'string' && (!G.Items || !G.Items.BY || G.Items.BY[id])))].slice(0, 2);
+      }
+    } else s.pseal = {};
     if (G.Upgrades) for (const d of Object.keys(s.pupg || {})) {
       const u = s.pupg[d];
       if (!u || typeof u !== 'object') { delete s.pupg[d]; continue; }
