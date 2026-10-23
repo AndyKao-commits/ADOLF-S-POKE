@@ -1253,6 +1253,43 @@ a.btn { text-decoration: none; display: inline-block; color: var(--ink); }
   #menu-partner { width: min(160px, 28vh); max-width: 100%; height: auto; flex: 0 0 auto; }
   #mode-help { max-height: 42px; line-height: 14px; padding: 0 8px; }
 }
+/* iPhone SE y móviles en horizontal: tres columnas iguales.
+   Si los lados piden 300px, el centro queda en una rendija. */
+@media (max-width: 960px) and (max-height: 500px) {
+  #scr-menu {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
+    padding: 4px max(6px, env(safe-area-inset-right, 0px)) 4px max(6px, env(safe-area-inset-left, 0px));
+  }
+  .menu-modes, .menu-stage, .menu-room { min-width: 0; max-width: 100%; }
+  .menu-modes, .menu-room { padding: 6px; gap: 6px; overflow: hidden; }
+  .menu-head { font-size: 12px; min-width: 0; }
+  .setup-row {
+    min-height: 30px; padding: 2px 4px; gap: 4px;
+    grid-template-columns: 22px auto minmax(0, 1fr) auto;
+  }
+  .setup-row .setup-k, .setup-row .setup-v {
+    font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .setup-row .mode-ico { width: 22px; height: 18px; flex-basis: 22px; }
+  .setup-row .mode-ico canvas, .setup-row .mode-ico img { width: 22px; height: 18px; }
+  #setup-map-thumb, .setup-ball { width: 22px; height: 16px; }
+  .menu-stage { padding: 0 2px; gap: 2px; overflow: hidden; justify-content: center; }
+  #scr-menu .partner-card { width: 100%; max-width: 100%; min-width: 0; }
+  #menu-partner { width: auto; height: min(108px, 26vh); max-width: 100%; }
+  #scr-menu .partner-card .nm, #scr-menu .menu-sum {
+    max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .menu-go { width: 100%; min-width: 0; }
+  .menu-play { min-width: 0; width: 100%; font-size: 15px; padding: 6px 8px; }
+  .menu-room .code-join { gap: 6px; }
+  #scr-menu .field { min-height: 32px; max-height: 36px; font-size: 14px; flex: 0 0 auto; }
+  .menu-room .code-join .btn { max-height: 40px; font-size: 14px; flex: 0 0 auto; padding: 6px 4px; }
+  #scr-menu .logo { margin: 0 54px 0 0; }
+  #scr-menu .logo-img { height: 36px; max-width: 42%; }
+  #scr-menu .brand-name { font-size: 9px; line-height: 1.1; }
+  .menu-dock .menu-item { min-width: 52px; flex-basis: 52px; font-size: 11px; min-height: 40px; }
+}
 
 /* ---------- pantalla de carga (lo primero que se ve y lo que lee Google) ---------- */
 .boot-in { text-align: center; padding: 20px; max-width: 640px; }
