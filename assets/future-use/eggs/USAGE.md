@@ -1,16 +1,23 @@
-# 精靈蛋：素材、規則及執行方式
+# 孵化蛋／幸運蛋：新版圖片與名稱
 
-## 檔案位置
+此四級孵化蛋已改用精靈球配色的幸運蛋外觀，順序為 **普通 → 稀有 → 傳說 → 史詩**。史詩為本系列最高級，依使用者指定。
 
-- `pokemon-egg-design.png`：新版奶黃色蛋殼、綠色斑點的通用外觀，透明 PNG。不預設為某一級。
-- `egg-level-1.png`～`egg-level-4.png`：既有四級小圖，40×48，分別為綠、藍、紫、金色斑點。
-- `../egg-hatching/egg-hatching.gif`：既有 256×256、4.16 秒循環孵化動畫，只是共用美術示範。
+| 等級 | 名稱 | 配色參考 | 正式命名檔（相對 assets/future-use） | 原路徑相容檔 |
+|---|---|---|---|---|
+| 1 | 普通幸運蛋 | 精靈球 | `lucky-eggs/lucky-egg-common.png` | `eggs/egg-level-1.png` |
+| 2 | 稀有幸運蛋 | 超級球 | `lucky-eggs/lucky-egg-rare.png` | `eggs/egg-level-2.png` |
+| 3 | 傳說幸運蛋 | 高級球 | `lucky-eggs/lucky-egg-legendary.png` | `eggs/egg-level-3.png` |
+| 4 | 史詩幸運蛋 | 大師球 | `lucky-eggs/lucky-egg-epic.png` | `eggs/egg-level-4.png` |
 
-## 規則狀態
+所有小圖均為 40×48 透明 PNG。兩組路徑的檔案內容相同，舊引用不必改路徑即可顯示新圖。新接入建議使用具有名稱的 lucky-eggs 檔案，名稱對照見 `../lucky-eggs/manifest.json`。
 
-四級目前只有外觀分級；孵化時間、花費、掉落來源、各級獎勵池、機率及持有上限尚未定義。不得把 4.16 秒的 GIF 長度當成實際孵化時間，也不能從斑點顏色推定稀有度機率。通用大圖與四級小圖是不同美術版本，尚未做成統一尺寸或各級專屬孵化動畫。
+`pokemon-egg-design.png` 保留為舊版通用設計參考，已不作為目前四級孵化蛋的預設圖。`render-eggs.cjs` 已改為從新命名檔同步四級相容圖片，不會再生成舊版配色。
 
-工程流程建議：取得蛋後保存唯一 ID、等級與狀態；條件達成時先保存孵化結果，再播放動畫並展示結果。同一顆蛋僅結算一次，動畫重播或重新整理不可重複發獎。這是接入規格建議，尚未實作。數值未定的欄位在 `docs/specs/candy-and-eggs.json` 記為 null，正式接入前需補齊。
+## 規則
+
+本次替換圖片、等級標記與預覽，不調整掉落率、孵化時間、花費、持有上限或獎勵。這些未定義的欄位維持待設定。不套用 70 道具中 Lucky Egg 的經驗加成。
+
+既有 `../egg-hatching/egg-hatching.gif` 仍是舊綠斑蛋的共用動畫示範，尚未重畫成此四種配色；預覽不再把它當作新版四級蛋的對應動畫。GIF 的 4.16 秒不是實際孵化時間。
 
 ## 執行預覽
 
@@ -18,15 +25,17 @@
 
 http://localhost:8000/assets/future-use/eggs/preview.html
 
-也可直接開啟本資料夾 preview.html。GIF 自動循環；預覽不建立蛋、不計時、不抽獎或發放寶可夢。
+預覽顯示新名稱與新圖片。亦可直接開啟 preview.html。
 
-## 接入方式
+## 更新舊路徑相容圖片
 
-根目錄頁面引用通用圖：
+在專案根目錄執行 `node assets/future-use/eggs/render-eggs.cjs`，將四張命名版素材同步到 egg-level-1～4。無額外套件。
+
+## 引用範例
 
 ```html
-<img src="assets/future-use/eggs/pokemon-egg-design.png" alt="精靈蛋"
-     width="80" style="height:auto;image-rendering:pixelated">
+<img src="assets/future-use/lucky-eggs/lucky-egg-common.png"
+     alt="普通幸運蛋" width="40" height="48" style="image-rendering:pixelated">
 ```
 
-四級小圖可用 `egg-level-1.png` 等檔名，建議 40×48 或 80×96 整數倍顯示。動畫可用 `<img src="assets/future-use/egg-hatching/egg-hatching.gif" alt="孵化動畫">` 展示，但循環 GIF 沒有可供可靠結算的播放完成事件；正式孵化應由遊戲狀態控制結算，不靠 GIF 迴圈發獎。Canvas 請關閉 imageSmoothingEnabled。
+建議顯示為 40×48 或 80×96，Canvas 關閉 imageSmoothingEnabled。尚未部署或接入正式遊戲的孵化流程。

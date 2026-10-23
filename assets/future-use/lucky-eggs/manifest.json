@@ -1,0 +1,75 @@
+{
+  "status": "future-use; not runtime integrated",
+  "purpose": "對局掉落及孵化蛋共用的四級幸運蛋外觀",
+  "tier_order": [
+    "common",
+    "rare",
+    "legendary",
+    "epic"
+  ],
+  "rules": "等級順序依使用者指定，史詩高於傳說；不沿用其他道具分級順序。 本批已替換原四級孵化蛋圖片，兩個資料夾是同一組素材的命名與相容路徑，不是兩套道具。",
+  "drop_rate": null,
+  "reward_pool": null,
+  "items": [
+    {
+      "id": "lucky_egg_common",
+      "name_zh_TW": "普通幸運蛋",
+      "tier": "common",
+      "tier_zh_TW": "普通",
+      "rank": 1,
+      "palette": "red-white",
+      "ball_palette_reference": "精靈球",
+      "file": "lucky-egg-common.png",
+      "width": 40,
+      "height": 48,
+      "sha256": "491e8033cf83c8e47ec5951d74a92035248b23269069777670cbf38f7a323627",
+      "legacy_level": 1,
+      "compatibility_path": "assets/future-use/eggs/egg-level-1.png"
+    },
+    {
+      "id": "lucky_egg_rare",
+      "name_zh_TW": "稀有幸運蛋",
+      "tier": "rare",
+      "tier_zh_TW": "稀有",
+      "rank": 2,
+      "palette": "blue-red",
+      "ball_palette_reference": "超級球",
+      "file": "lucky-egg-rare.png",
+      "width": 40,
+      "height": 48,
+      "sha256": "f2facb88c9de49b6dd55b5de0fe395401005aebead739caefe25da62a3d7fbcb",
+      "legacy_level": 2,
+      "compatibility_path": "assets/future-use/eggs/egg-level-2.png"
+    },
+    {
+      "id": "lucky_egg_legendary",
+      "name_zh_TW": "傳說幸運蛋",
+      "tier": "legendary",
+      "tier_zh_TW": "傳說",
+      "rank": 3,
+      "palette": "black-gold",
+      "ball_palette_reference": "高級球",
+      "file": "lucky-egg-legendary.png",
+      "width": 40,
+      "height": 48,
+      "sha256": "78c6fd09d5970dc1df10746c2bac7b20283ddb9fc5138f31cc86f4fad166594c",
+      "legacy_level": 3,
+      "compatibility_path": "assets/future-use/eggs/egg-level-3.png"
+    },
+    {
+      "id": "lucky_egg_epic",
+      "name_zh_TW": "史詩幸運蛋",
+      "tier": "epic",
+      "tier_zh_TW": "史詩",
+      "rank": 4,
+      "palette": "purple-pink",
+      "ball_palette_reference": "大師球",
+      "file": "lucky-egg-epic.png",
+      "width": 40,
+      "height": 48,
+      "sha256": "ec2bb0f4de194b13feab703be0eabb9d618c8e1944366da63ceedff2d2ec41a6",
+      "legacy_level": 4,
+      "compatibility_path": "assets/future-use/eggs/egg-level-4.png"
+    }
+  ]
+}

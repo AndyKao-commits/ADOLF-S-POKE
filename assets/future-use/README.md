@@ -1,4 +1,4 @@
-# 待使用遊戲素材：店鋪、孵化動畫與精靈蛋
+# 待使用遊戲素材：店鋪、孵化動畫與幸運蛋
 
 此目錄為之後使用而保存的獨立素材，尚未接入遊戲。不要將「已存檔」視為「已部署」。
 
@@ -6,14 +6,14 @@
 |---|---|---|
 | 店鋪 | `shop/shop-only.png` | 512×448，透明 PNG；僅店鋪本體，無角色、商品、蛋、招牌、箱子。原始設計解析度 128×112，整數倍放大 4 倍。 |
 | 孵化動畫 | `egg-hatching/egg-hatching.gif` | 256×256，透明背景，51 個編碼影格、4.16 秒，循環播放；搖晃→裂紋→破殼。 |
-| 精靈蛋 1 級 | `eggs/egg-level-1.png` | 40×48，透明 PNG，綠色斑紋，1 個等級標點。 |
-| 精靈蛋 2 級 | `eggs/egg-level-2.png` | 40×48，透明 PNG，藍色斑紋，2 個等級標點。 |
-| 精靈蛋 3 級 | `eggs/egg-level-3.png` | 40×48，透明 PNG，紫色斑紋，3 個等級標點。 |
-| 精靈蛋 4 級 | `eggs/egg-level-4.png` | 40×48，透明 PNG，金色斑紋，4 個等級標點。 |
+| 普通幸運蛋（1 級） | `eggs/egg-level-1.png` | 40×48，透明 PNG；精靈球配色，對應 `lucky-eggs/lucky-egg-common.png`。 |
+| 稀有幸運蛋（2 級） | `eggs/egg-level-2.png` | 40×48，透明 PNG；超級球配色，對應 `lucky-eggs/lucky-egg-rare.png`。 |
+| 傳說幸運蛋（3 級） | `eggs/egg-level-3.png` | 40×48，透明 PNG；高級球配色，對應 `lucky-eggs/lucky-egg-legendary.png`。 |
+| 史詩幸運蛋（4 級） | `eggs/egg-level-4.png` | 40×48，透明 PNG；大師球配色，對應 `lucky-eggs/lucky-egg-epic.png`。 |
 
 四級配色為本批素材的視覺分級，不代表已設定遊戲中的稀有度、孵化時間或掉落機率。孵化 GIF 是既有綠斑蛋的共用示範，尚未製作各級專屬動畫。全部素材以 nearest-neighbor 整數倍顯示，避免模糊。未更動雲端資料或玩家紀錄。
 
-`manifest.json` 記錄用途、尺寸、影格數與 SHA-256；`eggs/render-eggs.cjs` 為四級蛋的原生像素繪製來源（需要 `@napi-rs/canvas`）。
+`manifest.json` 記錄用途、尺寸、影格數與 SHA-256；`eggs/render-eggs.cjs` 為新版四級蛋相容路徑的同步腳本（新版改為同步命名版圖檔，無額外套件）。
 
 ## 商店與精靈球預覽／執行方式
 
@@ -33,3 +33,7 @@
 ## 夥伴熟練度光效
 
 [金級微光／鑽石金光模組與實作規則](partner-aura/README.md)。執行 `python3 -m http.server 8000` 後開啟 `http://localhost:8000/assets/future-use/partner-aura/preview.html`。可執行的視覺模組，尚未接入正式遊戲與熟練度資料。
+
+## 掉落用四級幸運蛋
+
+[普通／稀有／傳說／史詩幸運蛋](lucky-eggs/README.md)，依四種精靈球配色製作，已替換四級孵化蛋圖片。40×48 透明 PNG，尚未接入遊戲掉落流程。

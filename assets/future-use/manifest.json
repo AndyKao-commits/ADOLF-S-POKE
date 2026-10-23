@@ -3,36 +3,48 @@
   "runtimeIntegrated": false,
   "assets": [
     {
-      "label": "精靈蛋 1 級",
+      "label": "普通幸運蛋",
       "level": 1,
       "path": "assets/future-use/eggs/egg-level-1.png",
       "width": 40,
       "height": 48,
-      "sha256": "b8c6115d4e1d3389542562e13876193543cf7c3f28f030c0bce74f05654657e3"
+      "sha256": "491e8033cf83c8e47ec5951d74a92035248b23269069777670cbf38f7a323627",
+      "tier": "common",
+      "palette": "red-white",
+      "named_path": "assets/future-use/lucky-eggs/lucky-egg-common.png"
     },
     {
-      "label": "精靈蛋 2 級",
+      "label": "稀有幸運蛋",
       "level": 2,
       "path": "assets/future-use/eggs/egg-level-2.png",
       "width": 40,
       "height": 48,
-      "sha256": "c49c6938ccfda3c36ef759debacd46d57f0a374fdfa9cfece8cde016e07837f0"
+      "sha256": "f2facb88c9de49b6dd55b5de0fe395401005aebead739caefe25da62a3d7fbcb",
+      "tier": "rare",
+      "palette": "blue-red",
+      "named_path": "assets/future-use/lucky-eggs/lucky-egg-rare.png"
     },
     {
-      "label": "精靈蛋 3 級",
+      "label": "傳說幸運蛋",
       "level": 3,
       "path": "assets/future-use/eggs/egg-level-3.png",
       "width": 40,
       "height": 48,
-      "sha256": "3c33b38c46e0f75615849976740b47973cbf10ad1f13b2ca94a349674761a7ea"
+      "sha256": "78c6fd09d5970dc1df10746c2bac7b20283ddb9fc5138f31cc86f4fad166594c",
+      "tier": "legendary",
+      "palette": "black-gold",
+      "named_path": "assets/future-use/lucky-eggs/lucky-egg-legendary.png"
     },
     {
-      "label": "精靈蛋 4 級",
+      "label": "史詩幸運蛋",
       "level": 4,
       "path": "assets/future-use/eggs/egg-level-4.png",
       "width": 40,
       "height": 48,
-      "sha256": "929cf2454d2d2afe4d5fd698321f377e3492c0a42fd5a2c2c42db7c6bd9ad4f1"
+      "sha256": "ec2bb0f4de194b13feab703be0eabb9d618c8e1944366da63ceedff2d2ec41a6",
+      "tier": "epic",
+      "palette": "purple-pink",
+      "named_path": "assets/future-use/lucky-eggs/lucky-egg-epic.png"
     },
     {
       "label": "店鋪",

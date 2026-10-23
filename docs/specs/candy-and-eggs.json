@@ -30,24 +30,25 @@
     "implementation_status": "規格記錄，尚未接入遊戲程式。"
   },
   "egg": {
-    "name": "精靈蛋",
+    "name": "四級幸運蛋（孵化蛋）",
     "asset": {
       "path": "assets/future-use/eggs/pokemon-egg-design.png",
       "width": 1122,
       "height": 1402,
       "mode": "RGBA",
-      "sha256": "a11a024961fb25e4fdd6213ed37543488ef7ca998a183a306a0b7b0425d64229"
+      "sha256": "a11a024961fb25e4fdd6213ed37543488ef7ca998a183a306a0b7b0425d64229",
+      "role": "舊版通用設計參考，不再作為目前四級預設圖"
     },
-    "role": "通用精靈蛋外觀；不指定等級",
+    "role": "新版四級外觀共用於幸運蛋及孵化蛋",
     "tier_assets": [
-      "assets/future-use/eggs/egg-level-1.png",
-      "assets/future-use/eggs/egg-level-2.png",
-      "assets/future-use/eggs/egg-level-3.png",
-      "assets/future-use/eggs/egg-level-4.png"
+      "assets/future-use/lucky-eggs/lucky-egg-common.png",
+      "assets/future-use/lucky-eggs/lucky-egg-rare.png",
+      "assets/future-use/lucky-eggs/lucky-egg-legendary.png",
+      "assets/future-use/lucky-eggs/lucky-egg-epic.png"
     ],
     "hatching_animation": "assets/future-use/egg-hatching/egg-hatching.gif",
-    "animation_role": "共用美術示範，非孵化時間或結果判定",
-    "tier_rules": "1 級綠、2 級藍、3 級紫、4 級金僅為既有外觀分級",
+    "animation_role": "舊綠斑蛋的共用美術示範，尚未更新為四款新版外觀。",
+    "tier_rules": "1 普通紅白、2 稀有藍紅、3 傳說黑金、4 史詩紫粉；依精靈球配色。",
     "hatching_duration_seconds": null,
     "cost": null,
     "reward_pool": null,
@@ -59,6 +60,12 @@
       "孵化條件達成後先保存結果，再播放動畫；動畫結束顯示已保存的結果。",
       "同一顆蛋只結算一次，重新整理或動畫重播不重複發獎。"
     ],
-    "proposal_status": "工程接入建議，尚未實作"
+    "proposal_status": "工程接入建議，尚未實作",
+    "legacy_tier_assets": [
+      "assets/future-use/eggs/egg-level-1.png",
+      "assets/future-use/eggs/egg-level-2.png",
+      "assets/future-use/eggs/egg-level-3.png",
+      "assets/future-use/eggs/egg-level-4.png"
+    ]
   }
 }
