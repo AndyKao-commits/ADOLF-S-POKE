@@ -46,8 +46,8 @@
       "assets/future-use/lucky-eggs/lucky-egg-legendary.png",
       "assets/future-use/lucky-eggs/lucky-egg-epic.png"
     ],
-    "hatching_animation": "assets/future-use/egg-hatching/egg-hatching.gif",
-    "animation_role": "舊綠斑蛋的共用美術示範，尚未更新為四款新版外觀。",
+    "hatching_animation": "assets/future-use/egg-hatching/egg-hatching.js",
+    "animation_role": "四級共用 Canvas 視覺模組，1.8 秒播放；不代表實際孵化等待時間。",
     "tier_rules": "1 普通紅白、2 稀有藍紅、3 傳說黑金、4 史詩紫粉；依精靈球配色。",
     "hatching_duration_seconds": null,
     "cost": null,
@@ -66,6 +66,7 @@
       "assets/future-use/eggs/egg-level-2.png",
       "assets/future-use/eggs/egg-level-3.png",
       "assets/future-use/eggs/egg-level-4.png"
-    ]
+    ],
+    "legacy_animation": "assets/future-use/egg-hatching/egg-hatching.gif"
   }
 }

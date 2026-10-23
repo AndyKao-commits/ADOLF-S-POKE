@@ -31,3 +31,5 @@ http://localhost:8000/assets/future-use/lucky-eggs/preview.html
 ```
 
 替換檔名可切換等級，建議 40×48 或 80×96 整數倍顯示。Canvas 關閉 `imageSmoothingEnabled`，待圖片載入後以 `drawImage(image, x, y, 40, 48)` 繪製。
+
+新版孵化視覺使用 [共用 Canvas 動畫](../egg-hatching/README.md)，直接讀取本目錄四級蛋圖，不需要四份 GIF。

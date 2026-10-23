@@ -55,12 +55,13 @@
       "sha256": "f3daa931a20a0909378b68a28856ab370bd9c9c336d29b7fa3c2af71980e4e1c"
     },
     {
-      "label": "孵化動畫",
+      "label": "舊版孵化 GIF（保留參考）",
       "path": "assets/future-use/egg-hatching/egg-hatching.gif",
       "width": 256,
       "height": 256,
       "frames": 51,
-      "sha256": "08902666ba97c5302757769e3320eddb7cfa31236cbaf9202ca926cf468024b0"
+      "sha256": "08902666ba97c5302757769e3320eddb7cfa31236cbaf9202ca926cf468024b0",
+      "recommended": false
     },
     {
       "label": "精靈球",
@@ -105,6 +106,22 @@
       "height": 1207,
       "sha256": "b96513857f188d5df19ad4607bbb158a60a867e99a9ea7d6e0b17ddb54981c56",
       "rules_status": "能力、價格、稀有度與持有上限未設定"
+    },
+    {
+      "label": "四級幸運蛋共用孵化動畫",
+      "path": "assets/future-use/egg-hatching/egg-hatching.js",
+      "type": "Canvas JavaScript module",
+      "playback_seconds": 1.8,
+      "reduced_motion_seconds": 0.45,
+      "tiers": [
+        "common",
+        "rare",
+        "legendary",
+        "epic"
+      ],
+      "recommended": true,
+      "runtimeIntegrated": false,
+      "sha256": "969e8d26ac861869a07aa64ceb02c4470fac0bd85de2b2f5cb7ac44ac21d08e8"
     }
   ]
 }
