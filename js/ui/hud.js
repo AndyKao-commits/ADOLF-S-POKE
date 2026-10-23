@@ -450,14 +450,8 @@ G.HUD = (() => {
       bx += tw + 5;
     }
 
-    // ---------- reloj / bioma / kills ----------
-    ctx.textAlign = 'center';
-    ctx.font = F(800, 26);
-    ctx.fillStyle = 'rgba(255,255,255,.95)';
-    ctx.fillText(G.U.mmss(st.time), w / 2, 42);
-    ctx.font = F(600, 10);
-    ctx.fillStyle = '#8fa3c4';
-    ctx.fillText(G.World.biomeName().toUpperCase() + '  ·  ' + pl.kills + ' DERROTADOS  ·  ' + pl.coins + ' MONEDAS', w / 2, 58);
+    // ---------- reloj, mapa, derrotas y monedas ----------
+    drawRunPlate(ctx, w, sa, pl, st);
 
     // ---------- clima (arriba a la derecha) ----------
     const wx = G.Weather.current;
@@ -585,7 +579,7 @@ G.HUD = (() => {
       ctx.textAlign = 'center';
       ctx.font = F(800, 12);
       ctx.fillStyle = '#d9c2ff';
-      ctx.fillText('GRIETA · ' + G.U.mmss(G.Rift.timeLeft), w / 2, boss ? 98 : 76);
+      ctx.fillText('GRIETA · ' + G.U.mmss(G.Rift.timeLeft), w / 2, boss ? 108 : Math.max(86, sa.top + 70));
     }
 
     // Eventos: cuenta atrás, flecha al Pokémon perdido / a la marca y a los duendes.
@@ -865,6 +859,78 @@ G.HUD = (() => {
       }
       ctx.restore();
     }
+  }
+
+  /** Placa oscura del centro: tiempo, mapa, derrotas y monedas. */
+  function drawRunPlate(ctx, w, sa, pl, st) {
+    const id = G.World.regionId && G.World.regionId();
+    const map = id ? id.toUpperCase() : (G.World.biomeName() || '').toUpperCase();
+    const rawMap = !!id;
+    const time = G.U.mmss(st.time);
+    const kills = String(pl.kills | 0);
+    const coins = String(pl.coins | 0);
+    const icon = 15, gap = 12;
+    ctx.font = F(800, 13);
+    const mapW = (rawMap ? G.I18n.rawCanvas(ctx, 'measureText', map) : ctx.measureText(map)).width;
+    ctx.font = F(800, 15);
+    const kW = ctx.measureText(kills).width;
+    const cW = ctx.measureText(coins).width;
+    ctx.font = F(800, 22);
+    const timeW = ctx.measureText(time).width;
+    const rowW = mapW + gap + icon + 4 + kW + gap + icon + 4 + cW;
+    const topW = 16 + 8 + timeW;
+    const padX = 16;
+    const boxW = Math.ceil(Math.max(topW, rowW) + padX * 2);
+    const boxH = 54;
+    const x = Math.round((w - boxW) / 2);
+    const y = Math.round(6 + sa.top);
+    roundRect(ctx, x, y, boxW, boxH, 12);
+    ctx.fillStyle = 'rgba(6, 18, 52, .92)';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = 'rgba(120, 176, 240, .7)';
+    ctx.stroke();
+
+    const cx = x + boxW / 2;
+    const dropX = cx - topW / 2 + 8;
+    const timeY = y + 18;
+    ctx.save();
+    ctx.translate(dropX, timeY);
+    ctx.fillStyle = '#3ec6ff';
+    ctx.beginPath();
+    ctx.moveTo(0, -8);
+    ctx.bezierCurveTo(7, -2, 7, 4, 0, 8);
+    ctx.bezierCurveTo(-7, 4, -7, -2, 0, -8);
+    ctx.fill();
+    ctx.fillStyle = '#e9f8ff';
+    ctx.beginPath();
+    ctx.arc(-2.2, -1.5, 1.7, 0, 6.2832);
+    ctx.fill();
+    ctx.restore();
+    ctx.font = F(800, 22);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#f7fbff';
+    ctx.fillText(time, dropX + 12, timeY + 1);
+
+    let bx = cx - rowW / 2;
+    const by = y + 40;
+    ctx.font = F(800, 13);
+    ctx.fillStyle = '#ffe08a';
+    if (rawMap) G.I18n.rawCanvas(ctx, 'fillText', map, bx, by);
+    else ctx.fillText(map, bx, by);
+    bx += mapW + gap;
+    G.Icons.draw(ctx, 'star', bx, by - 12, icon);
+    bx += icon + 4;
+    ctx.font = F(800, 15);
+    ctx.fillStyle = '#f7fbff';
+    ctx.fillText(kills, bx, by);
+    bx += kW + gap;
+    G.Icons.draw(ctx, 'coin', bx, by - 12, icon);
+    bx += icon + 4;
+    ctx.fillText(coins, bx, by);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
   }
 
   return { draw, roundRect, bar };

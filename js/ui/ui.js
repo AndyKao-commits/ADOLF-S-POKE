@@ -188,6 +188,7 @@ G.UI = (() => {
         });
       }
       add(open('menu-sheet'), hit(e, '#menu-sheet') || hit(e, '#menu-more-btn'), () => $('menu-sheet').classList.add('hidden'));
+      add(open('setup-pop'), hit(e, '#setup-pop') || hit(e, '[data-setup]'), () => G.MenuUI && G.MenuUI.closeSetup());
       add(open('dex-drawer'), hit(e, '#dex-drawer') || hit(e, '#dex-filter-btn'), () => G.MenuUI && G.MenuUI.shutDrawer());
       add(open('dex-sheet'), hit(e, '#dex-sheet') || hit(e, '#dex-grid'), () => G.MenuUI && G.MenuUI.shutSheet());
       add(open('invite-pop'), hit(e, '#invite-pop'), () => $('invite-pop').classList.add('hidden'));

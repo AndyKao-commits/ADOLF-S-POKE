@@ -138,7 +138,12 @@ G.Game = (() => {
     G.Pickups.clear();
     if (coop) G.Coop.lockRun(coop.rules, false);
     else G.Coop.lockRun(null, true);
-    G.World.reset(coop ? coop.seed : Math.floor(Math.random() * 1e6), (!coop && G.Modes.is('normal')) ? G.Settings.get('region') : null);
+    let regionId = G.Settings.get('region');
+    if (!G.Regions.get(regionId)) {
+      const list = G.Regions.list;
+      regionId = list[(Math.random() * list.length) | 0].id;
+    }
+    G.World.reset(coop ? coop.seed : Math.floor(Math.random() * 1e6), (!coop && G.Modes.is('normal')) ? regionId : null);
     G.World.setBiome(G.World.runBiome(0), true);
     G.Spawner.reset();
     G.Rift.reset();

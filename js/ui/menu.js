@@ -25,16 +25,14 @@ G.MenuUI = (() => {
 
   function init() {
     const ICON = { play: 'ball', dex: 'book', upgrades: 'up', shop: 'shop', bag: 'bag', hatch: 'ball', gacha: 'ball4', goals: 'medal3', friends: 'friends', rank: 'trophy', settings: 'gear' };
-    const sheet = $('menu-sheet');
     document.querySelectorAll('#scr-menu [data-go]').forEach(b => {
       if (b.dataset.go !== 'play') b.insertAdjacentHTML('afterbegin', `<span class="mi-ico">${G.Icons.html(ICON[b.dataset.go], 22)}</span>`);
       b.dataset.sfx = b.dataset.go === 'play' ? 'confirm' : 'click';
       b.onclick = () => {
-        if (sheet) sheet.classList.add('hidden');
+        closeSetup();
         const go = b.dataset.go;
         if (go === 'play') {
           if (G.Social.room) G.LobbyUI.open();
-          else if ((G.Settings.get('runMode') || 'normal') === 'normal') G.RegionUI.open();
           else G.Flow.play();
         }
         else if (go === 'dex') openDex();
@@ -49,8 +47,15 @@ G.MenuUI = (() => {
         else if (go === 'settings') G.SettingsUI.open();
       };
     });
-    const moreBtn = $('menu-more-btn');
-    if (moreBtn && sheet) moreBtn.onclick = () => { sheet.classList.toggle('hidden'); G.Audio.sfx('click'); };
+    document.querySelectorAll('#scr-menu [data-setup]').forEach(b => {
+      b.onclick = () => { G.Audio.sfx('click'); openSetup(b.dataset.setup); };
+    });
+    const setupX = $('setup-pop-x');
+    if (setupX) setupX.onclick = () => { G.Audio.sfx('click'); closeSetup(); };
+    const modeHead = document.querySelector('#scr-menu .menu-modes .menu-head .mi-ico');
+    const roomHead = document.querySelector('#scr-menu .menu-room .menu-head .mi-ico');
+    if (modeHead) modeHead.innerHTML = G.Icons.html('ball', 18);
+    if (roomHead) roomHead.innerHTML = G.Icons.html('friends', 18);
     document.querySelectorAll('#dex-tabs button').forEach(b => {
       b.onclick = () => { G.Audio.sfx('select'); setDexTab(b.dataset.dexTab); };
     });
@@ -122,6 +127,141 @@ G.MenuUI = (() => {
     });
   }
 
+  const DIFFS = [
+    ['normal', 'Corriente', 'ball'],
+    ['hard', 'Difícil', 'ball2'],
+    ['challenge', 'Reto', 'ball4'],
+    ['nightmare', 'Pesadilla', 'ball3']
+  ];
+  let setupKind = null;
+  function soloDiff() {
+    const v = G.Settings.get('soloDiff');
+    return DIFFS.some(d => d[0] === v) ? v : 'normal';
+  }
+  function mapChoice() {
+    const v = G.Settings.get('region');
+    return v === 'random' || !G.Regions.get(v) ? 'random' : v;
+  }
+  function mapLabel(id) {
+    if (id === 'random') return G.T('Al azar');
+    const p = G.Regions.get(id);
+    return p ? p.name.split(' ')[0] : G.T('Al azar');
+  }
+  function closeSetup() {
+    setupKind = null;
+    const pop = $('setup-pop');
+    if (pop) pop.classList.add('hidden');
+    document.querySelectorAll('#scr-menu .setup-row').forEach(b => b.classList.remove('on'));
+  }
+  function fillSetup() {
+    const mode = G.Settings.get('runMode') || 'normal';
+    const map = mapChoice();
+    const diff = DIFFS.find(d => d[0] === soloDiff());
+    const modeEl = $('setup-mode-v');
+    const mapEl = $('setup-map-v');
+    const diffEl = $('setup-diff-v');
+    if (modeEl) modeEl.textContent = G.T(G.Modes.row(mode)[1]);
+    if (mapEl) mapEl.textContent = mapLabel(map);
+    if (diffEl) diffEl.textContent = G.T(diff[1]);
+    const ico = document.querySelector('#scr-menu [data-setup=mode] .mode-ico');
+    if (ico) { ico.dataset.modeIco = mode; paintModeIcons(ico.parentElement); }
+    const ball = document.querySelector('#scr-menu .setup-ball');
+    if (ball) ball.innerHTML = G.Icons.html(diff[2], 22);
+    const thumb = $('setup-map-thumb');
+    if (thumb) {
+      if (map === 'random') {
+        thumb.width = 48; thumb.height = 28;
+        const ctx = thumb.getContext('2d');
+        ctx.fillStyle = '#102040'; ctx.fillRect(0, 0, 48, 28);
+        ctx.fillStyle = '#ffe08a'; ctx.font = '700 18px Pixelify,sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('?', 24, 15);
+      } else if (G.RegionUI && G.RegionUI.paint) G.RegionUI.paint(thumb, G.Regions.get(map));
+    }
+    const sum = $('menu-sum');
+    if (sum && modeEl && mapEl && diffEl) sum.textContent = modeEl.textContent + ' · ' + mapEl.textContent + ' · ' + diffEl.textContent;
+    ensureModeArt().then(() => { if (G.UI.isOpen('scr-menu')) paintModeIcons(document.querySelector('#scr-menu [data-setup=mode]')); });
+  }
+  function openSetup(kind) {
+    const pop = $('setup-pop');
+    if (!pop) return;
+    if (setupKind === kind) { closeSetup(); return; }
+    setupKind = kind;
+    pop.classList.remove('hidden');
+    document.querySelectorAll('#scr-menu .setup-row').forEach(b => b.classList.toggle('on', b.dataset.setup === kind));
+    $('setup-pop-title').textContent = kind === 'mode' ? 'Elegir modo' : kind === 'map' ? 'Elegir mapa' : 'Elegir dificultad';
+    const body = $('setup-pop-body');
+    body.className = 'setup-grid ' + kind;
+    body.replaceChildren();
+    if (kind === 'mode') {
+      const cur = G.Settings.get('runMode') || 'normal';
+      for (const [id, label] of G.Modes.LIST) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'pick-card' + (id === cur ? ' on' : '');
+        b.innerHTML = `<span class="mode-ico" data-mode-ico="${id}"></span><b></b>`;
+        b.querySelector('b').textContent = label;
+        b.onclick = () => {
+          G.Settings.set('runMode', id);
+          if (G.Social.room && G.Social.room.isHost) G.Social.pushRules();
+          G.Audio.sfx('click');
+          closeSetup();
+          open();
+        };
+        body.appendChild(b);
+      }
+      paintModeIcons(body);
+      ensureModeArt().then(() => { if (setupKind === 'mode') paintModeIcons(body); });
+    } else if (kind === 'map') {
+      const cur = mapChoice();
+      const cards = [['random', null]].concat(G.Regions.list.map(p => [p.id, p]));
+      for (const [id, region] of cards) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'pick-card' + (id === cur ? ' on' : '');
+        const name = document.createElement('b');
+        if (id === 'random') {
+          b.innerHTML = '<span class="qmark">?</span>';
+          name.textContent = 'Al azar';
+        } else {
+          name.setAttribute('translate', 'no');
+          name.textContent = mapLabel(id);
+          const cv = document.createElement('canvas');
+          b.appendChild(cv);
+          if (G.RegionUI && G.RegionUI.paint) G.RegionUI.paint(cv, region);
+        }
+        b.appendChild(name);
+        b.onclick = () => {
+          G.Settings.set('region', id);
+          G.Audio.sfx('click');
+          closeSetup();
+          open();
+        };
+        body.appendChild(b);
+      }
+    } else {
+      const cur = soloDiff();
+      for (const [id, label, icon] of DIFFS) {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'pick-card' + (id === cur ? ' on' : '');
+        b.innerHTML = G.Icons.html(icon, 28) + '<b></b>';
+        b.querySelector('b').textContent = label;
+        b.onclick = () => {
+          G.Settings.set('soloDiff', id);
+          G.Audio.sfx('click');
+          closeSetup();
+          open();
+        };
+        body.appendChild(b);
+      }
+      const note = document.createElement('p');
+      note.className = 'setup-note';
+      note.textContent = 'Esta dificultad todavía no cambia la partida.';
+      body.appendChild(note);
+    }
+  }
+
   function open() {
     const s = G.DB.save;
     const mon = G.DEX_BY[s.partner];
@@ -160,24 +300,14 @@ G.MenuUI = (() => {
       (G.DB.guest ? '<br><span style="color:#ffb0b8">Modo invitado: no se guarda</span>' : '');
 
     socialLine();
-    const modeChips = $('mode-chips');
-    if (modeChips) G.Modes.mount(modeChips, null, {
-      mode: G.Settings.get('runMode') || 'normal',
-      editable: true,
-      icons: true,
-      onPick(id) {
-        G.Settings.set('runMode', id);
-        if (G.Social.room && G.Social.room.isHost) G.Social.pushRules();
-        open();
-      }
-    });
-    paintModeIcons(modeChips);
-    ensureModeArt().then(() => { if (G.UI.isOpen('scr-menu')) paintModeIcons($('mode-chips')); });
+    fillSetup();
     // Premios de misiones por recoger.
     G.Progress.checkAch();
     const pend = G.Progress.pending();
     $('menu-goals-sub').textContent = pend ? pend + (pend === 1 ? ' premio por recoger' : ' premios por recoger') : 'Misiones, logros y perfil';
     $('menu-goals-sub').classList.toggle('gold', pend > 0);
+    const goalBtn = document.querySelector('#scr-menu [data-go=goals]');
+    if (goalBtn) goalBtn.classList.toggle('alert', pend > 0);
     // Con cuenta en la nube: amigos en línea, invitaciones y (una vez) el apodo.
     if (G.DB.online && !G.Social.started) {
       G.Social.start().then(r => {
@@ -220,8 +350,8 @@ G.MenuUI = (() => {
   /** Texto bajo "Amigos" y "Jugar": quién está en línea, solicitudes, sala. */
   function socialLine() {
     const room = G.Social.room;
-    const play = document.querySelector('#scr-menu [data-go=play] small');
-    if (play) play.textContent = room ? 'Volver a tu sala (' + room.members.length + '/' + (room.cap || G.Coop.rulesFromSettings().cap) + ')' : 'Entra en la mazmorra';
+    const play = document.querySelector('#scr-menu [data-go=play]');
+    if (play) play.textContent = room ? ('Volver a tu sala (' + room.members.length + '/' + (room.cap || G.Coop.rulesFromSettings().cap) + ')') : 'Jugar';
     const fr = G.Social.friends;
     const req = fr.filter(f => f.status === 'in').length;
     const parts = [];
@@ -231,8 +361,8 @@ G.MenuUI = (() => {
       frSub.textContent = parts.length ? parts.join(' · ') : 'Juega en grupo, de 1 a 10';
       frSub.classList.toggle('gold', req > 0);
     }
-    const more = $('menu-more-btn');
-    if (more) more.classList.toggle('alert', req > 0);
+    const frBtn = document.querySelector('#scr-menu [data-go=friends]');
+    if (frBtn) frBtn.classList.toggle('alert', req > 0);
   }
 
   // ---------------- colección ----------------
@@ -914,5 +1044,5 @@ G.MenuUI = (() => {
     return el;
   }
 
-  return { init, open, openDex, GEN_NAMES, shutDrawer, shutSheet };
+  return { init, open, openDex, GEN_NAMES, shutDrawer, shutSheet, closeSetup };
 })();

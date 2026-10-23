@@ -120,5 +120,5 @@ G.RegionUI = (() => {
     $('region-start').onclick = () => G.Flow.play();
   }
 
-  return { init, open };
+  return { init, open, paint };
 })();

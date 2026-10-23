@@ -24,14 +24,14 @@
 <meta property="og:url" content="https://aulf-friends-game.firebaseapp.com/">
 <meta property="og:title" content="小柯與他的朋友">
 <meta property="og:description" content="這是改版過的 10 人聯機版本。">
-<meta property="og:image" content="https://aulf-friends-game.firebaseapp.com/assets/og-aulf.jpg">
+<meta property="og:image" content="https://aulf-friends-game.firebaseapp.com/assets/og-aulf.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="小柯與他的朋友，10 人聯機改版">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="小柯與他的朋友">
 <meta name="twitter:description" content="這是改版過的 10 人聯機版本。">
-<meta name="twitter:image" content="https://aulf-friends-game.firebaseapp.com/assets/og-aulf.jpg">
+<meta name="twitter:image" content="https://aulf-friends-game.firebaseapp.com/assets/og-aulf.png">
 <meta name="ps-pages" content="1">
 <!-- seo:end -->
 <link rel="manifest" href="manifest.webmanifest">
@@ -83,7 +83,7 @@
 }
 </script>
 <!-- seo:end -->
-<link rel="stylesheet" href="css/style.css?v=map36">
+<link rel="stylesheet" href="css/style.css?v=map43">
 <script src="js/core/locales.js"></script>
 </head>
 <body>
@@ -164,50 +164,68 @@
 
 <!-- ====== Menú principal ====== -->
 <section id="scr-menu" class="scr hidden">
+  <div class="logo">
+    <img class="logo-img" src="assets/future-use/title-logo/xiao-ke-survivor-logo-ui.png" alt="小柯 Survivor－小柯與他的朋友" translate="no" width="543" height="181">
+    <div class="brand-name" translate="no">AULF's friends GAME</div>
+  </div>
   <aside class="menu-modes box">
-    <b>Modo</b>
-    <div class="mode-pick" id="mode-pick"><div class="chips" id="mode-chips"></div></div>
+    <b class="menu-head"><span class="mi-ico"></span>Salida en solitario</b>
+    <button type="button" class="setup-row" data-setup="mode">
+      <span class="mode-ico" data-mode-ico="normal"></span>
+      <span class="setup-k">Modo</span>
+      <span class="setup-v" id="setup-mode-v" translate="no"></span>
+      <span class="setup-caret" aria-hidden="true">▾</span>
+    </button>
+    <button type="button" class="setup-row" data-setup="map">
+      <canvas id="setup-map-thumb" width="48" height="28"></canvas>
+      <span class="setup-k">Mapa</span>
+      <span class="setup-v" id="setup-map-v" translate="no"></span>
+      <span class="setup-caret" aria-hidden="true">▾</span>
+    </button>
+    <button type="button" class="setup-row" data-setup="diff">
+      <span class="setup-ball"></span>
+      <span class="setup-k">Dificultad</span>
+      <span class="setup-v" id="setup-diff-v" translate="no"></span>
+      <span class="setup-caret" aria-hidden="true">▾</span>
+    </button>
   </aside>
   <div class="menu-stage">
-    <div class="logo">
-      <div class="t1" translate="no">小柯<span>Survivor</span></div>
-      <div class="t2" translate="no">小柯與他的朋友</div>
-      <div class="brand-name" translate="no">AULF's friends GAME</div>
-    </div>
     <div class="partner-card">
       <canvas id="menu-partner" class="stage" width="320" height="248"></canvas>
       <div class="nm" id="menu-partner-name"></div>
       <div class="lv" id="menu-partner-info"></div>
       <div class="seg hidden" id="menu-shiny"><button data-v="0">Normal</button><button data-v="1"></button></div>
+      <div class="menu-sum" id="menu-sum" translate="no"></div>
     </div>
     <div class="menu-go">
-      <button class="btn gold menu-play" data-go="play" type="button">Jugar<small>Entra en la mazmorra</small></button>
+      <button class="btn gold menu-play" data-go="play" type="button">Jugar</button>
       <div id="menu-stats" class="menu-stats"></div>
     </div>
   </div>
   <aside class="menu-room box">
-    <b>Código de la sala</b>
+    <b class="menu-head"><span class="mi-ico"></span>Sala de varios</b>
     <form id="menu-code" class="code-join" autocomplete="off">
-      <input id="menu-code-in" class="field" maxlength="6" spellcheck="false" autocapitalize="characters" placeholder="Código de la sala">
-      <button class="btn gold" type="submit">Unirse</button>
-      <button id="menu-code-new" class="btn" type="button">Crear sala</button>
+      <input id="menu-code-in" class="field" maxlength="6" spellcheck="false" autocapitalize="characters" placeholder="Código de sala">
+      <button class="btn gold" type="submit">Entrar en la sala</button>
+      <button id="menu-code-new" class="btn" type="button">Abrir una sala</button>
     </form>
     <p id="menu-code-msg" class="err"></p>
   </aside>
   <nav class="menu-dock box">
     <button class="menu-item" data-go="dex">Pokémon<small id="menu-dex-count">Tu colección</small></button>
     <button class="menu-item" data-go="upgrades">Mejoras<small>Haz más fuerte cada run</small></button>
-    <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
-    <button class="menu-item" id="menu-more-btn" type="button"><span class="mi-ico" aria-hidden="true">☰</span>Más</button>
-  </nav>
-  <div id="menu-sheet" class="menu-sheet box hidden">
-    <button class="menu-item" data-go="shop">Tienda Kecleon<small>Mentas, Cápsulas y MT</small></button>
+    <button class="menu-item" data-go="shop">Tienda<small>Mentas, Cápsulas y MT</small></button>
     <button class="menu-item" data-go="bag">Mochila<small id="menu-bag-sub">Vacía</small></button>
+    <button class="menu-item" data-go="gacha">Gacha<small>9 regiones · Pokémon y shinies</small></button>
     <button class="menu-item" data-go="hatch">Incubadora<small>Huevos de incubar</small></button>
     <button class="menu-item" data-go="goals">Misiones<small id="menu-goals-sub">Misiones, logros y perfil</small></button>
     <button class="menu-item" data-go="friends">Amigos<small id="menu-friends-sub">Juega en grupo, de 1 a 10</small></button>
     <button class="menu-item" data-go="rank">Ranking<small>Quién aguanta más</small></button>
     <button class="menu-item" data-go="settings">Ajustes<small>Sonido, gráficos, controles y cuenta</small></button>
+  </nav>
+  <div id="setup-pop" class="setup-pop box hidden">
+    <div class="setup-pop-top"><b id="setup-pop-title"></b><button id="setup-pop-x" class="btn small ghost" type="button">×</button></div>
+    <div id="setup-pop-body"></div>
   </div>
 </section>
 
@@ -334,7 +352,7 @@
 </section>
 <div id="boot" class="boot">
   <div class="boot-in">
-    <h1 translate="no">小柯Survivor</h1>
+    <img class="boot-logo" src="assets/future-use/title-logo/xiao-ke-survivor-logo-ui.png" alt="小柯 Survivor－小柯與他的朋友" translate="no" width="543" height="181">
     <p>Juego de supervivencia con Pokémon, gratis en el navegador y en el móvil.</p>
     <p class="boot-ld">Cargando…</p>
   </div>
@@ -342,8 +360,7 @@
 <script src="js/boot.js"></script>
 <div id="tap-start" class="tapstart hidden">
   <div class="boot-in">
-    <h1 translate="no">小柯Survivor</h1>
-    <p translate="no">小柯與他的朋友 · 10 人聯機改版</p>
+    <img class="boot-logo" src="assets/future-use/title-logo/xiao-ke-survivor-logo-ui.png" alt="小柯 Survivor－小柯與他的朋友" translate="no" width="543" height="181">
     <p class="tap-blink">Pulsa para empezar</p>
   </div>
 </div>
@@ -471,7 +488,7 @@
 <section id="scr-hatch" class="scr dim hidden">
   <div class="box hatch-box">
     <div class="row between"><h2>Incubadora</h2><button class="btn small ghost" id="hatch-back" type="button">Volver</button></div>
-    <p class="sub">Al meter un huevo, recibe una sola condición al azar: 2000 pasos, 2000 derrotas o 30 objetos. Cumple esa y se puede incubar. Lo que sale suma un 5 % a la investigación de esa especie.</p>
+    <p class="sub">Mete un huevo de incubar. El Pokémon que sale se convierte en investigación.</p>
     <div id="hatch-slots" class="hatch-slots"></div>
     <div class="hatch-bag-label">Mochila</div>
     <div id="hatch-bag" class="hatch-bag"></div>
