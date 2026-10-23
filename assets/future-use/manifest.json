@@ -77,6 +77,22 @@
       "width": 40,
       "height": 40,
       "sha256": "5fb8b01ca9e4b8f51915e913d0e3ca85d873df77daab0c1f8e92b279bbfc59c3"
+    },
+    {
+      "label": "詛咒球小圖",
+      "path": "assets/future-use/balls/cursed-ball.png",
+      "width": 40,
+      "height": 40,
+      "sha256": "5764ca79ca0a5f30a02d8543be566e1da0f6e440402e100c2aef9636dd6a7f11",
+      "rules_status": "能力、價格、稀有度與持有上限未設定"
+    },
+    {
+      "label": "詛咒球設計圖",
+      "path": "assets/future-use/balls/cursed-ball-design.png",
+      "width": 1303,
+      "height": 1207,
+      "sha256": "b96513857f188d5df19ad4607bbb158a60a867e99a9ea7d6e0b17ddb54981c56",
+      "rules_status": "能力、價格、稀有度與持有上限未設定"
     }
   ]
 }
