@@ -1,0 +1,136 @@
+{
+  "status": "specification-only; not implemented",
+  "defaults": {
+    "soloRunMode": "normal",
+    "soloMap": "random",
+    "soloDifficulty": "normal"
+  },
+  "selection_order": [
+    "mode",
+    "map",
+    "difficulty"
+  ],
+  "interaction": {
+    "selection_commits_immediately": true,
+    "selection_closes_dialog": true,
+    "cancel_preserves_selection": true,
+    "remember_last_selection": true,
+    "lock_settings_at_run_start": true
+  },
+  "layout": {
+    "desktop": "左側三欄垂直設定、中央角色與開始、右側房間、下方功能入口",
+    "mobile": "角色下方、開始按鈕上方，每欄一整列",
+    "mode_grid_columns": {
+      "desktop": 3,
+      "mobile": 2
+    },
+    "map_grid_columns": {
+      "desktop": 3,
+      "mobile": 2
+    },
+    "difficulty_grid_columns": 2
+  },
+  "modes": [
+    {
+      "id": "normal",
+      "name": "一般"
+    },
+    {
+      "id": "shiny",
+      "name": "異色模式"
+    },
+    {
+      "id": "boss",
+      "name": "首領挑戰"
+    },
+    {
+      "id": "castle",
+      "name": "守護幼犬"
+    },
+    {
+      "id": "siege",
+      "name": "城堡攻防"
+    }
+  ],
+  "maps": [
+    {
+      "id": "random",
+      "name": "隨機"
+    },
+    {
+      "id": "kanto",
+      "name": "關都"
+    },
+    {
+      "id": "johto",
+      "name": "城都"
+    },
+    {
+      "id": "hoenn",
+      "name": "豐緣"
+    },
+    {
+      "id": "sinnoh",
+      "name": "神奧"
+    },
+    {
+      "id": "unova",
+      "name": "合眾"
+    },
+    {
+      "id": "kalos",
+      "name": "卡洛斯"
+    },
+    {
+      "id": "alola",
+      "name": "阿羅拉"
+    },
+    {
+      "id": "galar",
+      "name": "伽勒爾"
+    },
+    {
+      "id": "paldea",
+      "name": "帕底亞"
+    }
+  ],
+  "map_compatibility_status": "pending verification per mode; do not assume all maps are supported",
+  "legacy_empty_region": "legacy-original; distinct from random",
+  "random_policy": "均勻抽取相容地區；保存實際地圖與 seed 到本局快照，偏好仍為 random",
+  "difficulty_status": "draft-tuning; pending gameplay validation",
+  "difficulty_scope": "solo-only",
+  "difficulties": [
+    {
+      "id": "normal",
+      "name": "普通",
+      "spawnRate": 1,
+      "enemyHp": 1
+    },
+    {
+      "id": "hard",
+      "name": "困難",
+      "spawnRate": 1.25,
+      "enemyHp": 1.25
+    },
+    {
+      "id": "challenge",
+      "name": "挑戰",
+      "spawnRate": 1.5,
+      "enemyHp": 1.5
+    },
+    {
+      "id": "nightmare",
+      "name": "惡夢",
+      "spawnRate": 2,
+      "enemyHp": 2
+    }
+  ],
+  "difficulty_application": "乘以目前模式與進度的現有單人基準，僅套用一次；固定首領數、波次及勝敗條件不乘倍",
+  "unchanged": [
+    "多人房間規則",
+    "敵人攻擊及速度",
+    "每隻經驗",
+    "單次掉落機率",
+    "獎勵倍率"
+  ]
+}
