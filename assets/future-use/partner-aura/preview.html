@@ -1,0 +1,14 @@
+<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>夥伴熟練度光效</title>
+<style>body{background:#172839;color:#eef6ff;margin:24px;font:16px/1.7 system-ui}main{max-width:1000px;margin:auto}canvas{width:100%;height:auto;background:#355440;image-rendering:pixelated;border:1px solid #79947d}label{margin-right:20px}a{color:#a4ddff}</style>
+<main><h1>夥伴光效預覽</h1><p>左：無光效　中：金級微光　右：鑽石金光。使用現有卡比獸素材；此頁可獨立執行，不影響遊戲。</p><label><input id="low" type="checkbox">低畫質</label><label><input id="still" type="checkbox">減少動態</label><p id="status">載入角色…</p><canvas id="view" width="900" height="330"></canvas><p><a href="README.md">規則與接入說明</a></p></main>
+<script src="partner-aura.js"></script><script>
+const canvas=document.getElementById('view'),ctx=canvas.getContext('2d'),image=new Image();
+const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;document.getElementById('still').checked=reduced;
+let ready=false;image.onload=()=>{ready=true;document.getElementById('status').textContent='角色載入完成。';};image.onerror=()=>{document.getElementById('status').textContent='角色載入失敗，請由專案根目錄啟動 HTTP 預覽。';};image.src='../../pokemon/143/Idle.png';
+function frame(now){ctx.clearRect(0,0,900,330);ctx.imageSmoothingEnabled=false;const t=now/1000;
+for(let i=0;i<3;i++){const x=150+i*300,y=228;ctx.fillStyle='#294531';ctx.beginPath();ctx.ellipse(x,y,38,11,0,0,Math.PI*2);ctx.fill();
+const opt={tier:['none','gold','diamond'][i],x,y,width:65,height:90,time:t,seed:i,quality:document.getElementById('low').checked?'low':'high',reducedMotion:document.getElementById('still').checked};
+PartnerAura.draw(ctx,opt,'behind');if(ready)ctx.drawImage(image,0,0,32,64,Math.round(x-15.5*3),Math.round(y-35.5*3),96,192);PartnerAura.draw(ctx,opt,'front');
+ctx.fillStyle='#fff7de';ctx.font='20px system-ui';ctx.textAlign='center';ctx.fillText(['一般','金級 · 微光','鑽石級 · 金光'][i],x,300);}
+requestAnimationFrame(frame);}requestAnimationFrame(frame);
+</script></html>

@@ -29,3 +29,7 @@
 - [糖果代幣規則及預覽方式](candy/README.md)：新版大圖 `candy/candy-token.png`。
 - [精靈蛋規則及預覽方式](eggs/USAGE.md)：新版大圖 `eggs/pokemon-egg-design.png`、四級蛋與孵化動畫。
 - 工程資料表：`docs/specs/candy-and-eggs.json`。尚未接入正式遊戲。
+
+## 夥伴熟練度光效
+
+[金級微光／鑽石金光模組與實作規則](partner-aura/README.md)。執行 `python3 -m http.server 8000` 後開啟 `http://localhost:8000/assets/future-use/partner-aura/preview.html`。可執行的視覺模組，尚未接入正式遊戲與熟練度資料。
