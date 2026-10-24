@@ -1430,4 +1430,5 @@ G.I18n.add({
   "Si el jefe o una tropa derriba al rival, no hay experiencia. Sólo quien lo tumba con su propio ataque cobra.": "首領或小怪打倒對手時沒有經驗。只有自己的攻擊擊倒對方才有獎勵。",
   "En el asedio eliges el ataque con 1–4 y lo lanzas con el ratón. No se dispara solo, y el cuerpo no hiere.": "攻城戰用 1–4 選擇招式，再用滑鼠施放。不會自動攻擊，撞到也不會扣血。",
   "En el móvil el asedio se apunta arrastrando el ataque. En el ordenador se apunta con el ratón, sin cursor virtual.": "手機攻城戰是拖曳招式來瞄準。電腦用滑鼠瞄準，不會出現虛擬游標。",
+  "En el ordenador el asedio se lanza con el ratón aunque la pantalla también sea táctil.": "電腦即使有觸控螢幕，攻城戰仍用滑鼠施放。",
 }, 'zh-Hant');

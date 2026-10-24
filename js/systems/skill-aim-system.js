@@ -87,8 +87,29 @@ G.SkillAim = (() => {
 
   function ready(m) { return !!(m && !(m.t > 0) && !m._pending); }
 
-  /** Teléfono o tablet: el puntero principal es el dedo, no un ratón. */
-  function finger() { return !!(G.Settings && G.Settings.touch); }
+  // El móvil arrastra. El ratón (aunque el portátil tenga pantalla táctil) apunta
+  // como en el ordenador. Un toque a veces deja un ratón falso justo después:
+  // ese no cambia el modo.
+  let touchMode = !!(G.Settings && G.Settings.touch);
+  let lastTouchAt = 0;
+
+  function notePointer(p) {
+    const t = p && p.pointerType;
+    if (t === 'touch') { touchMode = true; lastTouchAt = performance.now(); return; }
+    if ((t === 'mouse' || t === 'pen') && performance.now() - lastTouchAt > 700) touchMode = false;
+  }
+
+  function mouseLike(p) {
+    if (p && p.pointerType === 'touch') return false;
+    if (p && (p.pointerType === 'mouse' || p.pointerType === 'pen')) return true;
+    return !touchMode;
+  }
+
+  /** El dedo manda ahora mismo (sin mira). El ratón, no. */
+  function finger() { return touchMode; }
+
+  addEventListener('pointerdown', notePointer, true);
+  addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.pointerType === 'pen') notePointer(e); }, true);
 
   function aimOf(g, pl) {
     if (g.finger) {
@@ -133,11 +154,12 @@ G.SkillAim = (() => {
 
   function pointerDown(p) {
     if (!manual() || p.pointerId == null) return false;
-    if (!finger() && p.button === 2) { gestures.clear(); return true; }
+    notePointer(p);
+    if (mouseLike(p) && p.button === 2) { gestures.clear(); return true; }
     if (p.button != null && p.button !== 0) return false;
     const pl = G.Game.player;
     if (!pl || pl.dead || pl.frozen) { gestures.clear(); return false; }
-    if (finger()) return fingerDown(p, pl);
+    if (!mouseLike(p)) return fingerDown(p, pl);
     if (G.Touch && G.Touch.hits && G.Touch.hits(p.x, p.y)) return false;
     if (gestures.has(p.pointerId)) return true;
     const m = selected(pl);
