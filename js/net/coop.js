@@ -76,6 +76,7 @@ G.Coop = (() => {
     const mode = r.mode === 'count' || r.mode === 'custom' ? r.mode : 'auto';
     let cap = clampCap(r.cap == null ? 4 : r.cap);
     const runMode = r.runMode === 'shiny' || r.runMode === 'boss' || r.runMode === 'castle' || r.runMode === 'siege' ? r.runMode : 'normal';
+    const diff = r.diff === 'hard' || r.diff === 'challenge' || r.diff === 'nightmare' ? r.diff : 'normal';
     // Asedio es una plantilla oficial 1 contra 1. No hereda el límite
     // configurable de las salas cooperativas.
     if (runMode === 'siege') cap = 2;
@@ -87,7 +88,7 @@ G.Coop = (() => {
       hp: clampMul(r.hp, 0.25, 8, autoHp(4)),
       xp: clampMul(r.xp, 0.25, 12, autoXp(4)),
       bossN: Math.min(10, Math.max(0, isFinite(bossRaw) ? bossRaw : 5)),
-      runMode
+      runMode, diff
     };
   }
   function rulesFromSettings() {
@@ -99,12 +100,13 @@ G.Coop = (() => {
       hp: G.Settings.get('diffHp'),
       xp: G.Settings.get('diffXp'),
       bossN: G.Settings.get('bossN'),
-      runMode: G.Settings.get('runMode')
+      runMode: G.Settings.get('runMode'),
+      diff: G.Settings.get('soloDiff')
     });
   }
   function publicRules(r) {
     const n = normalizeRules(r);
-    return { cap: n.cap, mode: n.mode, n: n.n, rate: n.rate, hp: n.hp, xp: n.xp, bossN: n.bossN, runMode: n.runMode };
+    return { cap: n.cap, mode: n.mode, n: n.n, rate: n.rate, hp: n.hp, xp: n.xp, bossN: n.bossN, runMode: n.runMode, diff: n.diff };
   }
   /** Fija la dificultad de esta partida. Sin rules y useSettings, la de este aparato. */
   function lockRun(rules, useSettings) {

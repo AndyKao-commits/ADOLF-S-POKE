@@ -1421,4 +1421,7 @@ G.I18n.add({
   "2 jugadores": "2 名玩家",
   "De 2 a {x} jugadores": "2 到 {x} 名玩家",
   "El asedio en sala es un duelo de 2. Chocar no hiere: sólo los ataques confirmados. Al caer, reapareces a los 5 s y no miras a un compañero.": "房間裡的攻城戰是兩人對決。撞到不會扣血，只有確認過的攻擊才會。倒下後 5 秒重生，不能觀戰隊友。",
+  "En el asedio, un disparo que sale de la pantalla sigue hiriendo al rival y a sus monstruos.": "攻城戰裡，飛出畫面的攻擊仍會打到對手和他的小怪。",
+  "En una sala, el modo normal puede elegir Corriente, Difícil, Reto o Pesadilla. Debajo del modo ya no hay un texto largo.": "房間的一般模式可以選普通、困難、挑戰或惡夢。模式下面不再放長篇說明。",
+  "Las miniaturas del mapa conservan su proporción y no se deforman.": "地圖縮圖維持原來的比例，不會被拉變形。",
 }, 'zh-Hant');

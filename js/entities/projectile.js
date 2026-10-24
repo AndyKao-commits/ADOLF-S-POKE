@@ -101,8 +101,14 @@ G.Projectiles = (() => {
       p.x += p.vx * dt;
       p.y += p.vy * dt;
 
-      // Fuera de la vista con margen generoso -> se descarta.
-      if (!G.Camera.sees(p.x, p.y, 260)) { list.splice(i, 1); continue; }
+      // Fuera de la vista se descarta. En el asedio el anfitrión calcula el
+      // disparo del rival aunque esté en la otra punta del mapa: si se borra
+      // al salir de SU pantalla, ese ataque no hiere a nadie.
+      const siegeShot = p.friendly && !p.ghost && G.Siege && G.Siege.up;
+      if (siegeShot) {
+        const edge = (G.Siege.half || 832) + 160;
+        if (Math.abs(p.x) > edge || Math.abs(p.y) > edge) { list.splice(i, 1); continue; }
+      } else if (!G.Camera.sees(p.x, p.y, 260)) { list.splice(i, 1); continue; }
     }
   }
 

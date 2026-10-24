@@ -79,6 +79,9 @@ test('los asaltos de jefe van de 0 a 10 y lo normal son 5', () => {
   assert.equal(Coop.publicRules({ bossN: -3 }).bossN, 0);
   assert.equal(Coop.publicRules({}).bossN, 5);
   assert.equal(Coop.publicRules({}).runMode, 'normal');
+  assert.equal(Coop.publicRules({}).diff, 'normal');
+  assert.equal(Coop.publicRules({ diff: 'nightmare' }).diff, 'nightmare');
+  assert.equal(Coop.publicRules({ diff: 'nope' }).diff, 'normal');
   assert.equal(Coop.publicRules({ runMode: 'castle' }).runMode, 'castle');
   assert.equal(Coop.publicRules({ runMode: 'nope' }).runMode, 'normal');
   assert.equal(Coop.publicRules({ runMode: 'boss', mode: 'count' }).mode, 'count');

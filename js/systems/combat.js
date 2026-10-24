@@ -855,19 +855,30 @@ G.Combat = (() => {
     if (a.touchPoison && m && (m.kind === 'melee' || m.kind === 'dash')) e.applyPoison(1);
   }
 
+  /** Durante el asedio el fotograma marca al jugador local como autor de todo.
+   *  El golpe de un muñeco tiene que firmarse con SU uid, o sus disparos no
+   *  hieren a los monstruos del anfitrión. */
+  function asAttacker(who, fn) {
+    if (!(G.Siege && G.Siege.up) || !G.Enemy.setStriker) { fn(); return; }
+    G.Enemy.setStriker(who || null);
+    try { fn(); } finally { G.Enemy.setStriker(null); }
+  }
+
   function hit(pl, e, dmg, col, dx, dy, knock, m) {
     if (isAlly(e, pl)) return;
     if (!ghost && pl && pl._castId && e && G.CombatAuthority && !G.CombatAuthority.claimDamage(pl._castId, e.id || e.uid || 'x')) return;
     const k = typeK(m.type, e) * G.Stats.taken(e.mon, m.cat) * abilOut(pl, m, e) * G.Items.outMul(pl, m.type, e) * (e.arceus && G.Judgment.dmgK ? G.Judgment.dmgK() : 1);
     const crit = isCrit(pl), sk = statusK(pl);
     dmg *= k * (crit ? Math.min(2, critMul(pl) * G.Items.critMul(pl)) : 1);
-    e.hurt(dmg, col, dx, dy, sk ? knock : 0, crit ? 'crit' : G.Types.label(G.Types.mult(m.type, e.types)));
+    asAttacker(pl && (pl.uid || 'me'), () => {
+      e.hurt(dmg, col, dx, dy, sk ? knock : 0, crit ? 'crit' : G.Types.label(G.Types.mult(m.type, e.types)));
+      if (m.burn && sk) e.applyBurn(m.burn * sk);
+      if (m.poison && sk) e.applyPoison(m.poison * sk);
+      if (m.slow && sk) e.applySlow(Math.min(0.8, m.slow * sk));
+    });
     if (!ghost) pl.onDealt(dmg);
     pl.dmgDealt += dmg;
     m.dealt = (m.dealt || 0) + dmg;               // por ataque, para el resumen de la pausa
-    if (m.burn && sk) e.applyBurn(m.burn * sk);
-    if (m.poison && sk) e.applyPoison(m.poison * sk);
-    if (m.slow && sk) e.applySlow(Math.min(0.8, m.slow * sk));
     afterHit(pl, e, m);
     if (!ghost) G.Items.onHit(pl, e);
   }
@@ -976,15 +987,18 @@ G.Combat = (() => {
 
         const crit = isCrit(pl), sk = statusK(pl);
         const k = (p.mtype ? typeK(p.mtype, e) : 1) * G.Stats.taken(e.mon, p.mcat) * (crit ? Math.min(2, critMul(pl) * G.Items.critMul(pl)) : 1) * abilOut(pl, p.src, e) * G.Items.outMul(pl, p.mtype, e) * (e.arceus && G.Judgment.dmgK ? G.Judgment.dmgK() : 1);
-        e.hurt(p.dmg * k, p.color, p.vx || (e.x - pl.x), p.vy || (e.y - pl.y), sk ? p.knock : 0,
-               crit ? 'crit' : p.mtype ? G.Types.label(G.Types.mult(p.mtype, e.types)) : null);
+        const shooter = p.ownerId || (p.owner && (p.owner.uid || 'me')) || null;
+        asAttacker(shooter, () => {
+          e.hurt(p.dmg * k, p.color, p.vx || (e.x - pl.x), p.vy || (e.y - pl.y), sk ? p.knock : 0,
+                 crit ? 'crit' : p.mtype ? G.Types.label(G.Types.mult(p.mtype, e.types)) : null);
+          if (p.burn && sk) e.applyBurn(p.burn * sk);
+          if (p.poison && sk) e.applyPoison(p.poison * sk);
+          if (p.slow && sk) e.applySlow(Math.min(0.8, p.slow * sk));
+        });
         if (Math.random() < 0.5) G.FX.sp('impact', p.vis ? p.vis.pal : 'normal', e.x, e.y - e.bodyH * 0.5, { life: 0.12, scale: 1 });
         pl.dmgDealt += p.dmg * k;
         if (p.src) p.src.dealt = (p.src.dealt || 0) + p.dmg * k;
         pl.onDealt(p.dmg * k);
-        if (p.burn && sk) e.applyBurn(p.burn * sk);
-        if (p.poison && sk) e.applyPoison(p.poison * sk);
-        if (p.slow && sk) e.applySlow(Math.min(0.8, p.slow * sk));
         if (p.drain) pl.heal(p.drain);                    // Beso Drenaje
         afterHit(pl, e, p.src);
         if (!p.ghost) G.Items.onHit(pl, e);
@@ -1014,7 +1028,7 @@ G.Combat = (() => {
       e.strike(pl);
       pl.hurt(e.dmg * (pl.hasItem('protectivepads') ? 0.7 : 1), e.atkType, false, e.cat);
       const thorns = G.Items.thorns(pl);
-      if (thorns) e.hurt(thorns, '#9aa6b5', e.x - pl.x, e.y - pl.y, 80);
+      if (thorns) asAttacker(pl.uid || 'me', () => e.hurt(thorns, '#9aa6b5', e.x - pl.x, e.y - pl.y, 80));
       if (pl.abil && pl.abil.contact && !pl.dead && !e.dead) pl.abil.contact(pl, e);     // Elec. Estática, Cuerpo Llama...
       const [nx, ny] = G.U.norm(e.x - pl.x, e.y - pl.y);
       e.kx += nx * 150; e.ky += ny * 150;

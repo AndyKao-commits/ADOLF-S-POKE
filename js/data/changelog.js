@@ -6,6 +6,18 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-24', title: ['Sala', 'Room'], chg: [
+    ['En una sala, el modo normal puede elegir Corriente, Difícil, Reto o Pesadilla. Debajo del modo ya no hay un texto largo.',
+     'In a room, Normal can choose Standard, Hard, Challenge or Nightmare. The long text under the mode is gone.']
+  ] },
+  { d: '2026-10-24', title: ['Mapa', 'Map'], fix: [
+    ['Las miniaturas del mapa conservan su proporción y no se deforman.',
+     'Map thumbnails keep their shape and are not stretched.']
+  ] },
+  { d: '2026-10-24', title: ['Asedio', 'Siege'], fix: [
+    ['En el asedio, un disparo que sale de la pantalla sigue hiriendo al rival y a sus monstruos.',
+     'In siege, a shot that leaves the screen still hurts the rival and their monsters.']
+  ] },
   { d: '2026-10-24', title: ['Asedio', 'Siege'], chg: [
     ['El asedio en sala es un duelo de 2. Chocar no hiere: sólo los ataques confirmados. Al caer, reapareces a los 5 s y no miras a un compañero.',
      'A room siege is a 2-player duel. Bumping does not hurt: only confirmed attacks do. When you fall, you return in 5 s and do not watch a teammate.']

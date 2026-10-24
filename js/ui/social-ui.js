@@ -273,7 +273,7 @@
         const key = (room.isHost ? 'h:' : 'g:') + picked;
         if (modeBox.dataset.key !== key) {
           modeBox.dataset.key = key;
-          modeBox.innerHTML = '<div class="lobby-section-title"><b>Modo de juego</b><small>La plantilla aplica automáticamente las reglas compatibles.</small></div><div class="chips lobby-mode-grid"></div><p class="lobby-mode-help"></p>';
+          modeBox.innerHTML = '<div class="lobby-section-title"><b>Modo de juego</b></div><div class="chips lobby-mode-grid"></div>';
           G.Modes.mount(modeBox.querySelector('.chips'), null, {
             mode: picked,
             editable: room.isHost,
@@ -291,7 +291,6 @@
               G.Social.pushRules();
             }
           });
-          modeBox.querySelector('.lobby-mode-help').textContent = G.Modes.row(picked)[2];
         }
       }
       const rulesBox = $('lobby-rules');
@@ -318,7 +317,7 @@
       const cfg = {
         k: 'start', seed: Math.floor(Math.random() * 1e6), host: room.host,
         members: room.members.map(m => ({ uid: m.uid, name: m.name, dex: m.dex, shiny: !!m.shiny, mr: G.MasteryFX ? G.MasteryFX.valid(m.mr) : '' })),
-        rules: G.Coop.publicRules(Object.assign({}, room.rules || G.Coop.rulesFromSettings(), { runMode: rm })),
+        rules: G.Coop.publicRules(Object.assign({}, G.Coop.rulesFromSettings(), { runMode: rm })),
         mode: rm
       };
       G.Social.setOpen(false);
@@ -375,27 +374,26 @@
       return 'Con ' + p.n + ': aparecen ×' + G.Coop.fmtMul(p.rate) + ', vida ×' + G.Coop.fmtMul(p.hp) + ' y la experiencia se reparte entre ' + G.Coop.fmtMul(p.xp) + '. Jefes: ' + rules.bossN + '.';
     }
 
-    const TEMPLATES = {
-      normal: ['Cooperativo', 'Escalado automático según los jugadores', 'Grietas activadas', 'Jefes según la regla oficial'],
-      shiny: ['Cooperativo', 'Sólo aparecen Pokémon shiny', 'Escalado automático según los jugadores', 'Grietas activadas'],
-      boss: ['Cooperativo', 'Sólo aparecen jefes', 'Inicio en nivel 20', 'Grieta temprana para fusionar ataques'],
-      castle: ['Cooperativo', 'Defiende el castillo durante 50 oleadas', 'Un jefe cada 10 oleadas', 'La plantilla fija el ritmo y la victoria'],
-      siege: ['1 contra 1 · exactamente 2 jugadores', 'Sólo los ataques hacen daño; los cuerpos no', 'Muerte con reaparición, sin rescate ni espectador', 'Jefe central activado · grietas desactivadas'],
-      endless: ['Cooperativo sin límite de oleadas', 'La dificultad cambia por eventos y combinaciones', 'Récord por tiempo y oleada', 'Grietas desactivadas']
-    };
+    const ROOM_DIFFS = [['normal', 'Corriente'], ['hard', 'Difícil'], ['challenge', 'Reto'], ['nightmare', 'Pesadilla']];
 
-    function roomTemplateHtml(opt) {
-      const id = G.Modes.idOf(opt.roomMode || 'normal');
-      const rows = TEMPLATES[id] || TEMPLATES.normal;
-      const fixed = id === 'siege';
-      const count = fixed
-        ? (G.I18n ? G.I18n.t('2 jugadores') : '2 jugadores')
-        : (G.I18n ? G.I18n.f('De 2 a {x} jugadores', liveRules(opt).cap) : ('De 2 a ' + liveRules(opt).cap + ' jugadores'));
-      return `<section class="room-template ${fixed ? 'versus' : ''}">
-        <div class="lobby-section-title"><b>Reglas de esta sala</b><span class="room-template-badge">${count}</span></div>
-        <div class="room-rule-grid">${rows.map(x => `<div class="room-rule"><i>✓</i><span>${esc(x)}</span></div>`).join('')}</div>
-        <p class="note">Las reglas oficiales de este modo se aplican automáticamente. Los ajustes incompatibles no se muestran.</p>
-      </section>`;
+    function roomDiffHtml(opt) {
+      const cur = liveRules(opt).diff || 'normal';
+      const dis = opt.editable ? '' : ' disabled';
+      return `<div class="lobby-section-title"><b>Dificultad</b></div><div class="chips lobby-mode-grid">${
+        ROOM_DIFFS.map(([id, label]) => `<button type="button" class="chip${cur === id ? ' on' : ''}" data-diff="${id}"${dis}>${label}</button>`).join('')
+      }</div>`;
+    }
+
+    function wireDiff(el, opt) {
+      el.querySelectorAll('[data-diff]').forEach(b => {
+        b.onclick = () => {
+          if (!opt.editable) return;
+          G.Settings.set('soloDiff', b.dataset.diff);
+          if (G.Social.room && G.Social.room.isHost) G.Social.pushRules();
+          viewKey.delete(el);
+          sync(el, Object.assign({}, opt, { rules: G.Coop.rulesFromSettings() }));
+        };
+      });
     }
 
     function html(opt) {
@@ -479,10 +477,13 @@
     function sync(el, opt) {
       opt = opt || { editable: true, liveN: 1 };
       if (opt.roomMode) {
-        const key = 'room:' + opt.roomMode + ':' + liveRules(opt).cap;
-        if (viewKey.get(el) !== key || !el.childElementCount) {
+        const id = G.Modes.idOf(opt.roomMode || 'normal');
+        const rules = liveRules(opt);
+        const key = 'room:' + id + ':' + (rules.diff || 'normal');
+        if (viewKey.get(el) !== key) {
           viewKey.set(el, key);
-          el.innerHTML = roomTemplateHtml(opt);
+          el.innerHTML = id === 'normal' ? roomDiffHtml(Object.assign({}, opt, { rules })) : '';
+          if (id === 'normal') wireDiff(el, opt);
         }
         return;
       }

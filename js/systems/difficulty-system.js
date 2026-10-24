@@ -1,6 +1,6 @@
 /* ============ difficulty-system.js — dificultad de una partida sola ============
- * Corriente, Difícil, Reto y Pesadilla. El asedio y una partida con amigos
- * no usan estos números: allí cada uno va con lo suyo.
+ * Corriente, Difícil, Reto y Pesadilla. El asedio no las usa.
+ * En una sala sólo valen si el modo es el normal.
  * Los objetos, la maestría y el precio de los caramelos no se tocan.
  */
 G.Difficulty = (() => {
@@ -18,10 +18,10 @@ G.Difficulty = (() => {
     return RUN_DIFFICULTY[id] ? id : 'normal';
   }
 
-  /** Sólo una partida de un jugador que no sea asedio. */
+  /** Una partida sola, o una sala en modo normal. El asedio no entra. */
   function solo() {
     if (G.Modes && G.Modes.is('siege')) return false;
-    if (G.Coop && G.Coop.active) return false;
+    if (G.Coop && G.Coop.active && !(G.Modes && G.Modes.is('normal'))) return false;
     return true;
   }
 

@@ -130,7 +130,8 @@ G.Game = (() => {
     if (G.Castle) G.Castle.end();
     if (G.Siege) G.Siege.end();
     G.Modes.lock(coop && coop.mode ? coop.mode : G.Settings.get('runMode'));
-    const pickedDiff = G.Settings.get('soloDiff');
+    let pickedDiff = G.Settings.get('soloDiff');
+    if (coop && G.Modes.is('normal') && coop.rules && coop.rules.diff) pickedDiff = coop.rules.diff;
     runDiff = pickedDiff === 'hard' || pickedDiff === 'challenge' || pickedDiff === 'nightmare' ? pickedDiff : 'normal';
     G.UI.hideAll();
     G.UI.chrome(false);
@@ -391,7 +392,7 @@ G.Game = (() => {
     const sheet = G.Result ? G.Result.seal({
       pl, time, wave: waveNow,
       mapId: (G.World.regionId && G.World.regionId()) || '',
-      diff: (G.Modes.is('siege') || (G.Coop && G.Coop.active)) ? '' : runDiff,
+      diff: (G.Modes.is('siege') || (G.Coop && G.Coop.active && !G.Modes.is('normal'))) ? '' : runDiff,
       win: G.Modes.is('siege') ? !!(siegeResult && siegeResult.win === (pl.uid || 'me')) : (G.Modes.is('castle') ? !!castleWon : !dead),
       group: !!(G.Coop && G.Coop.active)
     }) : null;
@@ -1124,7 +1125,7 @@ G.Game = (() => {
     G.EnemyMgr.update(dt, all);
     G.EnemyMgr.rebuildGrid();
     if (G.Siege && G.Siege.up) G.Siege.contain();
-    if (G.Enemy.setStriker) G.Enemy.setStriker(pl.uid || 'me');
+    if (G.Enemy.setStriker && !(G.Siege && G.Siege.up)) G.Enemy.setStriker(pl.uid || 'me');
     G.Combat.tick(dt, pl, time);
     G.Projectiles.update(dt, pl, G.EnemyMgr.all());
     G.Combat.resolve(dt, pl, time);

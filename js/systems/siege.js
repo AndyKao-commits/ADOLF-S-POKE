@@ -290,6 +290,16 @@ G.Siege = (() => {
     }
   }
 
+  /** El tramo recorrido este fotograma, no sólo el punto final: un disparo rápido no salta al rival. */
+  function shotDist2(p, x, y) {
+    const ax = p.px == null ? p.x : p.px, ay = p.py == null ? p.y : p.py;
+    const dx = p.x - ax, dy = p.y - ay, l2 = dx * dx + dy * dy;
+    let t = l2 ? ((x - ax) * dx + (y - ay) * dy) / l2 : 0;
+    if (t < 0) t = 0; else if (t > 1) t = 1;
+    const qx = ax + dx * t - x, qy = ay + dy * t - y;
+    return qx * qx + qy * qy;
+  }
+
   function strike(p) {
     if (!on || ended || !p || p.ghost || !p.friendly) return;
     if (!p.phits) p.phits = new Set();
@@ -298,7 +308,7 @@ G.Siege = (() => {
       if (c.uid === who || c.hp <= 0) continue;
       const key = 'sg' + c.uid;
       if (p.phits.has(key)) continue;
-      if (G.U.dist2(p.x, p.y, c.x, c.y) > (p.r + c.r) * (p.r + c.r)) continue;
+      if (shotDist2(p, c.x, c.y) > (p.r + c.r) * (p.r + c.r)) continue;
       p.phits.add(key);
       localHit(c, p.dmg, who);
     }
@@ -307,7 +317,7 @@ G.Siege = (() => {
       if (id === who) continue;
       const key = 'pl' + id;
       if (p.phits.has(key)) continue;
-      if (G.U.dist2(p.x, p.y, o.x, o.y) > (p.r + (o.r || 14)) * (p.r + (o.r || 14))) continue;
+      if (shotDist2(p, o.x, o.y) > (p.r + (o.r || 14)) * (p.r + (o.r || 14))) continue;
       p.phits.add(key);
       poke(id, p.dmg * 0.65, who);
     }
