@@ -6,6 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-24', title: ['Asedio', 'Siege'], chg: [
+    ['El asedio en sala es un duelo de 2. Chocar no hiere: sólo los ataques confirmados. Al caer, reapareces a los 5 s y no miras a un compañero.',
+     'A room siege is a 2-player duel. Bumping does not hurt: only confirmed attacks do. When you fall, you return in 5 s and do not watch a teammate.']
+  ] },
   { d: '2026-10-24', title: ['Asedio', 'Siege'], fix: [
     ['En el asedio un ataque no hiere a quien lo lanza, y sí al rival. Alrededor de cada castillo no hay cobertura. En el asedio no se abren grietas.',
      'In siege, an attack does not hurt the one who casts it, and it does hurt the rival. There is no cover around each castle. Siege does not open rifts.']

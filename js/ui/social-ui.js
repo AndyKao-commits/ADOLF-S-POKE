@@ -379,7 +379,7 @@
       normal: ['Cooperativo', 'Escalado automático según los jugadores', 'Grietas activadas', 'Jefes según la regla oficial'],
       shiny: ['Cooperativo', 'Sólo aparecen Pokémon shiny', 'Escalado automático según los jugadores', 'Grietas activadas'],
       boss: ['Cooperativo', 'Sólo aparecen jefes', 'Inicio en nivel 20', 'Grieta temprana para fusionar ataques'],
-      castle: ['Cooperativo', 'Defended el castillo durante 50 oleadas', 'Un jefe cada 10 oleadas', 'La plantilla fija el ritmo y la victoria'],
+      castle: ['Cooperativo', 'Defiende el castillo durante 50 oleadas', 'Un jefe cada 10 oleadas', 'La plantilla fija el ritmo y la victoria'],
       siege: ['1 contra 1 · exactamente 2 jugadores', 'Sólo los ataques hacen daño; los cuerpos no', 'Muerte con reaparición, sin rescate ni espectador', 'Jefe central activado · grietas desactivadas'],
       endless: ['Cooperativo sin límite de oleadas', 'La dificultad cambia por eventos y combinaciones', 'Récord por tiempo y oleada', 'Grietas desactivadas']
     };
@@ -388,7 +388,9 @@
       const id = G.Modes.idOf(opt.roomMode || 'normal');
       const rows = TEMPLATES[id] || TEMPLATES.normal;
       const fixed = id === 'siege';
-      const count = fixed ? '2 jugadores' : 'De 2 a ' + liveRules(opt).cap + ' jugadores';
+      const count = fixed
+        ? (G.I18n ? G.I18n.t('2 jugadores') : '2 jugadores')
+        : (G.I18n ? G.I18n.f('De 2 a {x} jugadores', liveRules(opt).cap) : ('De 2 a ' + liveRules(opt).cap + ' jugadores'));
       return `<section class="room-template ${fixed ? 'versus' : ''}">
         <div class="lobby-section-title"><b>Reglas de esta sala</b><span class="room-template-badge">${count}</span></div>
         <div class="room-rule-grid">${rows.map(x => `<div class="room-rule"><i>✓</i><span>${esc(x)}</span></div>`).join('')}</div>
