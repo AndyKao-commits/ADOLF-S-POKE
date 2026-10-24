@@ -7,8 +7,10 @@
  */
 G.CHANGELOG = [
   { d: '2026-10-25', title: ['Grupo', 'Group'], fix: [
-    ['En el grupo y en el asedio, Revivir y Revivir Máximo te levantan una vez al caer, igual que en solitario.',
-     'In a group and in siege, Revive and Max Revive get you up once when you fall, the same as in solo.']
+    ['En el grupo, Revivir y Revivir Máximo te levantan una vez al caer. En el asedio no.',
+     'In a group, Revive and Max Revive get you up once when you fall. In siege they do not.'],
+    ['Si alguien abre la tienda, la partida se para para todos: jugadores y monstruos.',
+     'If anyone opens the shop, the run pauses for everyone: players and monsters.']
   ] },
   { d: '2026-10-24', title: ['Asedio', 'Siege'], chg: [
     ['En el asedio eliges el ataque con 1–4 y lo lanzas con el ratón. No se dispara solo, y el cuerpo no hiere.',

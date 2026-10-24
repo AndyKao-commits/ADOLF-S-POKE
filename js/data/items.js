@@ -625,7 +625,7 @@ G.Items = (() => {
     return true;
   }
   function revive(p) {
-    if (!p) return false;
+    if (!p || (G.Modes && G.Modes.is('siege'))) return false;
     const c = p.reviveCharge;
     if (!c || c.used || !(c.hpRatio > 0)) return false;
     c.used = true;

@@ -294,7 +294,7 @@ G.Game = (() => {
       if (state === 'levelup') { state = holdBy.length ? 'held' : 'playing'; afterLevelUp(); }
     },
     /** ¿Estás eligiendo algo que para la partida (objeto o vínculo)? */
-    choosing() { return state === 'choice'; },
+    choosing() { return state === 'choice' || state === 'stall'; },
     /** A quién miras mientras estás caído (uid, o '' si a ti). */
     watching() { const w = watched(); return w ? w.uid : ''; },
     inLevelUp() { return state === 'levelup'; },
@@ -326,15 +326,19 @@ G.Game = (() => {
     },
     mateLeft() {},
     /** Grupo: quién está eligiendo fusión. Mientras haya alguien, todo parado. */
-    hold(names) {
+    hold(names, why) {
       holdBy = names || [];
-      const mine = G.UI.isOpen('scr-bond');
+      const mine = G.UI.isOpen('scr-bond') || state === 'stall';
       if (holdBy.length) {
         if (state === 'playing') state = 'held';
-        if (pl && pl.bonds > 0) offerBond(true);      // si tú también tienes vínculo, eliges a la vez
+        if (pl && pl.bonds > 0 && why !== 'shop') offerBond(true);
         const others = holdBy.filter(n => n !== (G.Social.me && G.Social.me.name) && n !== 'Tú');
-        if (!mine && others.length) G.Spawner.say('Pausa: ' + others.join(', ') + ' ' + (others.length > 1 ? 'están eligiendo…' : 'está eligiendo…'), 999, true);
-        else if (!others.length) G.Spawner.say(awayBy ? awayText() : '', awayBy ? 999 : 0, true);   // sólo tú: sin aviso viejo
+        if (!mine && others.length) {
+          const key = why === 'shop'
+            ? (others.length > 1 ? 'Pausa: {name} están en la tienda.' : 'Pausa: {name} está en la tienda.')
+            : (others.length > 1 ? 'Pausa: {name} están eligiendo…' : 'Pausa: {name} está eligiendo…');
+          G.Spawner.say(G.I18n.f(key, others.join(', ')), 999, true);
+        } else if (!others.length) G.Spawner.say(awayBy ? awayText() : '', awayBy ? 999 : 0, true);
       } else {
         if (state === 'held' && !awayBy) state = 'playing';
         G.Spawner.say(awayBy ? awayText() : '', awayBy ? 999 : 0, true);
@@ -887,13 +891,15 @@ G.Game = (() => {
     stallNote = '';
     state = 'stall';
     pl.frozen = true;
+    if (G.Coop.active && !(G.Siege && G.Siege.up)) G.Coop.holdStart('shop');
     paintStall();
     G.Audio.sfx('select');
   }
   function closeStall() {
     if (state !== 'stall') return;
-    state = 'playing';
-    if (pl) pl.frozen = false;
+    if (G.Coop.active && !(G.Siege && G.Siege.up)) G.Coop.holdEnd();
+    state = holdBy.length ? 'held' : 'playing';
+    if (pl) pl.frozen = state !== 'playing';
     stallShop = null;
     G.UI.hide('scr-stall');
   }

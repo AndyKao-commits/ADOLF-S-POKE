@@ -435,7 +435,7 @@ G.Coop = (() => {
           emit(['pb', ev[1], ev[2]], from);
           break;
         case 'lp': picked(from); break;
-        case 'hs': holdOn(from); break;
+        case 'hs': holdOn(from, ev[1]); break;
         case 'he': holdOff(from); break;
         case 'ou': {
           const x = +ev[2] || 0, y = +ev[3] || 0, z = +ev[4] || 1;
@@ -591,7 +591,7 @@ G.Coop = (() => {
       case 'lu': if (!(G.Siege && G.Siege.up) && (!ev[2] || ev[2] > seenSeq)) { seenSeq = ev[2] || seenSeq; api.levelStart(ev[1]); } break;
       case 'lw': api.waiting(ev[1]); break;
       case 'lr': api.resume(); break;
-      case 'hp': lastHo = (ev[1] || []).join('|'); api.hold && api.hold(ev[1]); break;
+      case 'hp': lastHo = (ev[1] || []).join('|'); api.hold && api.hold(ev[1], ev[2] || ''); break;
       case 'ha': hostAway = !!ev[1]; updateAway(); break;
       case 'sh': api.shiny(ev[1]); break;
       case 'ov': { const cb = api.over; const d = ev[1]; end(); cb(d); break; }
@@ -722,10 +722,10 @@ G.Coop = (() => {
   function holdNames() { return [...holds].map(nameOf); }
 
   /** Anfitrión: `u` empieza a elegir. */
-  function holdOn(u) {
+  function holdOn(u, why) {
     holds.add(u);
-    emit(['hp', holdNames()]); flushAll();
-    api.hold && api.hold(holdNames());
+    emit(['hp', holdNames(), why || '']); flushAll();
+    api.hold && api.hold(holdNames(), why || '');
   }
 
   /** Anfitrión: `u` ha terminado (o se ha ido). */
@@ -736,7 +736,7 @@ G.Coop = (() => {
   }
 
   /** Tú empiezas / terminas de elegir fusión. */
-  function holdStart() { if (host) holdOn(me); else { outEv.push(['hs']); flushClient(true); } }
+  function holdStart(why) { if (host) holdOn(me, why); else { outEv.push(['hs', why || '']); flushClient(true); } }
   function holdEnd() { if (host) holdOff(me); else { outEv.push(['he']); flushClient(true); } }
 
   /** Has elegido tu carta. */

@@ -1434,4 +1434,8 @@ G.I18n.add({
   "En el asedio, Giro Fuego daña donde lo apuntas. Las tropas caen con los ataques, y un castillo aguanta unos 3 minutos.": "攻城戰的火焰旋渦會打中你瞄準的地方。小怪會被攻擊打倒，城堡大約 3 分鐘會被攻下。",
   "En el ordenador el asedio se lanza con el ratón aunque la pantalla también sea táctil.": "電腦即使有觸控螢幕，攻城戰仍用滑鼠施放。",
   "En el grupo y en el asedio, Revivir y Revivir Máximo te levantan una vez al caer, igual que en solitario.": "多人房間和攻城戰裡，復活草和活力塊會在倒下時把你拉起來一次，跟單人一樣。",
+  "En el grupo, Revivir y Revivir Máximo te levantan una vez al caer. En el asedio no.": "多人房間裡，復活草和活力塊會在倒下時把你拉起來一次。攻城戰不會。",
+  "Si alguien abre la tienda, la partida se para para todos: jugadores y monstruos.": "有人打開商店時，所有人和怪物都會停住。",
+  "Pausa: {name} está en la tienda.": "暫停：{name} 正在商店。",
+  "Pausa: {name} están en la tienda.": "暫停：{name} 正在商店。",
 }, 'zh-Hant');
