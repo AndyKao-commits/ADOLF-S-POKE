@@ -457,15 +457,19 @@ G.Coop = (() => {
           if (G.Siege && G.Siege.up) G.Siege.applyHit(ev[1], ev[2], ev[3] || from);
           break;
         case 'ph':
+          if (ev[3] && ev[3] === ev[1]) break;
           if (ev[1] === me) {
             if (local && !local.dead) {
+              local._hitBy = ev[3] || from;
               local.hurt(Math.max(1, Math.min(160, +ev[2] || 1)));
-              if (local.dead && G.Siege && G.Siege.up) G.Siege.playerDown(ev[3] || from, me);
             }
           } else emit(['ph', ev[1], ev[2], ev[3] || from], from);
           break;
         case 'pk':
-          if (G.Siege && G.Siege.up) G.Siege.playerDown(ev[1], ev[2] || from);
+          if (G.Siege && G.Siege.up) G.Siege.payDeath(ev[2] || from, ev[1]);
+          break;
+        case 'pd':
+          if (G.Siege && G.Siege.up) G.Siege.payDeath(ev[1], ev[2] || '');
           break;
       }
     }
@@ -585,9 +589,10 @@ G.Coop = (() => {
       case 'sh': api.shiny(ev[1]); break;
       case 'ov': { const cb = api.over; const d = ev[1]; end(); cb(d); break; }
       case 'ph':
+        if (ev[3] && ev[3] === ev[1]) break;
         if (ev[1] === me && local && !local.dead) {
+          local._hitBy = ev[3] || '';
           local.hurt(Math.max(1, Math.min(160, +ev[2] || 1)));
-          if (local.dead && G.Siege && G.Siege.up) G.Siege.playerDown(ev[3], me);
         }
         break;
       case 'rw':

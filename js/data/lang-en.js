@@ -395,10 +395,10 @@ G.I18n.add({
   '· La tirada ×10 garantiza al menos una Épica.': '· The ×10 pull guarantees at least one Epic.',
   '· Los repetidos dan Pokémonedas. Los shiny no se repiten.': '· Duplicates give PokéCoins. Shinies never repeat.',
   '· Los tickets se consiguen jugando: algunos Pokémon los sueltan al caer, y los jefes y los legendarios de las grietas, a veces, tickets ×10.': '· Tickets are earned by playing: some Pokémon drop them when defeated, and bosses and rift legendaries sometimes give ×10 tickets.',
-  'Tirar ×1 ·': 'Pull ×1 ·', 'Tirar ×10 ·': 'Pull ×10 ·', 'tickets ×10': '×10 tickets', 'tickets y {x}': 'tickets and {x}',
+  'Tirar ×1 ·': 'Pull ×1 ·', 'Tirar ×10 ·': 'Pull ×10 ·', 'Tirar ×100 ·': 'Pull ×100 ·', 'tickets ×10': '×10 tickets', 'tickets y {x}': 'tickets and {x}',
   'No tienes tickets suficientes: consíguelos jugando': 'Not enough tickets: earn them by playing', '¡NUEVO!': 'NEW!', '¡SHINY NUEVO!': 'NEW SHINY!',
   'Repetido ·': 'Duplicate ·', '· {x} {x} shiny': '· {x} {x} shiny', '{x} Shiny': '{x} Shiny', 'Clic para acelerar': 'Click to speed up',
-  'TIRADA': 'PULL', 'TIRADA ×10': 'PULL ×10', '¡SUERTE!': 'GOOD LUCK!', '¡¿SHINY?!': 'SHINY?!', '¡¿LEGENDARIO?!': 'LEGENDARY?!', '¡¿ÉPICO?!': 'EPIC?!', 'SHINY ·': 'SHINY ·',
+  'TIRADA': 'PULL', 'TIRADA ×10': 'PULL ×10', 'TIRADA ×100': 'PULL ×100', '×100 · {x}/10': '×100 · {x}/10', '¡SUERTE!': 'GOOD LUCK!', '¡¿SHINY?!': 'SHINY?!', '¡¿LEGENDARIO?!': 'LEGENDARY?!', '¡¿ÉPICO?!': 'EPIC?!', 'SHINY ·': 'SHINY ·',
   // mejoras
   'Pokémon': 'Pokémon',
 
@@ -1183,4 +1183,6 @@ G.I18n.add({
   "Compra hecha.": "Purchase complete.",
   "Llevas x{x} · tope x{x}": "Held x{x} · cap x{x}",
   "El marcador enseña el modo, el mapa, la dificultad, el daño y los caramelos. El récord de un jugador, el de un grupo y el del asedio se guardan aparte. La tienda no cobra si faltan caramelos o el objeto está al tope.": "The results show the mode, map, difficulty, damage and candy. Solo, group and siege records are kept apart. The shop does not charge when candy is short or the item is at its cap.",
+  "La cuadrícula del mapa se puede bajar cuando no cabe. El botón de tirar ×100 sale en el idioma del juego.": "The map grid can scroll when it does not fit. The ×100 pull button uses the game language.",
+  "En el asedio un ataque no hiere a quien lo lanza, y sí al rival. Alrededor de cada castillo no hay cobertura. En el asedio no se abren grietas.": "In siege, an attack does not hurt the one who casts it, and it does hurt the rival. There is no cover around each castle. Siege does not open rifts.",
 });

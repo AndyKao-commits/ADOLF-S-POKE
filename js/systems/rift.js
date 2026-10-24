@@ -53,7 +53,7 @@ G.Rift = (() => {
   // ---------------- grieta en el mapa ----------------
 
   function update(dt, pl, time) {
-    if (G.Modes && G.Modes.is('castle')) return;
+    if (G.Modes && (G.Modes.is('castle') || G.Modes.is('siege'))) return;
     const siege = G.Modes && G.Modes.is('siege');
     if (rift) {
       rift.t += dt;
@@ -75,18 +75,9 @@ G.Rift = (() => {
   }
 
   function open() {
+    if (G.Modes && G.Modes.is('siege')) return;
     const alive = G.Game.everyone().filter(p => !p.dead);
     const near = G.U.pick(alive.length ? alive : [G.Game.player]);
-    // En el asedio el suelo del mapa no está libre: la grieta sale junto al jugador, dentro del campo.
-    if (G.Modes && G.Modes.is('siege')) {
-      const a = Math.random() * 6.2832, d = G.U.rand(160, 200);
-      const x = G.U.clamp(near.x + Math.cos(a) * d, -700, 700);
-      const y = G.U.clamp(near.y + Math.sin(a) * d, -700, 700);
-      show(x, y, TTL);
-      firstSure = false;
-      if (G.Coop.isHost) G.Coop.broadcast(['rift', Math.round(x), Math.round(y), TTL]);
-      return;
-    }
     for (let i = 0; i < 24; i++) {
       const a = Math.random() * 6.2832, d = G.U.rand(380, 560);
       const x = near.x + Math.cos(a) * d, y = near.y + Math.sin(a) * d * 0.85;
@@ -293,6 +284,7 @@ G.Rift = (() => {
   // ---------------- red ----------------
 
   function onEvent(ev) {
+    if (G.Modes && G.Modes.is('siege')) return;
     switch (ev[0]) {
       case 'rift': show(ev[1], ev[2], ev[3]); break;
       case 'riftx': rift = null; break;
@@ -303,7 +295,7 @@ G.Rift = (() => {
   }
 
   return {
-    reset, update, drawable, onEvent, leftBehind, enterRequest() { if (!arena) start(); },
+    reset, update, drawable, onEvent, leftBehind, enterRequest() { if (G.Modes && G.Modes.is('siege')) return; if (!arena) start(); },
     get rift() { return rift; }, get arena() { return arena; },
     get inArena() { return !!arena; },
     get timeLeft() { return arena ? Math.max(0, ARENA_TIME - arena.t) : 0; },

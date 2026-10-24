@@ -42,7 +42,8 @@ G.Siege = (() => {
   }
 
   function begin(members) {
-    on = true; ended = false; respawnT = 0; bumpT = 0;
+    on = true; ended = false; respawnT = 0; bumpT = 0; rejected = 0;
+    for (const k in paidDeath) delete paidDeath[k];
     resetBoss();
     for (const k in pk) delete pk[k];
     let people;
@@ -65,6 +66,9 @@ G.Siege = (() => {
     const mine = castles.find(c => c.uid === meId()) || castles[0];
     const pl = G.Game.player;
     if (pl && mine) placeAt(pl, mine);
+    if (G.World && G.World.clearCover) {
+      for (const c of castles) G.World.clearCover(c.x, c.y, 220);
+    }
     if (G.Coop.active) {
       for (const c of castles) {
         if (c.uid === meId()) continue;
@@ -86,7 +90,8 @@ G.Siege = (() => {
   }
 
   function end() {
-    on = false; castles = []; ended = false;
+    on = false; castles = []; ended = false; rejected = 0;
+    for (const k in paidDeath) delete paidDeath[k];
     resetBoss();
   }
 
@@ -177,11 +182,11 @@ G.Siege = (() => {
     if (c.hp <= 0) fall(c);
   }
 
-  function localHit(c, dmg) {
-    const who = meId();
-    if (c.uid === who) return;
-    if (!G.Coop.active || G.Coop.isHost) applyHit(c.uid, dmg, who);
-    else G.Coop.toHost(['sg', c.uid, clampDmg(dmg), who]);
+  function localHit(c, dmg, attacker) {
+    const who = attacker || meId();
+    if (!c || c.uid === who) return;
+    if (!authority()) G.Coop.toHost(['sg', c.uid, clampDmg(dmg), who]);
+    else applyHit(c.uid, dmg, who);
   }
 
   function mineUp() {
@@ -189,71 +194,144 @@ G.Siege = (() => {
     return !!(mine && mine.hp > 0);
   }
 
-  /** Otros jugadores que aún pueden recibir golpes. */
-  function foePlayers() {
-    if (!on || ended || !G.Coop.active || !mineUp()) return [];
+  function ownerId(who) {
+    if (!who) return meId();
+    if (typeof who === 'string') return who;
+    return who.uid || who.ownerId || 'me';
+  }
+
+  function people() {
     const out = [];
-    for (const o of G.Coop.puppets()) {
+    const pl = G.Game && G.Game.player;
+    if (pl) out.push(pl);
+    if (G.Coop.puppets) for (const o of G.Coop.puppets()) if (o) out.push(o);
+    return out;
+  }
+
+  /** Otros jugadores que aún pueden recibir los golpes de `who`. Nunca incluye a quien lanza. */
+  function foePlayers(who) {
+    if (!on || ended) return [];
+    const uid = ownerId(who);
+    const atk = castles.find(c => c.uid === uid);
+    if (atk && atk.hp <= 0) return [];
+    const out = [];
+    for (const o of people()) {
       if (!o || o.dead) continue;
-      const c = castles.find(x => x.uid === o.uid);
+      const id = o.uid || 'me';
+      if (id === uid) continue;
+      const c = castles.find(x => x.uid === id);
       if (c && c.hp <= 0) continue;
+      if ((o.spawnGuard || 0) > 0 || (o.reviveSafe || 0) > 0) continue;
       out.push(o);
     }
     return out;
   }
 
-  /** Blancos de mira: misma forma que un enemigo, para el apuntado y los teledirigidos. */
-  function marks() {
-    return foePlayers().map(o => ({
-      x: o.x, y: o.y, r: o.r || 14, dead: false, id: 'pl:' + o.uid, uid: o.uid, _pl: true,
+  function asMark(o) {
+    const id = o.uid || 'me';
+    return {
+      x: o.x, y: o.y, r: o.r || 14, dead: false, id: 'pl:' + id, uid: id, _pl: true,
       bodyH: o.bodyH || 28,
       cy() { return this.y; }
-    }));
+    };
   }
 
-  function poke(uid, dmg) {
-    if (!G.Coop.active || uid === meId() || !mineUp()) return;
+  /** Blancos de mira de este lanzador: el rival, nunca él mismo. */
+  function marks(who) {
+    return foePlayers(who).map(asMark);
+  }
+
+  let rejected = 0;
+  const paidDeath = {};
+
+  function poke(uid, dmg, attacker) {
+    attacker = attacker || meId();
+    if (!on || !uid || attacker === uid) { if (attacker === uid) rejected++; return; }
+    const atk = castles.find(c => c.uid === attacker);
+    if (atk && atk.hp <= 0) return;
+    const vic = castles.find(c => c.uid === uid);
+    if (vic && vic.hp <= 0) return;
     dmg = Math.max(1, Math.min(PLAYER_CAP, Math.round(+dmg || 0)));
-    const ev = ['ph', uid, dmg, meId()];
+    const body = people().find(o => (o.uid || 'me') === uid);
+    if (!body || body.dead) return;
+    if ((body.spawnGuard || 0) > 0 || (body.reviveSafe || 0) > 0) return;
+    // El daño lo aplica quien lo recibe. El anfitrión, si el blanco es otro, sólo avisa.
+    if (!G.Coop.active || uid === meId()) {
+      body._hitBy = attacker;
+      if (body.hurt) body.hurt(dmg);
+      return;
+    }
+    const ev = ['ph', uid, dmg, attacker];
     if (G.Coop.isHost) G.Coop.broadcast(ev);
-    else G.Coop.toHost(ev);
+    else if (attacker === meId()) G.Coop.toHost(ev);
   }
 
-  /** Daña a los jugadores que cumplan pred. dmg ya viene rebajado. */
-  function strikePlayers(pred, dmg) {
+  /** Daña a los rivales de `who` que cumplan pred. Nunca al lanzador. */
+  function strikePlayers(pred, dmg, who) {
     if (!on || ended || !pred) return;
-    for (const o of foePlayers()) if (pred(o)) poke(o.uid, dmg);
+    const uid = ownerId(who);
+    for (const o of foePlayers(who)) {
+      if ((o.uid || 'me') === uid) continue;
+      if (pred(o)) poke(o.uid || 'me', dmg, uid);
+    }
   }
 
   function smack(pl, reach, dmg) {
     if (!on || ended || !pl || pl.dead) return;
-    const who = meId();
+    const who = ownerId(pl);
     for (const c of castles) {
       if (c.uid === who || c.hp <= 0) continue;
       if (G.U.dist2(pl.x, pl.y, c.x, c.y) > (reach + c.r) * (reach + c.r)) continue;
-      localHit(c, dmg);
+      localHit(c, dmg, who);
     }
   }
 
   function strike(p) {
     if (!on || ended || !p || p.ghost || !p.friendly) return;
     if (!p.phits) p.phits = new Set();
-    const who = meId();
+    const who = p.owner ? ownerId(p.owner) : (p.ownerId || meId());
     for (const c of castles) {
       if (c.uid === who || c.hp <= 0) continue;
       const key = 'sg' + c.uid;
       if (p.phits.has(key)) continue;
       if (G.U.dist2(p.x, p.y, c.x, c.y) > (p.r + c.r) * (p.r + c.r)) continue;
       p.phits.add(key);
-      localHit(c, p.dmg);
+      localHit(c, p.dmg, who);
     }
-    for (const o of foePlayers()) {
-      const key = 'pl' + o.uid;
+    for (const o of foePlayers(who)) {
+      const id = o.uid || 'me';
+      if (id === who) continue;
+      const key = 'pl' + id;
       if (p.phits.has(key)) continue;
       if (G.U.dist2(p.x, p.y, o.x, o.y) > (p.r + (o.r || 14)) * (p.r + (o.r || 14))) continue;
       p.phits.add(key);
-      poke(o.uid, p.dmg * 0.65);
+      poke(id, p.dmg * 0.65, who);
     }
+  }
+
+  /**
+   * A quién mira este jugador. Primero el rival, luego su castillo, sus monstruos
+   * de avance, el jefe del centro y el resto. Nunca a sí mismo.
+   */
+  function pickAim(who, x, y, range) {
+    const r2 = range * range;
+    let best = null, bd = r2;
+    for (const o of foePlayers(who)) {
+      const d = G.U.dist2(x, y, o.x, o.y);
+      if (d < bd) { bd = d; best = o; }
+    }
+    if (best) return asMark(best);
+    const castle = target(x, y, range, who);
+    if (castle) return castle;
+    let push = null, boss = null, norm = null, pd = r2, bd2 = r2, nd = r2;
+    for (const e of G.EnemyMgr.all()) {
+      if (!e || e.dead || ally(e, who)) continue;
+      const d = G.U.dist2(x, y, e.x, e.y);
+      if (e.siegePush && d < pd) { pd = d; push = e; }
+      else if (e.siegeBoss && d < bd2) { bd2 = d; boss = e; }
+      else if (!e.siegeBoss && !e.siegePush && d < nd) { nd = d; norm = e; }
+    }
+    return push || boss || norm || null;
   }
 
   function grant(uid, xp, coins) {
@@ -349,6 +427,31 @@ G.Siege = (() => {
       bossNextAt = bossTime + cfg.respawnDelay;
       bossWarned = false;
     }
+  }
+
+  /** Cualquier muerte en un 1 contra 1: el único rival se lleva la experiencia, una vez. */
+  function noteDeath(victim) {
+    if (!on || !victim || victim.remote || victim._siegeXp) return;
+    const id = victim.uid || 'me';
+    const attacker = victim._hitBy || '';
+    victim._hitBy = '';
+    if (attacker === id) { rejected++; return; }
+    victim._siegeXp = true;
+    if (!authority()) { G.Coop.toHost(['pd', id, attacker]); return; }
+    payDeath(id, attacker);
+  }
+
+  function payDeath(victim, attacker) {
+    if (!on || !victim || paidDeath[victim] || attacker === victim) {
+      if (attacker === victim) rejected++;
+      return;
+    }
+    paidDeath[victim] = true;
+    const human = castles.some(c => c.uid === attacker);
+    if (human) { playerDown(attacker, victim); return; }
+    if (castles.filter(c => c.uid !== 'rival').length !== 2) return;
+    const opp = castles.find(c => c.uid !== 'rival' && c.uid !== victim);
+    if (opp) grant(opp.uid, 48, 0);
   }
 
   /** Matar a un jugador: experiencia, y un golpe a su castillo. Menos si es siempre el mismo. */
@@ -488,7 +591,7 @@ G.Siege = (() => {
     if (G.Coop.puppets) for (const o of G.Coop.puppets()) if (o) list.push(o);
     for (const p of list) {
       const id = p.uid || 'me';
-      if (sawDead[id] && !p.dead) p.spawnGuard = 2;
+      if (sawDead[id] && !p.dead) { p.spawnGuard = 2; delete paidDeath[id]; p._siegeXp = false; }
       sawDead[id] = !!p.dead;
       if (p.spawnGuard > 0) p.spawnGuard -= dt;
     }
@@ -611,9 +714,9 @@ G.Siege = (() => {
     return rows;
   }
 
-  function target(x, y, range) {
+  function target(x, y, range, who) {
     if (!on || ended) return null;
-    const who = meId();
+    who = ownerId(who);
     let best = null, bd = range * range;
     for (const c of castles) {
       if (c.uid === who || c.hp <= 0) continue;
@@ -697,8 +800,8 @@ G.Siege = (() => {
   }
 
   return {
-    begin, end, clamp, contain, smack, strike, strikePlayers, marks, tick, net, snapshot, target, aimFor, drawBorder, drawables, applyHit,
-    onCreepDown, onBossDown, noteBoss, playerDown, ally, knockOut,
+    begin, end, clamp, contain, smack, strike, strikePlayers, marks, pickAim, tick, net, snapshot, target, aimFor, drawBorder, drawables, applyHit,
+    onCreepDown, onBossDown, noteBoss, noteDeath, payDeath, playerDown, ally, knockOut,
     get up() { return on; },
     get half() { return HALF; },
     bossSoon() { return bossWarn > 0 ? bossWarn : 0; },

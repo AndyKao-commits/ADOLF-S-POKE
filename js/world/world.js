@@ -72,9 +72,11 @@ G.World = (() => {
            (arena.th.clear > 0 && Math.hypot(lx, ly + 5) < arena.th.clear);
   }
 
+  function arenaOuter() { return arena ? arena.r + 7 : 0; }
+
   function terrainRaw(tx, ty) {
     const ad = arenaDist(tx, ty);
-    if (ad < arena_outer()) {
+    if (ad < arenaOuter()) {
       if (ad >= arena.r) return WALL;
       if (arenaSafe(tx, ty)) return FLOOR;
       const th = arena.th;
@@ -103,7 +105,8 @@ G.World = (() => {
           props: [], propAt: new Map(), liquids: [] };
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
       const tx = cx * N + i, ty = cy * N + j;
-      const t = terrainRaw(tx, ty);
+      const t0 = terrainRaw(tx, ty);
+      const t = t0 === WALL && inHole(tx, ty) ? FLOOR : t0;
       c.terr[j * N + i] = t;
       if (t === LIQUID) c.liquids.push(tx, ty);
     }
@@ -119,7 +122,41 @@ G.World = (() => {
     return c.terr[(ty - cy * N) * N + (tx - cx * N)];
   }
 
-  const arena_outer = () => (arena ? arena.r + 7 : 0);
+  let coverHoles = [];
+  function inHole(tx, ty) {
+    if (!coverHoles.length) return false;
+    const px = tx * TS + TS / 2, py = ty * TS + TS / 2;
+    for (const h of coverHoles) {
+      const dx = px - h.x, dy = py - h.y;
+      if (dx * dx + dy * dy <= h.r * h.r) return true;
+    }
+    return false;
+  }
+
+  function clearCover(x, y, r) {
+    coverHoles.push({ x, y, r });
+    const minTx = Math.floor((x - r) / TS) - 1, maxTx = Math.ceil((x + r) / TS) + 1;
+    const minTy = Math.floor((y - r) / TS) - 1, maxTy = Math.ceil((y + r) / TS) + 1;
+    const touched = new Set();
+    for (let ty = minTy; ty <= maxTy; ty++) for (let tx = minTx; tx <= maxTx; tx++) {
+      if (!inHole(tx, ty)) continue;
+      const cx = Math.floor(tx / N), cy = Math.floor(ty / N);
+      const c = chunkData(cx, cy);
+      const i = (ty - cy * N) * N + (tx - cx * N);
+      if (c.terr[i] === WALL) c.terr[i] = FLOOR;
+      touched.add(cx + ',' + cy);
+    }
+    for (const key of touched) {
+      const c = data.get(key);
+      if (!c) continue;
+      c.props = c.props.filter(p => {
+        if (!p.solid || !inHole(p.tx, p.ty)) return true;
+        c.propAt.delete(p.tx + ',' + p.ty);
+        return false;
+      });
+      images.delete(key);
+    }
+  }
 
   function placeProps(c) {
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
@@ -135,7 +172,7 @@ G.World = (() => {
 
       // Dentro de la arena: la decoración de su tipo (y nada en el pasillo).
       const ad = arenaDist(tx, ty);
-      if (ad < arena_outer() + 2) {
+      if (ad < arenaOuter() + 2) {
         if (!arena || ad >= arena.r - 1.2 || arenaSafe(tx, ty)) continue;
         const pr = arena.th.props, hh = H(tx, ty, seed + 777);
         let at = null;
@@ -162,6 +199,7 @@ G.World = (() => {
       else if (open && h > 0.985 && h <= 0.992 && H(tx, ty, seed + 606) < 0.07) type = 'chest';
       else if (fbm(tx / 5, ty / 5, seed + 707) > 0.66 && H(tx, ty, seed + 808) < 0.75) type = 'grass';
       if (!type) continue;
+      if (inHole(tx, ty) && type !== 'grass' && type !== 'spring') continue;
 
       const p = makeProp(type, tx, ty, kind);
       c.props.push(p);
@@ -558,7 +596,7 @@ G.World = (() => {
   function reset(s, regionId = null) {
     region = G.Regions.get(regionId);
     seed = (s | 0) || 1;
-    data.clear(); images.clear(); broken.clear();
+    data.clear(); images.clear(); broken.clear(); coverHoles = [];
     fade = null; arena = null;
     placeShops();
   }
@@ -652,7 +690,7 @@ G.World = (() => {
     runBiome(step) { return region ? region.biome : ((step % G.Regions.originalCount) + G.Regions.originalCount) % G.Regions.originalCount; },
     regionId() { return region ? region.id : ''; }, liquidKind, liquidEffect, walkable,
     kindAt, isWall, isLiquid, isFree, collide, projectileBlock, propsInCircle, nearestBreakable,
-    damageProp, breakAt, specialsNear, update,
+    damageProp, breakAt, clearCover, specialsNear, update,
     breakProp(p) { if (!broken.has(p.tx + ',' + p.ty)) destroyProp(p); },
     /** Arena de la grieta: { tx, ty, r } (en tiles) o null. */
     setArena(a) {

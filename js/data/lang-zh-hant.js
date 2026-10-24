@@ -435,6 +435,7 @@ G.I18n.add({
   "· Los tickets se consiguen jugando: algunos Pokémon los sueltan al caer, y los jefes y los legendarios de las grietas, a veces, tickets ×10.": "· 遊玩即可獲得抽獎券：部分寶可夢被擊敗時會掉落，首領與裂縫中的傳說寶可夢有時會掉落十連抽獎券。",
   "Tirar ×1 ·": "抽 1 次 ·",
   "Tirar ×10 ·": "抽 10 次 ·",
+  "Tirar ×100 ·": "抽 100 次 ·",
   "tickets ×10": "十連抽獎券",
   "tickets y {x}": "張抽獎券，以及 {x}",
   "No tienes tickets suficientes: consíguelos jugando": "抽獎券不足，請透過遊戲獲得",
@@ -446,6 +447,8 @@ G.I18n.add({
   "Clic para acelerar": "點擊加速",
   "TIRADA": "抽獎",
   "TIRADA ×10": "十連抽",
+  "TIRADA ×100": "百連抽",
+  "×100 · {x}/10": "百連 · {x}/10",
   "¡SUERTE!": "祝你好運！",
   "¡¿SHINY?!": "竟然是異色？！",
   "¡¿LEGENDARIO?!": "竟然是傳說？！",
@@ -1386,4 +1389,6 @@ G.I18n.add({
   "Compra hecha.": "購買成功。",
   "Llevas x{x} · tope x{x}": "持有 x{x} · 上限 x{x}",
   "El marcador enseña el modo, el mapa, la dificultad, el daño y los caramelos. El récord de un jugador, el de un grupo y el del asedio se guardan aparte. La tienda no cobra si faltan caramelos o el objeto está al tope.": "結算會顯示模式、地圖、難度、傷害和糖果。單人、合作和攻防戰的紀錄分開保存。糖果不夠或道具已到上限時，商店不會扣糖果。",
+  "La cuadrícula del mapa se puede bajar cuando no cabe. El botón de tirar ×100 sale en el idioma del juego.": "地圖宮格放不下時可以往下捲。百連抽按鈕會跟著遊戲語言顯示。",
+  "En el asedio un ataque no hiere a quien lo lanza, y sí al rival. Alrededor de cada castillo no hay cobertura. En el asedio no se abren grietas.": "攻城戰的技能不會打到自己，只會打到對手。每座主堡周圍沒有掩體。攻城戰不會開裂縫。",
 }, 'zh-Hant');

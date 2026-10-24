@@ -426,13 +426,22 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
 .menu-dock .mi-ico { grid-row: auto; height: 22px; }
 .menu-dock .menu-item { min-height: 52px; }
 .menu-dock .menu-item.alert { box-shadow: inset 0 0 0 2px var(--gold); }
-.setup-pop {
+#scr-menu .setup-pop {
+  display: flex;
+  flex-direction: column;
   position: fixed; z-index: 40;
   top: max(64px, 8dvh); left: 0; right: 0;
   width: min(100% - 24px, 960px);
   margin-inline: auto;
-  max-height: calc(100dvh - 88px); overflow: auto;
+  max-height: calc(100dvh - 88px);
+  overflow: hidden;
   padding: 10px;
+}
+#setup-pop-body {
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 .menu-shell {
   width: min(100% - 24px, 960px);

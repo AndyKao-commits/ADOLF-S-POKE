@@ -25,6 +25,14 @@ G.Projectiles = (() => {
       orb: false, rehit: 0.34, hitLog: null, phits: null
     }, o);
     if (p.friendly && !p.orb && !p.phits) p.phits = new Set();
+    if (p.friendly && p.owner) {
+      p.ownerId = p.owner.uid || 'me';
+      p.ownerTeamId = p.ownerId;
+      p.sourceType = p.sourceType || 'player_skill';
+      p.skillId = p.skillId || (p.src && p.src.id) || '';
+      p.castId = p.castId || (p.src && p.src._castId) || '';
+      p.createdAt = p.createdAt || performance.now();
+    }
     list.push(p);
     return p;
   }
@@ -70,9 +78,13 @@ G.Projectiles = (() => {
 
       // Teledirigido: curva la velocidad hacia el enemigo más cercano.
       if (p.homing > 0 && p.friendly) {
-        let pool = (G.Siege && G.Siege.ally && p.owner) ? enemies.filter(e => !G.Siege.ally(e, p.owner)) : enemies;
-        if (G.Siege && G.Siege.up && G.Siege.marks) pool = pool.concat(G.Siege.marks());
-        const tg = nearest(pool, p.x, p.y, 340);
+        let tg = null;
+        if (G.Siege && G.Siege.up && G.Siege.pickAim && p.owner) tg = G.Siege.pickAim(p.owner, p.x, p.y, 340);
+        if (!tg) {
+          let pool = (G.Siege && G.Siege.ally && p.owner) ? enemies.filter(e => !G.Siege.ally(e, p.owner)) : enemies;
+          if (G.Siege && G.Siege.up && G.Siege.marks && p.owner) pool = pool.concat(G.Siege.marks(p.owner));
+          tg = nearest(pool, p.x, p.y, 340);
+        }
         if (tg) {
           const [dx, dy] = G.U.norm(tg.x - p.x, tg.cy() - p.y);
           const sp = Math.hypot(p.vx, p.vy);

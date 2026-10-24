@@ -54,7 +54,7 @@ G.Slots = (() => {
     try {
       for (let i = 0; i < results.length && !skip; i++) {
         const r = results[i];
-        if (ten) st.led = (total === 100 ? '×100 · ' : 'TIRADA ') + (i + 1) + '/10';
+        if (ten) st.led = total === 100 ? G.I18n.f('×100 · {x}/10', i + 1) : ('TIRADA ' + (i + 1) + '/10');
         // Palanca.
         G.Audio.sfx('ball');
         await tween(v => { if (st) st.lever = v; }, 0, 1, ten ? 0.12 : 0.22);

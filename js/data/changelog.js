@@ -6,6 +6,14 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-24', title: ['Asedio', 'Siege'], fix: [
+    ['En el asedio un ataque no hiere a quien lo lanza, y sí al rival. Alrededor de cada castillo no hay cobertura. En el asedio no se abren grietas.',
+     'In siege, an attack does not hurt the one who casts it, and it does hurt the rival. There is no cover around each castle. Siege does not open rifts.']
+  ] },
+  { d: '2026-10-24', title: ['Mapa y gacha', 'Map and gacha'], fix: [
+    ['La cuadrícula del mapa se puede bajar cuando no cabe. El botón de tirar ×100 sale en el idioma del juego.',
+     'The map grid can scroll when it does not fit. The ×100 pull button uses the game language.']
+  ] },
   { d: '2026-10-24', title: ['Marcador', 'Results'], chg: [
     ['El marcador enseña el modo, el mapa, la dificultad, el daño y los caramelos. El récord de un jugador, el de un grupo y el del asedio se guardan aparte. La tienda no cobra si faltan caramelos o el objeto está al tope.',
      'The results show the mode, map, difficulty, damage and candy. Solo, group and siege records are kept apart. The shop does not charge when candy is short or the item is at its cap.']

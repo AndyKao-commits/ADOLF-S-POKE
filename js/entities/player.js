@@ -382,6 +382,7 @@ G.Player = class Player {
       this.anim.play('Faint', { hold: true });
       G.Projectiles.clearOrbs(this);
       this.reviveT = 0;
+      if (!this.remote && G.Siege && G.Siege.noteDeath) G.Siege.noteDeath(this);
     }
   }
 
@@ -546,11 +547,10 @@ G.Player = class Player {
             || G.Projectiles.nearest(foes, this.x, this.y, 520)
             || G.World.nearestBreakable(this.x, this.y, 200);
     // Asedio: jugadores y monstruos enemigos a tiro; si no hay, el castillo.
-    const siegePool = (G.Siege && G.Siege.up && G.Siege.marks) ? foes.concat(G.Siege.marks()) : foes;
-    if (G.Siege && G.Siege.up) {
-      const near = G.Projectiles.nearest(siegePool, this.x, this.y, 720);
-      const castle = G.Siege.target(this.x, this.y, 980);
-      if (near || castle) tg = near || castle;
+    const siegePool = (G.Siege && G.Siege.up && G.Siege.marks) ? foes.concat(G.Siege.marks(this)) : foes;
+    if (G.Siege && G.Siege.up && G.Siege.pickAim) {
+      const aim = G.Siege.pickAim(this, this.x, this.y, 720);
+      if (aim) tg = aim;
     }
     // Apuntar a mano (Ajustes > Accesibilidad): hacia el ratón o el stick derecho.
     // El blanco (para la cadena) es el enemigo que hay en esa dirección; si no
@@ -605,6 +605,8 @@ G.Player = class Player {
   /** Vuelve a levantarse (lo revive un compañero en cooperativo). */
   revive(frac = 0.5) {
     this.dead = false;
+    this._siegeXp = false;
+    this._hitBy = '';
     this.hp = Math.max(1, this.maxHp * frac);
     this.invuln = 2;
     this.reviveSafe = 2;
