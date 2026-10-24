@@ -132,6 +132,14 @@ G.Touch = (() => {
   /** El HUD vacía y vuelve a registrar sus botones cada fotograma. */
   function clearButtons() { buttons = []; }
   function addButton(x, y, w, h, fn, pad = 6) { buttons.push({ x, y, w, h, fn, pad }); }
+  /** Un toque encima de un botón del HUD (habilidad, sprint, pausa) no es un disparo. */
+  function hits(x, y) {
+    for (let i = buttons.length - 1; i >= 0; i--) {
+      const b = buttons[i], p = b.pad || 0;
+      if (x >= b.x - p && x <= b.x + b.w + p && y >= b.y - p && y <= b.y + b.h + p) return true;
+    }
+    return false;
+  }
 
   /** Dibuja el joystick (coordenadas de pantalla, CSS px). */
   function draw(ctx) {
@@ -158,6 +166,6 @@ G.Touch = (() => {
     ctx.restore();
   }
 
-  return { init, vector, draw, drawStick, clearButtons, addButton, reset, safeArea, resetSafe, spot, stickBase, R, STICK_DEF,
+  return { init, vector, draw, drawStick, clearButtons, addButton, hits, reset, safeArea, resetSafe, spot, stickBase, R, STICK_DEF,
            get active() { return active; }, get stick() { return stick; } };
 })();

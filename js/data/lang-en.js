@@ -208,6 +208,8 @@ G.I18n.add({
   'encender o apagar ·': 'on or off ·', 'mapa ·': 'map ·',
   'Arrastra el dedo para moverte · toca un ataque para encenderlo o apagarlo': 'Drag to move · tap a move to turn it on or off',
   'Arrastra para moverte · toca un ataque para encenderlo o apagarlo · mapa arriba a la derecha · sprint abajo a la derecha': 'Drag to move · tap a move to turn it on or off · map at the top right · dash at the bottom right',
+  'Arrastra para moverte · toca un ataque para encenderlo o apagarlo · sprint abajo a la derecha': 'Drag to move · tap a move to turn it on or off · dash at the bottom right',
+  'WASD mover · 1-4 encender o apagar · Espacio sprint · Esc pausa': 'WASD move · 1-4 on or off · Space dash · Esc pause',
   'WASD mover · 1-4 encender o apagar · M mapa · Espacio sprint · Esc pausa': 'WASD move · 1-4 on or off · M map · Space dash · Esc pause',
   'Esprint': 'Dash', 'Espacio': 'Space',
   'Partida en grupo: el juego sigue mientras estás aquí.': 'Group game: the game keeps running while you\'re here.',

@@ -775,7 +775,8 @@ G.Coop = (() => {
   function noteSkill(req) {
     if (!active || !req || host) return;
     const pack = ['sk', req.castId, req.skillId, r1(req.origin.x), r1(req.origin.y),
-      r2(req.direction.x), r2(req.direction.y), r1(req.targetPoint.x), r1(req.targetPoint.y), req.sequence | 0, req.level | 0];
+      r2(req.direction.x), r2(req.direction.y), r1(req.targetPoint.x), r1(req.targetPoint.y),
+      req.sequence | 0, req.level | 0, req.inputType === 'hold' ? 'hold' : 'quick'];
     outEv.push(pack);
   }
   function confirmSkill(c) {
@@ -793,7 +794,8 @@ G.Coop = (() => {
     const req = {
       type: 'skill_cast_request', castId: String(ev[1] || ''), playerId: from, skillId: String(ev[2] || ''),
       origin: { x: +ev[3] || 0, y: +ev[4] || 0 }, direction: { x: +ev[5] || 0, y: +ev[6] || 0 },
-      targetPoint: { x: +ev[7] || 0, y: +ev[8] || 0 }, sequence: ev[9] | 0, level: ev[10] | 0
+      targetPoint: { x: +ev[7] || 0, y: +ev[8] || 0 }, sequence: ev[9] | 0, level: ev[10] | 0,
+      inputType: ev[11] === 'hold' ? 'hold' : 'quick'
     };
     const verdict = G.CombatAuthority.validate(req, mate.pl);
     if (!verdict.ok) { rejectSkill(req.castId, from); return; }

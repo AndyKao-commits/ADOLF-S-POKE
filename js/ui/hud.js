@@ -335,15 +335,15 @@ G.HUD = (() => {
     ctx.restore();
   }
 
-  function interactButton(ctx, w, h, touch) {
+  function interactButton(ctx, w, h, touch, place) {
     const shop = G.Game.nearestShop && G.Game.nearestShop();
     const field = G.Game.nearestField && G.Game.nearestField();
     if (!shop && !field) return;
-    const dash = 54, bs = 46, gap = 14;
+    const dash = 54, bs = place ? place.s : 46, gap = 14;
     const dashX = w - dash - 18;
     const dashY = h - dash - (touch ? 28 : 18);
-    const bx = dashX - gap - bs;
-    const by = dashY + (dash - bs) / 2;
+    const bx = place ? place.x : dashX - gap - bs;
+    const by = place ? place.y : dashY + (dash - bs) / 2;
     const cx = bx + bs / 2, cy = by + bs / 2;
     ctx.beginPath(); ctx.arc(cx, cy, bs / 2, 0, 6.2832);
     ctx.fillStyle = 'rgba(10,16,28,.82)'; ctx.fill();
@@ -353,9 +353,10 @@ G.HUD = (() => {
     G.Touch.addButton(bx, by, bs, bs, () => { if (G.Game.useNear) G.Game.useNear(); }, 8);
   }
 
-  function dashButton(ctx, w, h, pl, touch) {
-    const bs = 54;
-    const bx = w - bs - 18, by = h - bs - (touch ? 28 : 18);
+  function dashButton(ctx, w, h, pl, touch, place) {
+    const bs = place ? place.s : 54;
+    const bx = place ? place.cx - bs / 2 : w - bs - 18;
+    const by = place ? place.cy - bs / 2 : h - bs - (touch ? 28 : 18);
     const cd = pl.dashCd || 0, ready = cd <= 0 && !(pl.dashT > 0);
     ctx.beginPath(); ctx.arc(bx + bs / 2, by + bs / 2, bs / 2, 0, 6.2832);
     ctx.fillStyle = ready ? '#ffd23f' : 'rgba(10,16,28,.82)'; ctx.fill();
@@ -652,8 +653,10 @@ G.HUD = (() => {
     }
 
     // ---------- ranura de movimientos ----------
-    const S = 54, GAP = 9;
-    const n = Math.max(1, pl.slots.length);
+    const siegeHud = !!(G.Siege && G.Siege.up);
+    const short = Math.min(w, h);
+    const S = siegeHud ? Math.round(G.U.clamp(short * 0.105, 44, 76)) : 54, GAP = 9;
+    const n = siegeHud ? Math.max(pl.maxMoves || 4, pl.slots.length) : Math.max(1, pl.slots.length);
     const totalW = n * S + (n - 1) * GAP;
     let sx = (w - totalW) / 2;
     // Por encima de la barra de inicio del iPhone (allí los toques a veces no llegan).
@@ -661,11 +664,36 @@ G.HUD = (() => {
     // En móvil, donde la haya puesto el jugador: el bloque objeto + todos los
     // huecos (aunque aún no estén llenos), por su centro, como en el editor
     // (layout-ui.js); los ataques nuevos van saliendo hacia la derecha.
-    const pb = touch && G.Touch.spot('bar');
+    const pb = !siegeHud && touch && G.Touch.spot('bar');
     if (pb) {
       const nAll = Math.max(n, pl.maxMoves), bw = nAll * S + (nAll - 1) * GAP;
       sx = G.U.clamp(pb[0] * w - bw / 2, 6, Math.max(6, w - bw - 6));
       sy = G.U.clamp(pb[1] * h - S / 2, 24, h - S - 6);
+    }
+    // Asedio: nada en el centro. El sprint queda abajo a la derecha y los
+    // ataques salen en abanico hacia arriba e izquierda. El tamaño sigue la pantalla.
+    let slotAt = null, dashAt = null;
+    if (siegeHud) {
+      const dashS = Math.round(S * 1.12);
+      const margin = 14 + (touch ? Math.min(22, G.Touch.safeArea().bottom) : 0);
+      const dcx = w - margin - dashS / 2;
+      const dcy = h - margin - dashS / 2;
+      const a0 = Math.PI, a1 = Math.PI / 2;
+      const span = a0 - a1;
+      const step = n <= 1 ? span : span / (n - 1);
+      const clear = dashS / 2 + S / 2 + 16;
+      const need = (S + 16) / (2 * Math.sin(step / 2));
+      const maxR = Math.max(clear, Math.min(dcx - S / 2 - 12, dcy - 72 - S / 2));
+      const radius = Math.min(maxR, Math.max(clear, need));
+      slotAt = [];
+      for (let i = 0; i < n; i++) {
+        const a = n === 1 ? Math.PI * 0.75 : a0 + (a1 - a0) * (i / (n - 1));
+        slotAt.push({
+          x: G.U.clamp(dcx + Math.cos(a) * radius - S / 2, 8, Math.max(8, w - S - 8)),
+          y: G.U.clamp(dcy - Math.sin(a) * radius - S / 2, 64, Math.max(64, h - S - 28))
+        });
+      }
+      dashAt = { cx: dcx, cy: dcy, s: dashS };
     }
     const BOND = '#ff8ad8';
     const cdOf = m => m.kind === 'orbit' ? 0 : G.U.clamp(m.t / (m.cd * Math.max(0.45, pl.cdMul)), 0, 1);
@@ -674,12 +702,24 @@ G.HUD = (() => {
       const orbs = pl.orbs || [], ob = pl.orbBuff || {};
       const buffs = Object.keys(ob).filter(id => ob[id] > 0);
       if (orbs.some(Boolean) || buffs.length) {
-        const OS = 40, OG = 6, ow = G.Orbs.SLOTS * OS + (G.Orbs.SLOTS - 1) * OG;
+        const OS = siegeHud ? Math.round(G.U.clamp(S * 0.72, 34, 52)) : 40, OG = 6;
+        const ow = G.Orbs.SLOTS * OS + (G.Orbs.SLOTS - 1) * OG;
         const ox = sx + totalW / 2 - ow / 2, oy = sy - 30 - OS;
+        const orbAt = i => {
+          if (!slotAt || !dashAt) return { x: ox + i * (OS + OG), y: oy };
+          const t = G.Orbs.SLOTS <= 1 ? 0.5 : i / (G.Orbs.SLOTS - 1);
+          const a = Math.PI * (1.08 - 0.38 * t);
+          const radius = dashAt.s / 2 + S + OS * 0.7;
+          return {
+            x: G.U.clamp(dashAt.cx + Math.cos(a) * radius - OS / 2, 8, Math.max(8, w - OS - 8)),
+            y: G.U.clamp(dashAt.cy - Math.sin(a) * radius - OS / 2, 56, Math.max(56, h - OS - 8))
+          };
+        };
         const cdF = G.U.clamp(G.Orbs.cd, 0, 1);
         for (let i = 0; i < G.Orbs.SLOTS; i++) {
-          const o = orbs[i], x = ox + i * (OS + OG);
-          roundRect(ctx, x, oy, OS, OS, 9);
+          const o = orbs[i], box = orbAt(i), x = box.x, y = box.y;
+          const ic = Math.round(OS * 0.6);
+          roundRect(ctx, x, y, OS, OS, 9);
           ctx.fillStyle = o ? 'rgba(20,24,44,.88)' : 'rgba(10,16,28,.45)';
           ctx.fill();
           const pick = o && !!G.Pad.name && i === G.Orbs.sel;
@@ -687,35 +727,36 @@ G.HUD = (() => {
           ctx.strokeStyle = pick ? '#ffd23f' : o ? G.Orbs.BY[o.id].col : 'rgba(140,170,210,.18)';
           ctx.stroke();
           if (!o) continue;
-          G.Touch.addButton(x, oy, OS, OS, () => G.Orbs.use(pl, i), OG / 2 + 2);
-          G.Icons.draw(ctx, 'orb:' + o.id, x + (OS - 24) / 2, oy + (OS - 24) / 2, 24);
+          G.Touch.addButton(x, y, OS, OS, () => G.Orbs.use(pl, i), OG / 2 + 2);
+          G.Icons.draw(ctx, 'orb:' + o.id, x + (OS - ic) / 2, y + (OS - ic) / 2, ic);
           if (cdF > 0) {
-            ctx.save(); roundRect(ctx, x, oy, OS, OS, 9); ctx.clip();
-            ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(x, oy, OS, OS * cdF);
+            ctx.save(); roundRect(ctx, x, y, OS, OS, 9); ctx.clip();
+            ctx.fillStyle = 'rgba(0,0,0,.55)'; ctx.fillRect(x, y, OS, OS * cdF);
             ctx.restore();
           }
           ctx.font = F(800, 9);
-          if (!touch) { ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(180,200,230,.7)'; ctx.fillText(String(i + 5), x + 3, oy + 10); }
-          if (o.n > 1) { ctx.textAlign = 'right'; ctx.fillStyle = '#f4f8ff'; ctx.fillText('×' + o.n, x + OS - 3, oy + OS - 4); }
+          if (!touch) { ctx.textAlign = 'left'; ctx.fillStyle = 'rgba(180,200,230,.7)'; ctx.fillText(String(i + 5), x + 3, y + 10); }
+          if (o.n > 1) { ctx.textAlign = 'right'; ctx.fillStyle = '#f4f8ff'; ctx.fillText('×' + o.n, x + OS - 3, y + OS - 4); }
         }
         const mo = G.Input.mouse(), fresh = pl.orbNew && performance.now() - pl.orbNew.at < 3000 ? pl.orbNew.i : -1;
         let tip = -1, full = false;
         if (!touch) for (let i = 0; i < G.Orbs.SLOTS; i++) {
-          const x = ox + i * (OS + OG);
-          if (orbs[i] && mo.x >= x && mo.x <= x + OS && mo.y >= oy && mo.y <= oy + OS) { tip = i; full = true; }
+          const b = orbAt(i);
+          if (orbs[i] && mo.x >= b.x && mo.x <= b.x + OS && mo.y >= b.y && mo.y <= b.y + OS) { tip = i; full = true; }
         }
         if (tip < 0 && G.Pad.name && orbs[G.Orbs.sel]) tip = G.Orbs.sel;
         if (tip < 0 && fresh >= 0 && orbs[fresh]) tip = fresh;
         if (fresh >= 0 && orbs[fresh]) {
-          const x = ox + fresh * (OS + OG), a = 1 - (performance.now() - pl.orbNew.at) / 3000;
+          const b = orbAt(fresh), a = 1 - (performance.now() - pl.orbNew.at) / 3000;
           ctx.save(); ctx.globalAlpha = a;
-          roundRect(ctx, x - 2, oy - 2, OS + 4, OS + 4, 11);
+          roundRect(ctx, b.x - 2, b.y - 2, OS + 4, OS + 4, 11);
           ctx.lineWidth = 3; ctx.strokeStyle = G.Orbs.BY[orbs[fresh].id].col; ctx.stroke();
           ctx.restore();
         }
-        if (tip >= 0) orbTip(ctx, orbs[tip].id, ox + tip * (OS + OG) + OS / 2, oy - 8, full, w);
+        if (tip >= 0) { const b = orbAt(tip); orbTip(ctx, orbs[tip].id, b.x + OS / 2, b.y - 8, full, w); }
         buffs.forEach((id, k) => {
-          const bx = ox + ow + 10 + k * 30, by = oy + 4;
+          const anchor = orbAt(G.Orbs.SLOTS - 1);
+          const bx = anchor.x + OS + 10 + k * 30, by = anchor.y + 4;
           G.Icons.draw(ctx, 'orb:' + id, bx, by, 24);
           ctx.font = F(800, 10); ctx.textAlign = 'center';
           ctx.fillStyle = G.Orbs.BY[id].col;
@@ -728,28 +769,41 @@ G.HUD = (() => {
       const g = pl.slots[i] || [];
       const m = g[0];
       const fused = g.length > 1;
-      const on = g.on !== false;
+      const on = siegeHud ? true : g.on !== false;
       const focused = i === (pl.focus || 0);
-      const x = sx + i * (S + GAP);
-      const y = on ? sy - 6 : sy;
-      // Un toque enciende o apaga. Al aprenderlo ya está encendido.
-      if (m) G.Touch.addButton(x, y, S, S, () => { if (G.Game.state === 'playing') pl.toggleSlot(i); }, GAP / 2 + 3);
+      const x = slotAt ? slotAt[i].x : sx + i * (S + GAP);
+      const y = slotAt ? slotAt[i].y : (on ? sy - 6 : sy);
+      // Asedio: el toque sólo elige el hueco. Fuera, enciende o apaga.
+      G.Touch.addButton(x, y, S, S, () => {
+        if (G.Game.state !== 'playing') return;
+        if (siegeHud) pl.selectSlot(i);
+        else if (m) pl.toggleSlot(i);
+      }, GAP / 2 + 3);
       const col = m ? G.U.TYPE_COLOR[m.type] : '#4a5468';
 
       // fondo
       roundRect(ctx, x, y, S, S, 12);
       ctx.fillStyle = on ? 'rgba(20,30,50,.95)' : 'rgba(10,16,28,.8)';
       ctx.fill();
-      ctx.lineWidth = on ? 2.5 : fused || (m && m.evolved) ? 2 : 1.2;
+      ctx.lineWidth = siegeHud && focused ? 4 : on ? 2.5 : fused || (m && m.evolved) ? 2 : 1.2;
       // Vínculo: borde rosa. Evolucionado: dorado.
-      ctx.strokeStyle = fused ? BOND : m && m.evolved ? '#ffd23f' : on ? col : 'rgba(140,170,210,.22)';
+      ctx.strokeStyle = siegeHud && focused ? '#ffd23f' : fused ? BOND : m && m.evolved ? '#ffd23f' : on ? col : 'rgba(140,170,210,.22)';
       ctx.stroke();
 
-      if (!m) continue;
+      if (!m) {
+        if (siegeHud) {
+          ctx.font = F(800, 12);
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = focused ? '#ffd23f' : 'rgba(180,200,230,.4)';
+          ctx.fillText(String(i + 1), x + S / 2, y + S / 2);
+        }
+        continue;
+      }
 
       if (fused) {
         // Vínculo: los movimientos en una cuadrícula de 2×2, cada uno con su recarga.
-        const C = 22, P = (S - C * 2) / 3;
+        const C = slotAt ? Math.round(S * 0.4) : 22, P = (S - C * 2) / 3;
         g.forEach((gm, k) => {
           const cx = x + P + (k % 2) * (C + P), cy = y + P + Math.floor(k / 2) * (C + P);
           G.Icons.draw(ctx, 'move:' + gm.id, cx, cy, C);
@@ -772,7 +826,8 @@ G.HUD = (() => {
         }
 
         // emblema del tipo + insignia de la familia
-        G.Icons.draw(ctx, 'move:' + m.id, x + (S - 32) / 2, y + (S - 32) / 2 - 2, 32);
+        const ic = slotAt ? Math.round(S * 0.58) : 32;
+        G.Icons.draw(ctx, 'move:' + m.id, x + (S - ic) / 2, y + (S - ic) / 2 - 2, ic);
 
         // nivel del movimiento (puntitos)
         const dots = m.def.maxLvl;
@@ -789,7 +844,7 @@ G.HUD = (() => {
       ctx.fillStyle = fused ? BOND : on ? col : 'rgba(180,200,230,.45)';
       ctx.textAlign = 'left';
       ctx.fillText(String(i + 1), x + 3, y + 10);
-      if (!on) {
+      if (!on && !siegeHud) {
         ctx.strokeStyle = 'rgba(255,255,255,.7)'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.moveTo(x + 12, y + 12); ctx.lineTo(x + S - 12, y + S - 12); ctx.stroke();
       }
@@ -805,7 +860,9 @@ G.HUD = (() => {
 
     // ---------- vínculo guardado (aún no hay dos movimientos sueltos) ----------
     if (pl.bonds > 0) {
-      const bx = sx + totalW + 12, by = sy + S / 2 - 12;
+      const top = slotAt && slotAt.reduce((a, p) => p.y < a.y ? p : a);
+      const bx = top ? top.x + S + 8 : sx + totalW + 12;
+      const by = top ? top.y : sy + S / 2 - 12;
       G.Icons.draw(ctx, 'bond', bx, by, 24);
       if (pl.bonds > 1) {
         ctx.font = F(800, 10);
@@ -815,11 +872,16 @@ G.HUD = (() => {
       }
     }
 
-    radar(ctx, w, h, pl);
+    if (!siegeHud) radar(ctx, w, h, pl);
     pinArrow(ctx, w, h, pl);
     if (G.UI.isOpen('scr-map')) paintMap(document.getElementById('map-radar'), pl);
-    interactButton(ctx, w, h, touch);
-    dashButton(ctx, w, h, pl, touch);
+    const useAt = slotAt && slotAt.reduce((a, p) => p.x < a.x ? p : a);
+    interactButton(ctx, w, h, touch, useAt ? {
+      x: G.U.clamp(useAt.x - Math.round(S * 0.9) - 12, 8, w - S),
+      y: useAt.y,
+      s: Math.round(S * 0.85)
+    } : null);
+    dashButton(ctx, w, h, pl, touch, dashAt);
 
     // ---------- botón de pausa (táctil) ----------
     if (touch) {
@@ -841,8 +903,12 @@ G.HUD = (() => {
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(180,200,230,.55)';
       ctx.fillText(touch
-        ? 'Arrastra para moverte · toca un ataque para encenderlo o apagarlo · mapa arriba a la derecha · sprint abajo a la derecha'
-        : 'WASD mover · 1-4 encender o apagar · M mapa · Espacio sprint · Esc pausa', w / 2, h - 4);
+        ? (siegeHud
+          ? 'Arrastra para moverte · toca un ataque para encenderlo o apagarlo · sprint abajo a la derecha'
+          : 'Arrastra para moverte · toca un ataque para encenderlo o apagarlo · mapa arriba a la derecha · sprint abajo a la derecha')
+        : (siegeHud
+          ? 'WASD mover · 1-4 encender o apagar · Espacio sprint · Esc pausa'
+          : 'WASD mover · 1-4 encender o apagar · M mapa · Espacio sprint · Esc pausa'), w / 2, h - 4);
     }
 
     ctx.restore();

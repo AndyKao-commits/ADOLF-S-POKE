@@ -248,7 +248,7 @@ G.Siege = (() => {
   let rejected = 0;
   const paidDeath = {};
 
-  function poke(uid, dmg, attacker) {
+  function poke(uid, dmg, attacker, credit) {
     attacker = attacker || meId();
     if (!on || !uid || attacker === uid) { if (attacker === uid) rejected++; return; }
     const atk = castles.find(c => c.uid === attacker);
@@ -259,13 +259,15 @@ G.Siege = (() => {
     const body = people().find(o => (o.uid || 'me') === uid);
     if (!body || body.dead) return;
     if ((body.spawnGuard || 0) > 0 || (body.reviveSafe || 0) > 0) return;
+    // 'mob': el golpe es de un jefe o de una tropa. No cuenta como kill del jugador.
+    const who = credit === false ? 'mob' : attacker;
     // El daño lo aplica quien lo recibe. El anfitrión, si el blanco es otro, sólo avisa.
     if (!G.Coop.active || uid === meId()) {
-      body._hitBy = attacker;
+      body._hitBy = who;
       if (body.hurt) body.hurt(dmg);
       return;
     }
-    const ev = ['ph', uid, dmg, attacker];
+    const ev = ['ph', uid, dmg, who];
     if (G.Coop.isHost) G.Coop.broadcast(ev);
     else if (attacker === meId()) G.Coop.toHost(ev);
   }
@@ -443,7 +445,7 @@ G.Siege = (() => {
     }
   }
 
-  /** Cualquier muerte en un 1 contra 1: el único rival se lleva la experiencia, una vez. */
+  /** Una baja sólo paga si el golpe final es de un jugador, no de un jefe ni de una tropa. */
   function noteDeath(victim) {
     if (!on || !victim || victim.remote || victim._siegeXp) return;
     const id = victim.uid || 'me';
@@ -461,11 +463,9 @@ G.Siege = (() => {
       return;
     }
     paidDeath[victim] = true;
-    const human = castles.some(c => c.uid === attacker);
-    if (human) { playerDown(attacker, victim); return; }
-    if (castles.filter(c => c.uid !== 'rival').length !== 2) return;
-    const opp = castles.find(c => c.uid !== 'rival' && c.uid !== victim);
-    if (opp) grant(opp.uid, 48, 0);
+    // Jefe, tropa o cualquier cosa que no sea el jugador: nadie cobra la baja.
+    const human = attacker && attacker !== 'mob' && castles.some(c => c.uid === attacker);
+    if (human) playerDown(attacker, victim);
   }
 
   /** Matar a un jugador: experiencia, y un golpe a su castillo. Menos si es siempre el mismo. */
@@ -602,7 +602,7 @@ G.Siege = (() => {
       if (e.siegeWindup > 0) continue;
       const dmg = Math.max(2, Math.round(e.dmg));
       if (found.kind === 'castle') applyHit(found.target.uid, dmg, e.owner);
-      else if (found.kind === 'player') poke(found.target.uid || 'me', dmg, e.owner);
+      else if (found.kind === 'player') poke(found.target.uid || 'me', dmg, e.owner, false);
       else {
         const prev = found.target.lastUid;
         found.target.hurt(dmg, '#ffb0b0', found.target.x - e.x, found.target.y - e.y, 30);

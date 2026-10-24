@@ -223,6 +223,15 @@ G.Player = class Player {
    * Enciende o apaga un hueco. Varios pueden estar encendidos a la vez:
    * cada uno dispara con su propia recarga. Otro toque en el mismo lo apaga.
    */
+  /** Asedio: 1–4 sólo eligen el hueco. No enciende ni apaga, y vale aunque esté vacío. */
+  selectSlot(i) {
+    if (i < 0 || i >= (this.maxMoves || 4)) return false;
+    this.focus = i;
+    if (this.slots[i]) this.active = i;
+    G.Audio.sfx('select');
+    return true;
+  }
+
   toggleSlot(i) {
     const g = this.slots[i];
     if (!g || !g.length) return false;
@@ -536,6 +545,18 @@ G.Player = class Player {
     // Con una horda encima casi siempre te toca algo; si eso ganara siempre,
     // los ataques a distancia no le darían nunca al jefe.
     // Sin enemigos, apunta a la roca o cofre más cercano.
+    if (G.Siege && G.Siege.up && !this.remote) {
+      this.manualAim = true;
+      this.target = null;
+      const w = G.Input.mouseWorld();
+      const dx = w.x - this.x, dy = w.y - this.y;
+      if (dx * dx + dy * dy > 16) this.aim = Math.atan2(dy, dx);
+      else if (this.walking) this.aim = this.moveAngle;
+      const face = this.attackFace > 0 || !this.walking ? this.aim : this.moveAngle;
+      this.anim.dir = G.Sprites.dirFromAngle(face);
+      this.anim.loop(this.walking ? 'Walk' : 'Idle', this.walking ? this.spd / 110 : 1);
+      return;
+    }
     const all = G.EnemyMgr.all();
     const mine = this.uid || 'me';
     const foes = (G.Siege && G.Siege.up) ? all.filter(e => !(e.owner && e.owner === mine)) : all;

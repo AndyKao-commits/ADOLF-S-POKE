@@ -119,11 +119,20 @@ G.CombatAuthority = (() => {
   }
 
   function watch(castId, move) { if (castId && move) pending.set(castId, move); }
-  function acceptLocal(castId) { pending.delete(castId); }
+  function acceptLocal(castId) {
+    const m = pending.get(castId);
+    pending.delete(castId);
+    const pl = G.Game && G.Game.player;
+    if (m && pl) {
+      m._pending = false;
+      m._pendingAt = 0;
+      m.t = Math.max(0.05, (m.cd || 0.4) * Math.max(0.45, pl.cdMul || 1));
+    }
+  }
   function rejectLocal(castId) {
     const m = pending.get(castId);
     pending.delete(castId);
-    if (m) m.t = 0;
+    if (m) { m._pending = false; m._pendingAt = 0; m.t = 0; }
   }
 
   function claimPickup(id) { return claim(pickups, id, performance.now()); }

@@ -969,14 +969,17 @@ G.Game = (() => {
           && document.getElementById('pull-fx').classList.contains('hidden')) G.MenuUI.open();
       return;
     }
+    if (G.Input.tap('escape') && G.SkillAim && G.SkillAim.cancelKeyboard()) return;
     if (G.Input.tap('escape') || G.Input.tap('keyp')) { togglePause(); return; }
     if (G.Input.tap('keym') && state === 'playing') { toggleMap(); return; }
     if (state !== 'playing' || !pl) return;
     if (G.Input.tap('space') && !G.Judgment.cinematic) pl.tryDash();
     for (let i = 0; i < 4; i++) {
-      if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) pl.toggleSlot(i);
+      if (!(G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1)))) continue;
+      if (G.Siege && G.Siege.up) pl.selectSlot(i);
+      else pl.toggleSlot(i);
     }
-    if (G.Input.tap('keyx')) pl.toggleSlot(pl.focus || 0);
+    if (!(G.Siege && G.Siege.up) && G.Input.tap('keyx')) pl.toggleSlot(pl.focus || 0);
     if (G.Orbs) {
       for (let i = 0; i < 4; i++) {
         if (G.Input.tap('digit' + (i + 5)) || G.Input.tap('numpad' + (i + 5))) G.Orbs.use(pl, i);
@@ -1100,6 +1103,7 @@ G.Game = (() => {
 
     pl.frozen = state !== 'playing' || (coop && (G.UI.isOpen('scr-pause') || G.UI.isOpen('scr-item') || G.UI.isOpen('scr-map')));
     pl.update(dt);
+    if (G.SkillAim && G.SkillAim.guard) G.SkillAim.guard();
     if (coop) {
       for (const p of G.Coop.puppets()) { p.netUpdate(dt); G.Combat.ghostOrbit(p, dt, time); }
       if (pl.dead && !(G.Siege && G.Siege.up)) reviveTick(dt);

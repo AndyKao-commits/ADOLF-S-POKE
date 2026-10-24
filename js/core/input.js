@@ -47,8 +47,23 @@ G.Input = (() => {
     mouse() { return { x: mx, y: my, down: mdown }; },
     /** Cuándo se movió el ratón por última vez (performance.now). */
     get mouseMovedAt() { return movedAt; },
-    /** Dónde apunta el ratón en el mundo (el lienzo ocupa toda la ventana). */
-    mouseWorld() { return { x: G.Camera.left() + mx / G.Camera.scale, y: G.Camera.top() + my / G.Camera.scale }; },
+    /**
+     * Dónde apunta el ratón en el mundo. clientX/clientY son de la página:
+     * primero se pasan al lienzo (rect y resolución) y luego a la cámara.
+     */
+    mouseWorld() {
+      const cv = document.getElementById('game');
+      let x = mx, y = my;
+      if (cv) {
+        const r = cv.getBoundingClientRect();
+        const sx = r.width ? cv.width / r.width : 1;
+        const sy = r.height ? cv.height / r.height : 1;
+        x = (mx - r.left) * sx;
+        y = (my - r.top) * sy;
+      }
+      const k = (G.Camera && G.Camera.scale) || 1;
+      return { x: G.Camera.left() + x / k, y: G.Camera.top() + y / k };
+    },
     endFrame() { pressed.clear(); }
   };
 })();

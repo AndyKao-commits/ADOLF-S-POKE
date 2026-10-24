@@ -232,6 +232,8 @@ G.I18n.add({
   "mapa ·": "地圖 ·",
   "Arrastra el dedo para moverte · toca un ataque para encenderlo o apagarlo": "拖曳手指移動 · 點一下招式即可開啟或關閉",
   "Arrastra para moverte · toca un ataque para encenderlo o apagarlo · mapa arriba a la derecha · sprint abajo a la derecha": "拖曳移動 · 點招式開關 · 右上角地圖 · 右下角衝刺",
+  "Arrastra para moverte · toca un ataque para encenderlo o apagarlo · sprint abajo a la derecha": "拖曳移動 · 點招式開關 · 右下角衝刺",
+  "WASD mover · 1-4 encender o apagar · Espacio sprint · Esc pausa": "WASD 移動 · 1-4 開關招式 · 空白鍵衝刺 · Esc 暫停",
   "WASD mover · 1-4 encender o apagar · M mapa · Espacio sprint · Esc pausa": "WASD 移動 · 1–4 開關招式 · M 地圖 · 空白鍵衝刺 · Esc 暫停",
   "Esprint": "衝刺",
   "Espacio": "空白鍵",
@@ -1424,4 +1426,7 @@ G.I18n.add({
   "En el asedio, un disparo que sale de la pantalla sigue hiriendo al rival y a sus monstruos.": "攻城戰裡，飛出畫面的攻擊仍會打到對手和他的小怪。",
   "En una sala, el modo normal puede elegir Corriente, Difícil, Reto o Pesadilla. Debajo del modo ya no hay un texto largo.": "房間的一般模式可以選普通、困難、挑戰或惡夢。模式下面不再放長篇說明。",
   "Las miniaturas del mapa conservan su proporción y no se deforman.": "地圖縮圖維持原來的比例，不會被拉變形。",
+  "En el asedio no hay mapa en la esquina. Los ataques rodean el sprint en abanico y su tamaño sigue la pantalla.": "攻城戰不再顯示右上角地圖。招式圍著衝刺排成扇形，大小跟著畫面。",
+  "Si el jefe o una tropa derriba al rival, no hay experiencia. Sólo quien lo tumba con su propio ataque cobra.": "首領或小怪打倒對手時沒有經驗。只有自己的攻擊擊倒對方才有獎勵。",
+  "En el asedio eliges el ataque con 1–4 y lo lanzas con el ratón. No se dispara solo, y el cuerpo no hiere.": "攻城戰用 1–4 選擇招式，再用滑鼠施放。不會自動攻擊，撞到也不會扣血。",
 }, 'zh-Hant');

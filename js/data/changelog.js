@@ -6,6 +6,16 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-24', title: ['Asedio', 'Siege'], chg: [
+    ['En el asedio eliges el ataque con 1–4 y lo lanzas con el ratón. No se dispara solo, y el cuerpo no hiere.',
+     'In siege you pick a move with 1–4 and cast it with the mouse. It does not fire by itself, and bumping does not hurt.']
+  ] },
+  { d: '2026-10-24', title: ['Asedio', 'Siege'], chg: [
+    ['En el asedio no hay mapa en la esquina. Los ataques rodean el sprint en abanico y su tamaño sigue la pantalla.',
+     'In siege there is no corner map. Moves fan around the dash and their size follows the screen.'],
+    ['Si el jefe o una tropa derriba al rival, no hay experiencia. Sólo quien lo tumba con su propio ataque cobra.',
+     'If the boss or a creep downs the rival, there is no experience. Only the player who lands the killing blow is paid.']
+  ] },
   { d: '2026-10-24', title: ['Sala', 'Room'], chg: [
     ['En una sala, el modo normal puede elegir Corriente, Difícil, Reto o Pesadilla. Debajo del modo ya no hay un texto largo.',
      'In a room, Normal can choose Standard, Hard, Challenge or Nightmare. The long text under the mode is gone.']

@@ -1,14 +1,14 @@
 /* ============ skill-aim-system.js — apuntar ataques en el asedio ============
- * En el asedio cada ataque encendido es un botón a la derecha.
- * Un toque corto lo lanza hacia donde ya miras. Mantener o arrastrar apunta,
- * y soltar encima del botón lo cancela sin gastar la recarga.
- * El dibujo es sólo una vista previa: el golpe lo calcula el combate.
+ * En el asedio no hay ataque automático. 1–4 elige el hueco (lo pinta el HUD
+ * en abanico). El ratón, sobre el lienzo, marca la dirección del mundo:
+ * un clic corto dispara; mantener o arrastrar enseña el alcance y soltar dispara.
+ * Derecho o Esc cancela, sin recarga y sin avisar a la red.
  * Fuera del asedio los ataques siguen saliendo solos.
  */
 G.SkillAim = (() => {
   const AimState = { IDLE: 'idle', PRESSING: 'pressing', AIMING: 'aiming', CANCELLED: 'cancelled', CASTING: 'casting' };
-  const HOLD_MS = 180;
-  const DRAG_PX = 10;
+  const HOLD_MS = 150;
+  const DRAG_PX = 8;
   const CANCEL_R = 22;
   const STICK_PX = 64;
 
@@ -73,50 +73,38 @@ G.SkillAim = (() => {
     };
   }
 
-  function layout(w, h, pl) {
-    buttons = [];
-    if (!manual() || !pl || pl.dead) return buttons;
-    const moves = pl.enabledMoves ? pl.enabledMoves().filter(m => m.kind !== 'orbit') : [];
-    const bs = 52, gap = 8;
-    const sa = G.Touch && G.Touch.safeArea ? G.Touch.safeArea() : { right: 0, top: 0 };
-    const touch = !!(G.Touch && G.Touch.active);
-    const x = Math.max(8, w - bs - 16 - (sa.right || 0));
-    const bottom = h - 54 - (touch ? 40 : 22) - gap;
-    const top = 84 + (sa.top || 0);
-    const need = moves.length * bs + Math.max(0, moves.length - 1) * gap;
-    let y = Math.max(top, bottom - need);
-    moves.forEach((m, i) => {
-      const by = y + i * (bs + gap);
-      buttons.push({
-        move: m, x, y: by, w: bs, h: bs,
-        cx: x + bs / 2, cy: by + bs / 2
-      });
-    });
-    return buttons;
+  function layout() { buttons = []; return buttons; }
+
+  function selected(pl) {
+    if (!pl || !pl.slots) return null;
+    const g = pl.slots[pl.focus || 0];
+    const m = g && g[0];
+    return m && m.kind !== 'orbit' ? m : null;
   }
 
-  function buttonAt(x, y) {
-    for (let i = buttons.length - 1; i >= 0; i--) {
-      const b = buttons[i];
-      if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) return b;
-    }
-    return null;
+  function worldAt(sx, sy) {
+    const k = (G.Camera && G.Camera.scale) || 1;
+    return { x: G.Camera.left() + sx / k, y: G.Camera.top() + sy / k };
   }
+
+  function ready(m) { return !!(m && !(m.t > 0) && !m._pending); }
 
   function owned(pointerId) { return gestures.has(pointerId); }
 
   function pointerDown(p) {
     if (!manual() || p.pointerId == null) return false;
-    if (gestures.has(p.pointerId)) return true;
-    const hit = buttonAt(p.x, p.y);
-    if (!hit) return false;
+    if (p.button === 2) { gestures.clear(); return true; }
+    if (p.button != null && p.button !== 0) return false;
     const pl = G.Game.player;
-    if (!pl || pl.dead || pl.frozen) return false;
-    for (const g of gestures.values()) if (g.move === hit.move) return false;
+    if (!pl || pl.dead || pl.frozen) { gestures.clear(); return false; }
+    if (G.Touch && G.Touch.hits && G.Touch.hits(p.x, p.y)) return false;
+    if (gestures.has(p.pointerId)) return true;
+    const m = selected(pl);
+    if (!ready(m)) return false;
     gestures.set(p.pointerId, {
-      state: AimState.PRESSING, pointerId: p.pointerId, move: hit.move,
+      state: AimState.PRESSING, pointerId: p.pointerId, move: m,
       t0: performance.now(), x0: p.x, y0: p.y, x: p.x, y: p.y,
-      cx: hit.cx, cy: hit.cy, travel: 0, left: false, cancelled: false
+      world: worldAt(p.x, p.y), travel: 0
     });
     return true;
   }
@@ -124,10 +112,8 @@ G.SkillAim = (() => {
   function poke(g) {
     const dt = performance.now() - g.t0;
     g.travel = Math.max(g.travel, Math.hypot(g.x - g.x0, g.y - g.y0));
-    const from = Math.hypot(g.x - g.cx, g.y - g.cy);
-    if (from >= CANCEL_R) g.left = true;
+    g.world = worldAt(g.x, g.y);
     if (g.state === AimState.PRESSING && (dt >= HOLD_MS || g.travel >= DRAG_PX)) g.state = AimState.AIMING;
-    g.cancelled = g.state === AimState.AIMING && !!g.left && from < CANCEL_R;
   }
 
   function pointerMove(p) {
@@ -145,25 +131,14 @@ G.SkillAim = (() => {
     return 'c' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
   }
 
-  function commit(g, quick) {
+  function commit(g) {
     const pl = G.Game.player;
     const m = g.move;
-    if (!pl || pl.dead || pl.frozen || !m || m.t > 0) return false;
-    const prof = profile(m);
-    if (quick && !prof.quickCast) return false;
-    let dir, want;
-    if (quick || prof.aimType === 'self') {
-      dir = defaultDirection(pl);
-      want = prof.aimType === 'self' ? 0 : prof.castRange;
-      if (pl.target && !pl.target.dead && prof.aimType !== 'self') {
-        want = Math.min(prof.castRange, Math.hypot(pl.target.x - pl.x, pl.target.y - pl.y));
-      }
-    } else {
-      const dx = g.x - g.cx, dy = g.y - g.cy, d = Math.hypot(dx, dy);
-      dir = d > 0.001 ? { x: dx / d, y: dy / d } : defaultDirection(pl);
-      want = (d / STICK_PX) * prof.castRange;
-    }
-    const aim = aimPoint(pl, m, dir, want);
+    if (!pl || pl.dead || pl.frozen || !ready(m)) return false;
+    const world = g.world || worldAt(g.x, g.y);
+    const dx = world.x - pl.x, dy = world.y - pl.y;
+    const dir = unit(dx, dy) || defaultDirection(pl);
+    const aim = aimPoint(pl, m, dir, Math.hypot(dx, dy));
     const req = {
       type: 'skill_cast_request',
       castId: uuid(),
@@ -172,6 +147,7 @@ G.SkillAim = (() => {
       origin: { x: pl.x, y: pl.y },
       direction: { x: aim.dir.x, y: aim.dir.y },
       targetPoint: { x: aim.point.x, y: aim.point.y },
+      inputType: g.state === AimState.AIMING ? 'hold' : 'quick',
       clientTime: performance.now(),
       sequence: sequence + 1,
       level: m.lvl || 1
@@ -179,8 +155,9 @@ G.SkillAim = (() => {
     pl.aim = Math.atan2(aim.dir.y, aim.dir.x);
     const coop = G.Coop && G.Coop.active && G.Siege && G.Siege.up;
     if (coop && !G.Coop.isHost) {
+      m._pending = true;
+      m._pendingAt = performance.now();
       if (G.Combat && G.Combat.previewCast) G.Combat.previewCast(pl, m, aim.point);
-      m.t = Math.max(0.05, (m.cd || 0.4) * Math.max(0.45, pl.cdMul || 1));
       sequence += 1;
       lastDir = { x: aim.dir.x, y: aim.dir.y };
       lastRequest = req;
@@ -214,13 +191,31 @@ G.SkillAim = (() => {
     if (!g) return false;
     g.x = p.x; g.y = p.y;
     poke(g);
-    const dt = performance.now() - g.t0;
-    const tap = (g.state === AimState.PRESSING && dt < HOLD_MS && g.travel < DRAG_PX) || (g.state === AimState.AIMING && !g.left);
-    const aimed = g.state === AimState.AIMING && g.left && !g.cancelled;
-    g.state = tap || aimed ? AimState.CASTING : AimState.CANCELLED;
-    if (tap || aimed) commit(g, tap);
+    const cast = g.state === AimState.PRESSING || g.state === AimState.AIMING;
+    if (cast) commit(g);
     gestures.delete(p.pointerId);
     return true;
+  }
+
+  function cancelKeyboard() {
+    if (!gestures.size) return false;
+    gestures.clear();
+    return true;
+  }
+
+  function guard() {
+    const pl = G.Game && G.Game.player;
+    if (!manual() || !pl || pl.dead || pl.frozen) {
+      if (gestures.size) gestures.clear();
+    }
+    if (!pl || !pl.slots) return;
+    const now = performance.now();
+    for (const g of pl.slots) for (const m of g) {
+      if (m && m._pending && m._pendingAt && now - m._pendingAt > 2500) {
+        m._pending = false;
+        m._pendingAt = 0;
+      }
+    }
   }
 
   function pointerCancel(p) {
@@ -243,20 +238,18 @@ G.SkillAim = (() => {
     const out = [];
     for (const g of gestures.values()) {
       if (g.state !== AimState.AIMING) continue;
-      const prof = profile(g.move);
-      const dx = g.x - g.cx, dy = g.y - g.cy, d = Math.hypot(dx, dy);
-      const aiming = g.state === AimState.AIMING && d >= CANCEL_R;
-      const dir = aiming ? { x: dx / d, y: dy / d } : defaultDirection(pl);
-      const want = aiming ? (d / STICK_PX) * prof.castRange : (prof.aimType === 'self' ? 0 : prof.castRange);
-      const aim = aimPoint(pl, g.move, dir, want);
-      out.push({ prof, aim, cancelled: g.state === AimState.AIMING && !!g.cancelled, move: g.move });
+      const world = g.world || worldAt(g.x, g.y);
+      const dx = world.x - pl.x, dy = world.y - pl.y;
+      const dir = unit(dx, dy) || defaultDirection(pl);
+      const aim = aimPoint(pl, g.move, dir, Math.hypot(dx, dy));
+      out.push({ prof: aim.prof, aim, cancelled: false, move: g.move });
     }
     return out;
   }
 
   return {
-    AimState, HOLD_MS, DRAG_PX, CANCEL_R, profile, defaultDirection, aimPoint, layout, buttonAt,
-    pointerDown, pointerMove, pointerUp, pointerCancel, owned, reset, previews, manual,
+    AimState, HOLD_MS, DRAG_PX, CANCEL_R, profile, defaultDirection, aimPoint, layout,
+    pointerDown, pointerMove, pointerUp, pointerCancel, owned, reset, previews, manual, guard, cancelKeyboard,
     get buttons() { return buttons; },
     get lastRequest() { return lastRequest; },
     get sequence() { return sequence; },

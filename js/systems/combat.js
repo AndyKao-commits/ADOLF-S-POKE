@@ -909,6 +909,7 @@ G.Combat = (() => {
         }
         if (p.side && p.side === (pl.uid || 'me')) continue;
         if (G.U.dist2(p.x, p.y, pl.x, pl.y) < (p.r + pl.r) * (p.r + pl.r)) {
+          if (G.Siege && G.Siege.up) pl._hitBy = 'mob';
           pl.hurt(p.dmg, p.mtype, false, p.cat);
           G.FX.burst(p.x, p.y - G.LIFT, p.color, 7, 110);
           projectiles.splice(i, 1);
@@ -1018,14 +1019,15 @@ G.Combat = (() => {
     // --- contacto enemigo <-> jugador ---
     if (pl.dead) return;
     for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, pl.r + 40)) {
-      // En asedio, tocar un esbirro sólo separa los cuerpos. El daño de sus
-      // ataques lo confirma Siege tras su animación/tiempo de preparación.
-      if (G.Siege && G.Siege.up && e.siegeCreep) continue;
+      // En asedio el cuerpo no hiere: ni jugador, ni esbirro, ni jefe, ni castillo.
+      // El daño entra por habilidades, disparos, áreas o el ataque preparado del esbirro.
+      if (G.Siege && G.Siege.up) continue;
       if (e.owner && e.owner === (pl.uid || 'me')) continue;
       if (G.U.dist2(e.x, e.y, pl.x, pl.y) > (e.r + pl.r) * (e.r + pl.r)) continue;
       if (e.arceus || e.touchCd > 0 || e.behavior === 'thief' || e.stunT > 0 || e.sleepT > 0 || (e.net && e.net.st & 16)) continue;
       e.touchCd = 0.55;
       e.strike(pl);
+      if (G.Siege && G.Siege.up) pl._hitBy = 'mob';
       pl.hurt(e.dmg * (pl.hasItem('protectivepads') ? 0.7 : 1), e.atkType, false, e.cat);
       const thorns = G.Items.thorns(pl);
       if (thorns) asAttacker(pl.uid || 'me', () => e.hurt(thorns, '#9aa6b5', e.x - pl.x, e.y - pl.y, 80));
