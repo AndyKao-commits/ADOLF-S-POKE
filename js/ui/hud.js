@@ -907,7 +907,9 @@ G.HUD = (() => {
       // Nombre y distancia: al lado contrario de la flecha, para que no se salga
       const lx = -Math.cos(a) * 30, ly = -Math.sin(a) * 26 + 4;
       ctx.font = F(800, 12);
-      const label = o.dead ? G.I18n.f('¡{x} necesita ayuda! · {x} m', m.name, metres) : m.name + ' · ' + metres + ' m';
+      const label = o.dead
+        ? (G.Siege && G.Siege.up ? m.name + ' · K.O.' : G.I18n.f('¡{x} necesita ayuda! · {x} m', m.name, metres))
+        : m.name + ' · ' + metres + ' m';
       ctx.textAlign = Math.cos(a) > 0.3 ? 'right' : Math.cos(a) < -0.3 ? 'left' : 'center';
       ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.8)';
       G.I18n.rawCanvas(ctx, 'strokeText', label, lx, ly);
@@ -922,15 +924,18 @@ G.HUD = (() => {
       ctx.textAlign = 'center';
       ctx.font = F(800, 20);
       ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.75)';
-      const msg = G.Coop.players().every(p => p.dead) ? 'Habéis caído todos…' : 'Has caído: un compañero puede levantarte';
+      const siege = !!(G.Siege && G.Siege.up);
+      const left = siege && G.Siege.respawnLeft ? Math.max(1, Math.ceil(G.Siege.respawnLeft())) : 0;
+      const msg = siege ? G.I18n.f('Has caído · reapareces en {x}', left)
+        : G.Coop.players().every(p => p.dead) ? 'Habéis caído todos…' : 'Has caído: un compañero puede levantarte';
       ctx.strokeText(msg, w / 2, h * 0.62);
       ctx.fillStyle = '#ffb0b8';
       ctx.fillText(msg, w / 2, h * 0.62);
-      const f = (pl.reviveT || 0) / G.Player.REVIVE_TIME;
-      if (f > 0) bar(ctx, w / 2 - 110, h * 0.62 + 12, 220, 10, f, '#5fe08a');
+      const f = siege ? 0 : (pl.reviveT || 0) / G.Player.REVIVE_TIME;
+      if (!siege && f > 0) bar(ctx, w / 2 - 110, h * 0.62 + 12, 220, 10, f, '#5fe08a');
       // Mirar a un compañero vivo mientras tanto (botón, Q / E o LB / RB).
       const w0 = G.Game.watching;
-      if (w0 || G.Coop.puppets().some(p => !p.dead)) {
+      if (!siege && (w0 || G.Coop.puppets().some(p => !p.dead))) {
         const m = w0 && G.Coop.mates.find(x => x.pl === w0);
         const label = (m ? G.I18n.f('Viendo a {x}', m.name) + ' · ' + G.I18n.t('cambiar') : G.I18n.t('Ver a un compañero'))
           + (G.Touch.active ? '' : '  (E)');

@@ -1004,6 +1004,9 @@ G.Combat = (() => {
     // --- contacto enemigo <-> jugador ---
     if (pl.dead) return;
     for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, pl.r + 40)) {
+      // En asedio, tocar un esbirro sólo separa los cuerpos. El daño de sus
+      // ataques lo confirma Siege tras su animación/tiempo de preparación.
+      if (G.Siege && G.Siege.up && e.siegeCreep) continue;
       if (e.owner && e.owner === (pl.uid || 'me')) continue;
       if (G.U.dist2(e.x, e.y, pl.x, pl.y) > (e.r + pl.r) * (e.r + pl.r)) continue;
       if (e.arceus || e.touchCd > 0 || e.behavior === 'thief' || e.stunT > 0 || e.sleepT > 0 || (e.net && e.net.st & 16)) continue;

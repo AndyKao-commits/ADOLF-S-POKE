@@ -197,7 +197,8 @@
       const room = G.Social.room;
       if (!room) return;
       const ms = room.members;
-      const cap = room.cap || G.Coop.rulesFromSettings().cap;
+      const selectedMode = room.isHost ? (G.Settings.get('runMode') || 'normal') : ((room.rules && room.rules.runMode) || 'normal');
+      const cap = selectedMode === 'siege' ? 2 : (room.cap || G.Coop.rulesFromSettings().cap);
       $('lobby-sub').textContent = room.isHost
         ? 'Eres el anfitrión. Invita a tus amigos (hasta ' + cap + ') y empezad cuando estéis.'
         : 'Estás en la sala de ' + ((ms.find(m => m.uid === room.host) || {}).name || '…') + '. El anfitrión empezará la partida.';
@@ -213,7 +214,7 @@
       }
 
       // Las tarjetas sólo se rehacen si cambian los miembros (los sprites no parpadean).
-      const key = cap + '|' + ms.map(m => m.uid + ':' + m.dex + ':' + (m.shiny ? 1 : 0)).join('|');
+      const key = selectedMode + '|' + cap + '|' + ms.map(m => m.uid + ':' + m.dex + ':' + (m.shiny ? 1 : 0)).join('|');
       const box = $('lobby-members');
       if (key !== membersKey) {
         membersKey = key;
@@ -272,22 +273,32 @@
         const key = (room.isHost ? 'h:' : 'g:') + picked;
         if (modeBox.dataset.key !== key) {
           modeBox.dataset.key = key;
-          modeBox.innerHTML = '<b>Modo</b><div class="chips"></div>';
+          modeBox.innerHTML = '<div class="lobby-section-title"><b>Modo de juego</b><small>La plantilla aplica automáticamente las reglas compatibles.</small></div><div class="chips lobby-mode-grid"></div><p class="lobby-mode-help"></p>';
           G.Modes.mount(modeBox.querySelector('.chips'), null, {
             mode: picked,
             editable: room.isHost,
             onPick(id) {
+              if (id === 'siege' && room.members.length > 2) {
+                G.UI.toast('El asedio admite exactamente 2 jugadores. La sala tiene demasiados jugadores.');
+                return;
+              }
               G.Settings.set('runMode', id);
+              // Las salas usan la plantilla oficial, no los multiplicadores
+              // personalizados guardados para partidas privadas.
+              G.Settings.set('diffMode', 'auto');
+              G.Settings.set('partyCap', id === 'siege' ? 2 : 10);
               modeBox.dataset.key = '';
               G.Social.pushRules();
             }
           });
+          modeBox.querySelector('.lobby-mode-help').textContent = G.Modes.row(picked)[2];
         }
       }
       const rulesBox = $('lobby-rules');
       if (rulesBox) G.PartyUI.sync(rulesBox, {
         editable: room.isHost,
         liveN: ms.length,
+        roomMode: selectedMode,
         rules: room.isHost ? G.Coop.rulesFromSettings() : (room.rules || G.Coop.normalizeRules({ mode: 'auto', cap }))
       });
       $('lobby-note').textContent = !room.isHost ? 'Cuando el anfitrión empiece, entraréis todos a la vez.'
@@ -300,8 +311,8 @@
       const room = G.Social.room;
       if (!room || !room.isHost || room.members.length < 2) return;
       const rm = G.Settings.get('runMode') || 'normal';
-      if (rm === 'siege' && room.members.length > 4) {
-        G.UI.toast('El asedio es de 2 a 4.');
+      if (rm === 'siege' && room.members.length !== 2) {
+        G.UI.toast('El asedio es un duelo de exactamente 2 jugadores.');
         return;
       }
       const cfg = {
@@ -362,6 +373,27 @@
       const rules = liveRules(opt);
       const p = G.Coop.preview(opt.liveN || 1, rules);
       return 'Con ' + p.n + ': aparecen ×' + G.Coop.fmtMul(p.rate) + ', vida ×' + G.Coop.fmtMul(p.hp) + ' y la experiencia se reparte entre ' + G.Coop.fmtMul(p.xp) + '. Jefes: ' + rules.bossN + '.';
+    }
+
+    const TEMPLATES = {
+      normal: ['Cooperativo', 'Escalado automático según los jugadores', 'Grietas activadas', 'Jefes según la regla oficial'],
+      shiny: ['Cooperativo', 'Sólo aparecen Pokémon shiny', 'Escalado automático según los jugadores', 'Grietas activadas'],
+      boss: ['Cooperativo', 'Sólo aparecen jefes', 'Inicio en nivel 20', 'Grieta temprana para fusionar ataques'],
+      castle: ['Cooperativo', 'Defended el castillo durante 50 oleadas', 'Un jefe cada 10 oleadas', 'La plantilla fija el ritmo y la victoria'],
+      siege: ['1 contra 1 · exactamente 2 jugadores', 'Sólo los ataques hacen daño; los cuerpos no', 'Muerte con reaparición, sin rescate ni espectador', 'Jefe central activado · grietas desactivadas'],
+      endless: ['Cooperativo sin límite de oleadas', 'La dificultad cambia por eventos y combinaciones', 'Récord por tiempo y oleada', 'Grietas desactivadas']
+    };
+
+    function roomTemplateHtml(opt) {
+      const id = G.Modes.idOf(opt.roomMode || 'normal');
+      const rows = TEMPLATES[id] || TEMPLATES.normal;
+      const fixed = id === 'siege';
+      const count = fixed ? '2 jugadores' : 'De 2 a ' + liveRules(opt).cap + ' jugadores';
+      return `<section class="room-template ${fixed ? 'versus' : ''}">
+        <div class="lobby-section-title"><b>Reglas de esta sala</b><span class="room-template-badge">${count}</span></div>
+        <div class="room-rule-grid">${rows.map(x => `<div class="room-rule"><i>✓</i><span>${esc(x)}</span></div>`).join('')}</div>
+        <p class="note">Las reglas oficiales de este modo se aplican automáticamente. Los ajustes incompatibles no se muestran.</p>
+      </section>`;
     }
 
     function html(opt) {
@@ -444,6 +476,14 @@
 
     function sync(el, opt) {
       opt = opt || { editable: true, liveN: 1 };
+      if (opt.roomMode) {
+        const key = 'room:' + opt.roomMode + ':' + liveRules(opt).cap;
+        if (viewKey.get(el) !== key || !el.childElementCount) {
+          viewKey.set(el, key);
+          el.innerHTML = roomTemplateHtml(opt);
+        }
+        return;
+      }
       const rules = liveRules(opt);
       const key = (opt.editable ? 'e:' : 'v:') + rules.mode + ':' + (opt.editable ? '' : JSON.stringify(G.Coop.publicRules(rules)));
       if (viewKey.get(el) !== key || !el.childElementCount) {

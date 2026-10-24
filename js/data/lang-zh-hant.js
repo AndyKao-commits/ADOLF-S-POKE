@@ -1391,4 +1391,13 @@ G.I18n.add({
   "El marcador enseña el modo, el mapa, la dificultad, el daño y los caramelos. El récord de un jugador, el de un grupo y el del asedio se guardan aparte. La tienda no cobra si faltan caramelos o el objeto está al tope.": "結算會顯示模式、地圖、難度、傷害和糖果。單人、合作和攻防戰的紀錄分開保存。糖果不夠或道具已到上限時，商店不會扣糖果。",
   "La cuadrícula del mapa se puede bajar cuando no cabe. El botón de tirar ×100 sale en el idioma del juego.": "地圖宮格放不下時可以往下捲。百連抽按鈕會跟著遊戲語言顯示。",
   "En el asedio un ataque no hiere a quien lo lanza, y sí al rival. Alrededor de cada castillo no hay cobertura. En el asedio no se abren grietas.": "攻城戰的技能不會打到自己，只會打到對手。每座主堡周圍沒有掩體。攻城戰不會開裂縫。",
+  "Modo de juego": "遊戲模式",
+  "La plantilla aplica automáticamente las reglas compatibles.": "系統會自動套用此模式可用的規則。",
+  "Reglas de esta sala": "本房間規則",
+  "Las reglas oficiales de este modo se aplican automáticamente. Los ajustes incompatibles no se muestran.": "系統會自動套用此模式的正式規則，不相容的設定不會顯示。",
+  "1 contra 1 · exactamente 2 jugadores": "1 對 1・固定兩名玩家",
+  "Sólo los ataques hacen daño; los cuerpos no": "只有攻擊會造成傷害，身體碰撞不扣血",
+  "Muerte con reaparición, sin rescate ni espectador": "死亡後自動重生，沒有隊友救援或觀戰",
+  "Jefe central activado · grietas desactivadas": "中央 Boss 開啟・裂縫關閉",
+  "Has caído · reapareces en {x}": "你已倒下・{x} 秒後重生",
 }, 'zh-Hant');

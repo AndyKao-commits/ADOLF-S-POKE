@@ -1168,5 +1168,14 @@ G.I18n.add({
   "Descartar": "忽略举报",
   "Reporte descartado": "举报已忽略",
   "Desmarcar": "移除标记",
-  "Desmarcada": "标记已移除"
+  "Desmarcada": "标记已移除",
+  "Modo de juego": "游戏模式",
+  "La plantilla aplica automáticamente las reglas compatibles.": "系统会自动套用此模式可用的规则。",
+  "Reglas de esta sala": "本房间规则",
+  "Las reglas oficiales de este modo se aplican automáticamente. Los ajustes incompatibles no se muestran.": "系统会自动套用此模式的正式规则，不兼容的设置不会显示。",
+  "1 contra 1 · exactamente 2 jugadores": "1 对 1・固定两名玩家",
+  "Sólo los ataques hacen daño; los cuerpos no": "只有攻击会造成伤害，身体碰撞不扣血",
+  "Muerte con reaparición, sin rescate ni espectador": "死亡后自动重生，没有队友救援或观战",
+  "Jefe central activado · grietas desactivadas": "中央 Boss 开启・裂缝关闭",
+  "Has caído · reapareces en {x}": "你已倒下・{x} 秒后重生"
 }, 'zh-Hans');

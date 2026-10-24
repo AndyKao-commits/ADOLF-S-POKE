@@ -999,12 +999,14 @@ G.Game = (() => {
   let watch = null;
   /** El compañero al que miras, o null si miras tu cuerpo. */
   function watched() {
+    if (G.Siege && G.Siege.up) return (watch = null);
     if (!pl || !pl.dead || !G.Coop.active) return (watch = null);
     if (watch && (watch.dead || !G.Coop.puppets().includes(watch))) watch = G.Coop.puppets().find(p => !p.dead) || null;
     return watch;
   }
   /** Cambia a quién miras: tú → cada compañero vivo → tú. */
   function cycleWatch(dir) {
+    if (G.Siege && G.Siege.up) { watch = null; return; }
     const list = [null, ...G.Coop.puppets().filter(p => !p.dead)];
     if (list.length < 2) return;
     watch = list[(list.indexOf(watched()) + dir + list.length) % list.length];

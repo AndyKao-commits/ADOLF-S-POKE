@@ -14,7 +14,11 @@ G.Siege = (() => {
   const CREEP_CAP = 4;
   const KILL_CASTLE = 240;
   const PLAYER_CAP = 160;
-  let on = false, castles = [], img = null, ended = false, respawnT = 0, bumpT = 0;
+  let on = false, castles = [], img = null, ended = false, respawnT = 0;
+  const CREEP_WINDUP = 0.28;
+  const CREEP_RECOVERY = 0.55;
+  const CREEP_REACH = 12;
+  const CREEP_AGGRO = 230;
   let bossAlive = false, bossSpawns = 0, bossNextAt = 90, bossWarned = false, bossWarn = 0, bossPaid = {};
   let bossByPlayer = new Map(), bossByTeam = new Map(), bossTime = 0, sawDead = {};
   const pk = {};
@@ -42,13 +46,13 @@ G.Siege = (() => {
   }
 
   function begin(members) {
-    on = true; ended = false; respawnT = 0; bumpT = 0; rejected = 0;
+    on = true; ended = false; respawnT = 0; rejected = 0;
     for (const k in paidDeath) delete paidDeath[k];
     resetBoss();
     for (const k in pk) delete pk[k];
     let people;
     if (members && members.length) {
-      people = members.slice(0, 4).map((m, i) => ({
+      people = members.slice(0, 2).map((m, i) => ({
         uid: m.uid, name: m.name || '?', color: G.Coop.COLORS[i % G.Coop.COLORS.length]
       }));
     } else {
@@ -547,41 +551,56 @@ G.Siege = (() => {
     spawnCenterBoss();
   }
 
-  function creepTouch(dt) {
-    for (const e of G.EnemyMgr.all()) {
-      if (!on || e.dead || e.remote || !e.siegeCreep) continue;
-      if ((e.castleCd || 0) > 0) { e.castleCd -= dt; continue; }
-      for (const c of castles) {
-        if (c.uid === e.owner || c.hp <= 0) continue;
-        const reach = e.r + c.r;
-        if (G.U.dist2(e.x, e.y, c.x, c.y) > reach * reach) continue;
-        e.castleCd = 0.5;
-        applyHit(c.uid, Math.max(2, Math.round(e.dmg)), e.owner);
-        if (!on || ended || e.dead) return;
-        break;
-      }
+  function creepTarget(e) {
+    let best = null, bd = Infinity, kind = '';
+    const consider = (target, type, radius) => {
+      const reach = (e.r || 12) + radius + CREEP_REACH;
+      const d = G.U.dist2(e.x, e.y, target.x, target.y);
+      if (d <= reach * reach && d < bd) { best = target; bd = d; kind = type; }
+    };
+    // Primero combate la línea rival; después puede golpear al jugador y, si
+    // no hay defensor al alcance, al castillo. El contacto por sí solo no daña.
+    for (const o of G.EnemyMgr.all()) {
+      if (!o || o === e || o.dead || !o.siegeCreep || o.owner === e.owner) continue;
+      consider(o, 'creep', o.r || 12);
     }
+    if (!best) for (const p of people()) {
+      if (!p || p.dead || (p.uid || 'me') === e.owner) continue;
+      if ((p.spawnGuard || 0) > 0 || (p.reviveSafe || 0) > 0) continue;
+      consider(p, 'player', p.r || 14);
+    }
+    if (!best) for (const c of castles) {
+      if (c.uid === e.owner || c.hp <= 0) continue;
+      consider(c, 'castle', c.r || 26);
+    }
+    return best ? { target: best, kind } : null;
   }
 
-  /** Los monstruos de castillos distintos se pegan entre ellos. */
-  function creepFight() {
-    const creeps = [];
-    for (const e of G.EnemyMgr.all()) if (!e.dead && !e.remote && e.siegeCreep) creeps.push(e);
-    for (const e of creeps) {
-      if (e.dead || (e.creepCd || 0) > 0) continue;
-      let best = null, bd = Infinity;
-      for (const o of creeps) {
-        if (o === e || o.dead || o.owner === e.owner) continue;
-        const reach = e.r + o.r;
-        const d = G.U.dist2(e.x, e.y, o.x, o.y);
-        if (d > reach * reach || d >= bd) continue;
-        bd = d; best = o;
+  /** Ataque explícito de tropas: preparación -> un impacto -> recuperación. */
+  function creepAttacks(dt) {
+    for (const e of G.EnemyMgr.all()) {
+      if (!on || ended || e.dead || e.remote || !e.siegeCreep) continue;
+      if ((e.siegeAttackCd || 0) > 0) {
+        e.siegeAttackCd = Math.max(0, e.siegeAttackCd - dt);
+        continue;
       }
-      if (!best) continue;
-      e.creepCd = 0.5;
-      const prev = best.lastUid;
-      best.hurt(Math.max(2, Math.round(e.dmg)), '#ffb0b0', best.x - e.x, best.y - e.y, 30);
-      if (best.lastUid !== prev && !best.dead) best.lastUid = prev;
+      const found = creepTarget(e);
+      if (!found) { e.siegeWindup = 0; e.siegeAttackTarget = ''; continue; }
+      const id = found.kind + ':' + (found.target.uid || found.target.id || found.target.owner || 'castle');
+      if (e.siegeAttackTarget !== id) { e.siegeAttackTarget = id; e.siegeWindup = CREEP_WINDUP; }
+      e.siegeWindup = Math.max(0, (e.siegeWindup || CREEP_WINDUP) - dt);
+      if (e.siegeWindup > 0) continue;
+      const dmg = Math.max(2, Math.round(e.dmg));
+      if (found.kind === 'castle') applyHit(found.target.uid, dmg, e.owner);
+      else if (found.kind === 'player') poke(found.target.uid || 'me', dmg, e.owner);
+      else {
+        const prev = found.target.lastUid;
+        found.target.hurt(dmg, '#ffb0b0', found.target.x - e.x, found.target.y - e.y, 30);
+        if (found.target.lastUid !== prev && !found.target.dead) found.target.lastUid = prev;
+      }
+      if (e.strike) e.strike(found.target);
+      e.siegeAttackCd = CREEP_RECOVERY;
+      e.siegeWindup = 0;
     }
   }
 
@@ -608,8 +627,7 @@ G.Siege = (() => {
       summon(c, time);
     }
     if (on) watchGuards(dt);
-    if (on) creepTouch(dt);
-    if (on) creepFight();
+    if (on) creepAttacks(dt);
     if (on) maybeBoss(time);
   }
 
@@ -628,24 +646,8 @@ G.Siege = (() => {
       }
     } else {
       respawnT = 0;
-      for (const c of castles) if (c.cd > 0) c.cd -= dt;
-      bumpT -= dt;
-      const who = meId();
-      for (const c of castles) {
-        if (!on || c.uid === who || c.hp <= 0 || c.cd > 0) continue;
-        if (G.U.dist2(pl.x, pl.y, c.x, c.y) > (pl.r + c.r) * (pl.r + c.r)) continue;
-        c.cd = 0.45;
-        localHit(c, 8 + pl.level * 2);
-      }
-      if (on && G.Coop.active && bumpT <= 0) {
-        for (const o of G.Coop.puppets()) {
-          if (o.dead) continue;
-          if (G.U.dist2(pl.x, pl.y, o.x, o.y) > (pl.r + o.r) * (pl.r + o.r)) continue;
-          bumpT = 0.55;
-          poke(o.uid, 6 + pl.level * 1.5);
-          break;
-        }
-      }
+      // Cuerpos de jugadores, tropas y castillos nunca hacen daño. Los golpes
+      // a jugadores y castillos entran exclusivamente por skills/ataques.
     }
     if (on && authority()) tickWorld(dt, time || 0);
   }
@@ -674,22 +676,28 @@ G.Siege = (() => {
       return { x: best.x, y: best.y, r: best.r, dead: false, level: 1, _vx: 0, _vy: 0, hurt() {} };
     }
     if (!e.siegeCreep) return null;
-    let best = null, bd = Infinity, castle = false;
-    for (const c of castles) {
-      if (c.uid === e.owner || c.hp <= 0) continue;
-      const d = G.U.dist2(e.x, e.y, c.x, c.y);
-      if (d < bd) { bd = d; best = c; castle = true; }
+    let best = null, bd = CREEP_AGGRO * CREEP_AGGRO, castle = false;
+    // Sólo se desvía de la ruta por defensores cercanos. Así un jugador no
+    // puede arrastrar una oleada por todo el mapa.
+    for (const o of G.EnemyMgr.all()) {
+      if (!o || o.dead || o === e || !o.siegeCreep || o.owner === e.owner) continue;
+      const d = G.U.dist2(e.x, e.y, o.x, o.y);
+      if (d < bd) { bd = d; best = o; }
     }
     for (const p of players) {
       if (!p || p.dead) continue;
       if ((p.uid || 'me') === e.owner) continue;
+      if ((p.spawnGuard || 0) > 0 || (p.reviveSafe || 0) > 0) continue;
       const d = G.U.dist2(e.x, e.y, p.x, p.y);
       if (d < bd) { bd = d; best = p; castle = false; }
     }
-    for (const o of G.EnemyMgr.all()) {
-      if (!o || o.dead || o === e || !o.siegeCreep || o.owner === e.owner) continue;
-      const d = G.U.dist2(e.x, e.y, o.x, o.y);
-      if (d < bd) { bd = d; best = o; castle = false; }
+    if (!best) {
+      bd = Infinity;
+      for (const c of castles) {
+        if (c.uid === e.owner || c.hp <= 0) continue;
+        const d = G.U.dist2(e.x, e.y, c.x, c.y);
+        if (d < bd) { bd = d; best = c; castle = true; }
+      }
     }
     if (!best) return null;
     if (!castle) return best;
@@ -805,6 +813,7 @@ G.Siege = (() => {
     get up() { return on; },
     get half() { return HALF; },
     bossSoon() { return bossWarn > 0 ? bossWarn : 0; },
+    respawnLeft() { return on && G.Game.player && G.Game.player.dead ? Math.max(0, RESPAWN - respawnT) : 0; },
     self() {
       const c = castles.find(x => x.uid === meId());
       return c ? { hp: c.hp, maxHp: c.maxHp, shield: c.shield || 0, name: c.name } : null;
