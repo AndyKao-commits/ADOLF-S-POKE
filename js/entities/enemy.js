@@ -128,6 +128,10 @@
     hurt(amount, color = '#fff', dirX = 0, dirY = 0, knock = 0, eff = null) {
       if (this.dead) return;
       if (this.siegeCreep && this.owner && striker && striker === this.owner) return;
+      if (this.siegeCreep) {
+        const n = +amount;
+        amount = Math.max(8, Number.isFinite(n) ? n : 8);
+      }
       if (striker) this.lastUid = striker;
       if (!this.remote && this.eliteMods && this.eliteMods.guard) amount *= 0.85;
       const d = Math.max(1, Math.round(amount));

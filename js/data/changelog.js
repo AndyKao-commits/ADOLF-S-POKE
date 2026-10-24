@@ -6,6 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-25', title: ['Grupo', 'Group'], fix: [
+    ['En el grupo y en el asedio, Revivir y Revivir Máximo te levantan una vez al caer, igual que en solitario.',
+     'In a group and in siege, Revive and Max Revive get you up once when you fall, the same as in solo.']
+  ] },
   { d: '2026-10-24', title: ['Asedio', 'Siege'], chg: [
     ['En el asedio eliges el ataque con 1–4 y lo lanzas con el ratón. No se dispara solo, y el cuerpo no hiere.',
      'In siege you pick a move with 1–4 and cast it with the mouse. It does not fire by itself, and bumping does not hurt.'],
@@ -13,6 +17,8 @@ G.CHANGELOG = [
      'On a phone, siege aiming is a drag from the move. On a computer it uses the mouse, with no virtual cursor.'],
     ['En el móvil, un toque al ataque lo lanza al enemigo más cercano. Arrastrarlo sigue apuntando a mano.',
      'On a phone, tapping a move casts it at the nearest enemy. Dragging it still aims by hand.'],
+    ['En el asedio, Giro Fuego daña donde lo apuntas. Las tropas caen con los ataques, y un castillo aguanta unos 3 minutos.',
+     'In siege, Fire Spin hurts where you aim it. Troops fall to attacks, and a castle lasts about 3 minutes.'],
     ['En el ordenador el asedio se lanza con el ratón aunque la pantalla también sea táctil.',
      'On a computer, siege still casts with the mouse even if the screen is also a touch screen.']
   ] },

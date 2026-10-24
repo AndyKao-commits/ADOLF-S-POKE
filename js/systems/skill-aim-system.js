@@ -32,6 +32,9 @@ G.SkillAim = (() => {
       const len = kind === 'cone' ? Math.max(70, (m.speed || 200) * (m.life || 0.4)) : (m.radius || 70);
       return { aimType: 'cone', castRange: len, effectRadius: m.radius || len, coneAngle: ((m.arc || 0.9) * 180) / Math.PI, quickCast: true };
     }
+    if (kind === 'orbit' && G.Siege && G.Siege.up) {
+      return { aimType: 'circle', castRange: 220, effectRadius: Math.max(78, (m && m.radius) || 62), coneAngle: 0, quickCast: true };
+    }
     if (kind === 'buff' || kind === 'orbit' || kind === 'aura' || kind === 'nova' || kind === 'spin') {
       return { aimType: 'self', castRange: 0, effectRadius: m.radius || 80, coneAngle: 0, quickCast: true };
     }
@@ -77,7 +80,7 @@ G.SkillAim = (() => {
     if (!pl || !pl.slots) return null;
     const g = pl.slots[pl.focus || 0];
     const m = g && g[0];
-    return m && m.kind !== 'orbit' ? m : null;
+    return m || null;
   }
 
   function worldAt(sx, sy) {
@@ -177,7 +180,7 @@ G.SkillAim = (() => {
     if (pl.selectSlot) pl.selectSlot(i);
     const slot = pl.slots[i];
     const m = slot && slot[0];
-    if (!ready(m) || m.kind === 'orbit') return true;
+    if (!ready(m)) return true;
     gestures.set(p.pointerId, {
       state: AimState.PRESSING, pointerId: p.pointerId, move: m, finger: true,
       t0: performance.now(), x0: p.x, y0: p.y, x: p.x, y: p.y,

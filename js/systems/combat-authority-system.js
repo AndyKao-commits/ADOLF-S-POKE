@@ -49,7 +49,9 @@ G.CombatAuthority = (() => {
       if (fromNet.length) return fromNet;
     }
     if (actor && actor.enabledMoves) {
-      const list = actor.enabledMoves().filter(m => m && m.kind !== 'orbit');
+      // Giro Fuego es pasivo fuera del asedio. Dentro se lanza a mano y tiene que contar.
+      const siege = G.Siege && G.Siege.up;
+      const list = actor.enabledMoves().filter(m => m && (m.kind !== 'orbit' || siege));
       if (list.length) return list.map(m => ({ id: m.id, lvl: m.lvl || 1 }));
     }
     return parseSkills(actor && actor.net && actor.net.skills);
@@ -90,7 +92,8 @@ G.CombatAuthority = (() => {
       point: { x: actor.x + dir.x * reach, y: actor.y + dir.y * reach },
       confirm: {
         type: 'skill_cast_confirmed', castId: req.castId, playerId: req.playerId, skillId: row.id,
-        serverOrigin: { x: actor.x, y: actor.y }, direction: dir, hostTime: now
+        serverOrigin: { x: actor.x, y: actor.y }, direction: dir, hostTime: now,
+        point: { x: actor.x + dir.x * reach, y: actor.y + dir.y * reach }
       }
     };
   }

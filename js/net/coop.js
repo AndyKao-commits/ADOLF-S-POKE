@@ -237,7 +237,7 @@ G.Coop = (() => {
             local.dead ? 1 : 0, m ? m.id : '', m ? m.lvl : 1, r1(local.magnet), r2(local.aim), r2(local.xpMul),
             r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq, api.watching ? api.watching() : '',
             r1(local.level || 1),
-            local.enabledMoves().filter(x => x.kind !== 'orbit').map(x => x.id + ':' + (x.lvl || 1)).join(',').slice(0, 180)];
+            local.enabledMoves().filter(x => x.kind !== 'orbit' || (G.Siege && G.Siege.up)).map(x => x.id + ':' + (x.lvl || 1)).join(',').slice(0, 180)];
   }
 
   /** Número que llega por la red: si no es un número de verdad vale `def`, y si se pasa se queda en el tope. */
@@ -560,7 +560,10 @@ G.Coop = (() => {
         if (ev[2] === me) { if (G.CombatAuthority) G.CombatAuthority.acceptLocal(ev[1]); }
         else {
           const mate = mates.get(ev[2]);
-          if (mate && G.Combat) G.Combat.ghostCast(mate.pl, ev[3], 1, Math.atan2(+ev[6] || 0, +ev[5] || 1), 0);
+          if (mate && G.Combat) {
+            const point = ev[9] !== '' && ev[9] != null && ev[10] !== '' && ev[10] != null ? { x: +ev[9], y: +ev[10] } : null;
+            G.Combat.ghostCast(mate.pl, ev[3], 1, Math.atan2(+ev[6] || 0, +ev[5] || 1), 0, point);
+          }
         }
         break;
       case 'no':
@@ -781,7 +784,8 @@ G.Coop = (() => {
   }
   function confirmSkill(c) {
     if (!active || !host || !c) return;
-    emit(['ok', c.castId, c.playerId, c.skillId, r1(c.serverOrigin.x), r1(c.serverOrigin.y), r2(c.direction.x), r2(c.direction.y), r2(c.hostTime || 0)]);
+    emit(['ok', c.castId, c.playerId, c.skillId, r1(c.serverOrigin.x), r1(c.serverOrigin.y), r2(c.direction.x), r2(c.direction.y), r2(c.hostTime || 0),
+      c.point ? r1(c.point.x) : '', c.point ? r1(c.point.y) : '']);
   }
   function rejectSkill(castId, playerId) {
     if (!active || !host) return;

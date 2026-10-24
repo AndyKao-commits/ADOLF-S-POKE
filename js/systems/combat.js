@@ -25,7 +25,16 @@ G.Combat = (() => {
   }
 
   function tickMove(dt, pl, m, now) {
-    if (m.kind === 'orbit') { orbit(pl, m, dt, now); return; }
+    if (m.kind === 'orbit') {
+      // En el asedio se lanza a mano (un remolino donde apuntas). Fuera, gira solo.
+      if (G.SkillAim && G.SkillAim.manual()) {
+        if (G.Projectiles.clearOrbs) G.Projectiles.clearOrbs(pl);
+        if (m.t > 0) m.t -= dt;
+        return;
+      }
+      orbit(pl, m, dt, now);
+      return;
+    }
 
     if (G.SkillAim && G.SkillAim.manual()) {
       if (m.t > 0) m.t -= dt;
@@ -53,7 +62,7 @@ G.Combat = (() => {
    *  opt.asAuthority: el anfitrión dispara el muñeco de un invitado.
    *  opt.silent: no reenvía el ataque (ya va el aviso de confirmación). */
   function castNow(pl, m, point, opt) {
-    if (!pl || pl.dead || pl.frozen || !m || m.kind === 'orbit') return false;
+    if (!pl || pl.dead || pl.frozen || !m) return false;
     if (pl.remote && !(opt && opt.asAuthority)) return false;
     if (m.t > 0) return false;
     pl.skillPoint = point || null;
@@ -104,6 +113,7 @@ G.Combat = (() => {
       case 'charge':     chargeUp(pl, m); break;
       case 'spin':       spin(pl, m); break;
       case 'quake':      quake(pl, m); break;
+      case 'orbit':      siegeOrbit(pl, m); break;
       case 'vortex':     vortex(pl, m); break;
       case 'shove':      shove(pl, m); break;
       case 'stun':       stunZone(pl, m); break;
@@ -307,7 +317,14 @@ G.Combat = (() => {
     const pool = aimPool(pl);
     let cur = pl.target && !pl.target.dead && (pl.target.hurt || pl.target._pl) && !isAlly(pl.target, pl) && !sameCaster(pl.target, pl)
       ? pl.target : G.Projectiles.nearest(pool, pl.x, pl.y, reach(m));
-    if (!cur) return;
+    if (!cur) {
+      // Sin monstruo a tiro, el rayo igual puede caer en el castillo rival.
+      if (!ghost && G.Siege && G.Siege.up && G.Siege.target && G.Siege.smackAt) {
+        const t = G.Siege.target(pl.x, pl.y, reach(m), pl);
+        if (t) G.Siege.smackAt(t.x, t.y, (t.r || 26) + 8, m.dmg * pl.atkFor(m) * 0.55, pl);
+      }
+      return;
+    }
     let fx = pl.x, fy = pl.y - G.LIFT, k = 1;
     const done = new Set();
     const n = Math.max(1, m.count | 0);
@@ -480,6 +497,20 @@ G.Combat = (() => {
     if (!ghost) G.Camera.kick(0.1);
   }
 
+  /** Giro Fuego en el asedio: un remolino donde apuntas, no unas llamas que apenas rozan. */
+  function siegeOrbit(pl, m) {
+    if (!(G.Siege && G.Siege.up)) return;
+    const col = G.U.TYPE_COLOR[m.type], vis = G.VFX.forMove(m);
+    const point = pl.skillPoint;
+    const x = point ? point.x : pl.x, y = point ? point.y : pl.y;
+    const r = Math.max(78, m.radius || 62);
+    fields.push({ kind: 'vortex', owner: pl, ghost, m, col, vis, x, y, t: 0, life: 2.2, r,
+                  tick: 0.05, dmg: m.dmg * pl.atkFor(m), pull: 70 });
+    G.FX.ring(x, y, r, 8, col, 0.45, 3);
+    const mine = fields.filter(f => f.kind === 'vortex' && f.owner === pl && !f.gone);
+    for (const o of mine.slice(0, Math.max(0, mine.length - 2))) o.gone = true;
+  }
+
   /** Remolino: sale donde está el enemigo, los atrae al centro y les va dañando. */
   function vortex(pl, m) {
     const col = G.U.TYPE_COLOR[m.type], vis = G.VFX.forMove(m), tg = spotFor(pl, m);
@@ -505,7 +536,11 @@ G.Combat = (() => {
     G.Camera.kick(0.1);
     for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, m.radius)) hit(pl, e, m.dmg * pl.atkFor(m), col, e.x - pl.x, e.y - pl.y, m.knock || 300, m);
     for (const p of G.World.propsInCircle(pl.x, pl.y, m.radius)) G.World.damageProp(p, m.dmg * pl.atkFor(m), col);
-    if (G.Siege && G.Siege.up) G.Siege.strikePlayers(o => G.U.dist2(pl.x, pl.y, o.x, o.y) <= (m.radius + (o.r || 14)) ** 2, m.dmg * pl.atkFor(m) * 0.55, pl);
+    if (G.Siege && G.Siege.up) {
+      const d = m.dmg * pl.atkFor(m);
+      G.Siege.smack(pl, m.radius, d);
+      G.Siege.strikePlayers(o => G.U.dist2(pl.x, pl.y, o.x, o.y) <= (m.radius + (o.r || 14)) ** 2, d * 0.55, pl);
+    }
   }
 
   /** Aturdir: una zona avisa en el suelo y al momento daña y deja quietos a los que pilla. */
@@ -615,7 +650,10 @@ G.Combat = (() => {
           if (!e.dead) e.applyStun((m.stun || 1) * (e.boss || e.judge ? 0.35 : 1));
         }
         for (const p of G.World.propsInCircle(f.x, f.y, f.r)) G.World.damageProp(p, f.dmg, f.col);
-        if (G.Siege && G.Siege.up) G.Siege.strikePlayers(o => G.U.dist2(f.x, f.y, o.x, o.y) <= (f.r + (o.r || 14)) ** 2, f.dmg * 0.55, pl);
+        if (G.Siege && G.Siege.up) {
+          G.Siege.strikePlayers(o => G.U.dist2(f.x, f.y, o.x, o.y) <= (f.r + (o.r || 14)) ** 2, f.dmg * 0.55, pl);
+          if (G.Siege.smackAt) G.Siege.smackAt(f.x, f.y, f.r, f.dmg * 0.45, pl);
+        }
       }
       return true;
     }
@@ -628,7 +666,10 @@ G.Combat = (() => {
     const pl = f.owner, m = f.m;
     for (const e of G.EnemyMgr.queryCircle(f.x, f.y, r)) hit(pl, e, f.dmg * k, f.col, e.x - f.x, e.y - f.y, m.knock || 0, m);
     for (const p of G.World.propsInCircle(f.x, f.y, r)) G.World.damageProp(p, f.dmg * k, f.col);
-    if (G.Siege && G.Siege.up) G.Siege.strikePlayers(o => G.U.dist2(f.x, f.y, o.x, o.y) <= (r + (o.r || 14)) ** 2, f.dmg * k * 0.55, pl);
+    if (G.Siege && G.Siege.up) {
+      G.Siege.strikePlayers(o => G.U.dist2(f.x, f.y, o.x, o.y) <= (r + (o.r || 14)) ** 2, f.dmg * k * 0.55, pl);
+      if (G.Siege.smackAt) G.Siege.smackAt(f.x, f.y, r, f.dmg * k * 0.45, pl);
+    }
   }
 
   const NEW_FIELDS = new Set(['charge', 'spin', 'quake', 'vortex', 'stunzone']);
@@ -807,17 +848,20 @@ G.Combat = (() => {
   }
 
   /** Repite el ataque de un compañero sólo para verlo (sin daño). */
-  function ghostCast(pl, id, lvl, aim, evolved) {
+  function ghostCast(pl, id, lvl, aim, evolved, point) {
     const def = G.Moves.BY_ID[id];
-    if (!def || def.kind === 'orbit') return;
+    // Fuera del asedio la órbita no es un disparo (gira sola). Dentro, el remolino se ve donde cayó.
+    if (!def || (def.kind === 'orbit' && !(G.Siege && G.Siege.up))) return;
     const m = G.Moves.instance(id, lvl);
     if (evolved) G.Moves.evolve(m);
     pl.aim = aim;
+    const prev = pl.skillPoint;
+    if (point && Number.isFinite(point.x) && Number.isFinite(point.y)) pl.skillPoint = point;
     ghost = true;
     try {
       pl.cast(m);
       run(pl, m);
-    } finally { ghost = false; }
+    } finally { ghost = false; pl.skillPoint = prev; }
   }
 
   /** Orbes de un compañero que tiene activo un movimiento de órbita (sólo visual). */

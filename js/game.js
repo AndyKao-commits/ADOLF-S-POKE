@@ -315,6 +315,7 @@ G.Game = (() => {
     },
     lost(msg) { G.UI.toast(msg, 3600); endRun(false); },
     ball(tier) { offerBall(tier); },
+    item(id) { offerItem(id); },
     egg(tier) { if (pl) takeEgg(tier); },
     coin(n) { if (pl) { pl.coins += n | 0; G.FX.dmgText(pl.x, pl.y - pl.bodyH - 6, '+' + (n | 0), '#ffd23f'); } },
     candy(n) {

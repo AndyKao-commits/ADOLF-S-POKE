@@ -1431,5 +1431,7 @@ G.I18n.add({
   "En el asedio eliges el ataque con 1–4 y lo lanzas con el ratón. No se dispara solo, y el cuerpo no hiere.": "攻城戰用 1–4 選擇招式，再用滑鼠施放。不會自動攻擊，撞到也不會扣血。",
   "En el móvil el asedio se apunta arrastrando el ataque. En el ordenador se apunta con el ratón, sin cursor virtual.": "手機攻城戰是拖曳招式來瞄準。電腦用滑鼠瞄準，不會出現虛擬游標。",
   "En el móvil, un toque al ataque lo lanza al enemigo más cercano. Arrastrarlo sigue apuntando a mano.": "手機點一下招式會打向最近的敵人。往外拖曳仍然自己瞄準。",
+  "En el asedio, Giro Fuego daña donde lo apuntas. Las tropas caen con los ataques, y un castillo aguanta unos 3 minutos.": "攻城戰的火焰旋渦會打中你瞄準的地方。小怪會被攻擊打倒，城堡大約 3 分鐘會被攻下。",
   "En el ordenador el asedio se lanza con el ratón aunque la pantalla también sea táctil.": "電腦即使有觸控螢幕，攻城戰仍用滑鼠施放。",
+  "En el grupo y en el asedio, Revivir y Revivir Máximo te levantan una vez al caer, igual que en solitario.": "多人房間和攻城戰裡，復活草和活力塊會在倒下時把你拉起來一次，跟單人一樣。",
 }, 'zh-Hant');

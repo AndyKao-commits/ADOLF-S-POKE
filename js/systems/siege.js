@@ -9,7 +9,7 @@
  */
 G.Siege = (() => {
   const HALF = 832;
-  const MAX_HP = 4800;
+  const MAX_HP = 2600;
   const RESPAWN = 5;
   const CREEP_CAP = 4;
   const KILL_CASTLE = 240;
@@ -283,12 +283,18 @@ G.Siege = (() => {
   }
 
   function smack(pl, reach, dmg) {
-    if (!on || ended || !pl || pl.dead) return;
-    const who = ownerId(pl);
+    if (!pl) return;
+    smackAt(pl.x, pl.y, reach, dmg, pl);
+  }
+
+  /** Igual, pero el círculo sale de un punto (remolino, mina, meteoro), no del jugador. */
+  function smackAt(x, y, reach, dmg, who) {
+    if (!on || ended || x == null || y == null) return;
+    const uid = ownerId(who);
     for (const c of castles) {
-      if (c.uid === who || c.hp <= 0) continue;
-      if (G.U.dist2(pl.x, pl.y, c.x, c.y) > (reach + c.r) * (reach + c.r)) continue;
-      localHit(c, dmg, who);
+      if (c.uid === uid || c.hp <= 0) continue;
+      if (G.U.dist2(x, y, c.x, c.y) > (reach + c.r) * (reach + c.r)) continue;
+      localHit(c, dmg, uid);
     }
   }
 
@@ -495,9 +501,8 @@ G.Siege = (() => {
     const x = G.U.clamp(c.x - c.x / d * dist, -HALF + 24, HALF - 24);
     const y = G.U.clamp(c.y - c.y / d * dist, -HALF + 24, HALF - 24);
     const e = new G.Enemy(def, x, y, { hp: 1, dmg: 1, spd: 1 });
-    const grow = Math.floor((time || 0) / 45);
-    e.maxHp = e.hp = Math.round(18 + grow * 6);
-    e.dmg = 4 + grow;
+    e.maxHp = e.hp = Math.round(12 + Math.floor((time || 0) / 60) * 4);
+    e.dmg = 4 + Math.floor((time || 0) / 60);
     e.spd = 64;
     e.xp = 6;
     e.flying = true;
@@ -818,7 +823,7 @@ G.Siege = (() => {
   }
 
   return {
-    begin, end, clamp, contain, smack, strike, strikePlayers, marks, pickAim, tick, net, snapshot, target, aimFor, drawBorder, drawables, applyHit,
+    begin, end, clamp, contain, smack, smackAt, strike, strikePlayers, marks, pickAim, tick, net, snapshot, target, aimFor, drawBorder, drawables, applyHit,
     onCreepDown, onBossDown, noteBoss, noteDeath, payDeath, playerDown, ally, knockOut,
     get up() { return on; },
     get half() { return HALF; },

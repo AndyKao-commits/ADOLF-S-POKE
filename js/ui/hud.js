@@ -696,7 +696,7 @@ G.HUD = (() => {
       dashAt = { cx: dcx, cy: dcy, s: dashS };
     }
     const BOND = '#ff8ad8';
-    const cdOf = m => m.kind === 'orbit' ? 0 : G.U.clamp(m.t / (m.cd * Math.max(0.45, pl.cdMul)), 0, 1);
+    const cdOf = m => (m.kind === 'orbit' && !(G.Siege && G.Siege.up)) ? 0 : G.U.clamp(m.t / (m.cd * Math.max(0.45, pl.cdMul)), 0, 1);
 
     if (G.Orbs) {
       const orbs = pl.orbs || [], ob = pl.orbBuff || {};

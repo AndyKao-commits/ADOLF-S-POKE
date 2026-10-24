@@ -625,14 +625,15 @@ G.Items = (() => {
     return true;
   }
   function revive(p) {
-    if (!p || (G.Modes && G.Modes.is('siege'))) return false;
+    if (!p) return false;
     const c = p.reviveCharge;
     if (!c || c.used || !(c.hpRatio > 0)) return false;
     c.used = true;
-    p.hp = p.maxHp * c.hpRatio;
+    p.hp = Math.max(1, p.maxHp * c.hpRatio);
     p.dead = false;
     p.invuln = 1.5;
     p.reviveSafe = 1.5;
+    p._hitBy = '';
     if (G.MasteryFX) G.MasteryFX.onRevive(p);
     say(p, Math.round(c.hpRatio * 100) + '%', '#7dffb3');
     return true;
