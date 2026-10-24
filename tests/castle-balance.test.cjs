@@ -37,3 +37,12 @@ test('十人房不会让场上上限超过 30', () => {
   assert.equal(Castle.partyScale(99).players, 10);
   assert.equal(Castle.partyScale(10).cap, 30);
 });
+
+test('小奶狗与第 50 波最终决战采用新的固定规则', () => {
+  const Castle = boot();
+  assert.equal(Castle.balance.puppyHp, 4500);
+  assert.equal(Castle.balance.finalWave, 50);
+  assert.equal(Castle.balance.finalHpMul, 2.4);
+  assert.equal(Castle.balance.finalVisualMul, 4.2);
+  assert.equal(Castle.balance.finalMinPuppyHp, 0.4);
+});

@@ -938,6 +938,7 @@
       if (o.owner) { e.owner = o.owner; e.siegeCreep = !o.siegeBoss; }
       if (o.ring) e.ring = o.ring;
       if (o.siegeBoss) e.siegeBoss = true;
+      if (o.finalCastleBoss && G.Castle && G.Castle.dressFinalBoss) G.Castle.dressFinalBoss(e);
       e.net = { x: o.x, y: o.y, vx: 0, vy: 0, age: 0, dir: 0, anim: 0, st: 0 };
       list.push(e);
       byId.set(e.id, e);

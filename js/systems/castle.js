@@ -7,6 +7,11 @@
 G.Castle = (() => {
   const aim = { x: 0, y: 80, r: 34, _vx: 0, _vy: 0, level: 1, dead: false };
   const WAVES = 50, BASE_CAP = 12;
+  const PUPPY_MAX_HP = 4500;
+  const FINAL_WAVE = 50;
+  const FINAL_HP_MUL = 2.4;
+  const FINAL_VISUAL_MUL = 4.2;
+  const FINAL_MIN_PUPPY_HP = 0.40;
   let on = false, hp = 1, maxHp = 1, img = null;
   let wave = 1, queued = 0, acc = 0, won = false, bondWave = 0;
 
@@ -50,7 +55,7 @@ G.Castle = (() => {
     aim.x = 0;
     aim.y = 80;
     aim.dead = false;
-    maxHp = 7000;
+    maxHp = PUPPY_MAX_HP;
     hp = maxHp;
     wave = 1;
     queued = 0;
@@ -70,7 +75,8 @@ G.Castle = (() => {
     wave = w;
     const s = spec(w);
     const boss = w % 10 === 0;
-    queued = boss ? Math.max(4, Math.round(s.n * 0.4)) : s.n;
+    if (w === FINAL_WAVE) hp = Math.max(hp, Math.round(maxHp * FINAL_MIN_PUPPY_HP));
+    queued = w === FINAL_WAVE ? 0 : boss ? Math.max(4, Math.round(s.n * 0.4)) : s.n;
     acc = boss ? 0.35 : s.gap;
     if (boss) spawnBoss(s, w);
     if (G.Spawner) G.Spawner.say(boss ? ('Oleada ' + w + ' de 50 · ¡Jefe!') : ('Oleada ' + w + ' de 50'), 2.6);
@@ -89,6 +95,10 @@ G.Castle = (() => {
   function onBossDown() {
     if (!on || bondWave === wave) return;
     bondWave = wave;
+    // Los cuatro jefes previos reparan un poco lo defendido. El jefe final
+    // termina la partida y no abre una elección de vínculo a destiempo.
+    if (wave < FINAL_WAVE) hp = Math.min(maxHp, hp + Math.round(maxHp * 0.05));
+    if (wave === FINAL_WAVE) return;
     giveBond();
     if (G.Coop.active && G.Coop.isHost) G.Coop.broadcast(['cb']);
   }
@@ -135,15 +145,47 @@ G.Castle = (() => {
     const pt = spot();
     const e = new G.Enemy(def, pt[0], pt[1], { hp: 1, dmg: 1, spd: 1 }, true);
     const m = G.Difficulty ? G.Difficulty.combat() : { hp: 1, dmg: 1, rate: 1 };
-    e.maxHp = e.hp = Math.round(s.hp * (8 + tier) * m.hp * s.party.bossHp);
+    const final = w === FINAL_WAVE;
+    e.maxHp = e.hp = Math.round(s.hp * (8 + tier) * m.hp * s.party.bossHp * (final ? FINAL_HP_MUL : 1));
     e.dmg = s.dmg * 1.35 * m.dmg * s.party.damage;
     e.spd = Math.min(92, Math.round(s.spd * 0.82));
     e.xp = 16 + w;
     e.castleWave = w;
     e.castleBoss = true;
+    if (final) dressFinalBoss(e);
     G.EnemyMgr.add(e);
     G.Audio.sfx('boss');
     G.Camera.kick(0.8);
+  }
+
+  /** Tamaño visual enorme; el cuerpo físico queda limitado para poder esquivarlo. */
+  function dressFinalBoss(e) {
+    if (!e || e.finalCastleBoss) return e;
+    e.finalCastleBoss = true;
+    e.scale *= FINAL_VISUAL_MUL;
+    e.anim = new G.Sprites.Animator(e.dex, e.scale, !!e.shiny);
+    e.bodyH = G.Sprites.bodyHeight(e.dex, e.scale);
+    e.r = Math.min(88, G.Sprites.bodyRadius(e.dex, e.scale));
+    e.finalBaseSpd = e.spd;
+    e.finalCastleCd = 2.5;
+    e.finalCastleWindup = null;
+    e.finalPhase = 1;
+    e.ring = '#ffcb3d';
+    return e;
+  }
+
+  function updateFinalPhase(e) {
+    if (!e || !e.finalCastleBoss || e.dead || e.maxHp <= 0) return;
+    const frac = e.hp / e.maxHp;
+    const phase = frac <= 0.35 ? 3 : frac <= 0.70 ? 2 : 1;
+    if (phase !== e.finalPhase) {
+      e.finalPhase = phase;
+      e.skillCd = Math.min(e.skillCd || 3, phase === 3 ? 1 : 1.8);
+      G.Camera.kick(phase === 3 ? 1.2 : 0.75);
+      G.FX.ring(e.x, e.y, e.r, e.r * 3.2, phase === 3 ? '#ff4a4a' : '#ff9b4a', 0.7, 7);
+    }
+    e.spd = e.finalBaseSpd * (phase === 3 ? 1.20 : phase === 2 ? 1.10 : 1);
+    e.ring = phase === 3 ? '#ff4a4a' : phase === 2 ? '#ff9b4a' : '#ffcb3d';
   }
 
   /** Sólo el anfitrión (o el solo) saca la oleada y decide cuándo se ha limpiado. */
@@ -151,6 +193,8 @@ G.Castle = (() => {
     if (!on || won || hp <= 0) return;
     if (G.Coop.active && !G.Coop.isHost) return;
     const s = spec(wave);
+    const finalBoss = G.EnemyMgr.all().find(e => !e.dead && e.finalCastleBoss);
+    if (finalBoss) updateFinalPhase(finalBoss);
     if (queued > 0) {
       acc += dt;
       let made = 0;
@@ -186,6 +230,32 @@ G.Castle = (() => {
     if (!on || hp <= 0) return false;
     for (const e of G.EnemyMgr.all()) {
       if (e.dead || e.remote || e.behavior === 'thief' || e.stunT > 0 || e.siegeBoss) continue;
+      if (e.finalCastleBoss) {
+        updateFinalPhase(e);
+        if (e.finalCastleCd > 0) { e.finalCastleCd -= dt; continue; }
+        const reach = e.r + aim.r + 18;
+        if (G.U.dist2(e.x, e.y, aim.x, aim.y) > reach * reach) {
+          e.finalCastleWindup = null;
+          continue;
+        }
+        if (e.finalCastleWindup == null) {
+          e.finalCastleWindup = 1.2;
+          G.FX.ring(aim.x, aim.y, aim.r, aim.r * 2.4, '#ff4a4a', 1.2, 6);
+          if (e.strike) e.strike(aim);
+          continue;
+        }
+        e.finalCastleWindup -= dt;
+        if (e.finalCastleWindup > 0) continue;
+        const pct = e.finalPhase === 3 ? 0.08 : 0.06;
+        const dmg = Math.round(maxHp * pct);
+        hp = Math.max(0, hp - dmg);
+        e.finalCastleWindup = null;
+        e.finalCastleCd = e.finalPhase === 3 ? 4.5 : 6;
+        G.Camera.kick(1.1);
+        G.FX.dmgText(aim.x + G.U.rand(-10, 10), aim.y - 62, dmg, '#ff5f6d');
+        if (hp <= 0) return true;
+        continue;
+      }
       if ((e.castleCd || 0) > 0) { e.castleCd -= dt; continue; }
       const reach = e.r + aim.r;
       if (G.U.dist2(e.x, e.y, aim.x, aim.y) > reach * reach) continue;
@@ -232,7 +302,9 @@ G.Castle = (() => {
   }
 
   return {
-    begin, end, net, snapshot, touch, tick, draw, aim, onBossDown, giveBond, partyScale,
+    begin, end, net, snapshot, touch, tick, draw, aim, onBossDown, giveBond, partyScale, dressFinalBoss,
+    balance: { puppyHp: PUPPY_MAX_HP, finalWave: FINAL_WAVE, finalHpMul: FINAL_HP_MUL,
+      finalVisualMul: FINAL_VISUAL_MUL, finalMinPuppyHp: FINAL_MIN_PUPPY_HP },
     get up() { return on; },
     get hp() { return hp; },
     get maxHp() { return maxHp; },
