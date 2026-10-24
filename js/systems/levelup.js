@@ -23,8 +23,8 @@ G.LevelUp = (() => {
       apply: pl => pl.magnet *= 1.30, max: 6 },
     { id: 'xp',   icon: 'book', title: 'Aprendizaje',  desc: '+12% de experiencia ganada.',
       apply: pl => pl.xpMul *= 1.12, max: 8 },
-    { id: 'heal', icon: 'berry', title: 'Baya Zidra',   desc: 'Recupera el 45% de tu vida ahora mismo.',
-      apply: pl => pl.heal(pl.maxHp * 0.45) }
+    { id: 'heal', icon: 'berry', title: 'Baya Zidra',   desc: 'Recupera el 40% de tu vida ahora mismo.',
+      apply: pl => pl.heal(pl.maxHp * 0.40) }
   ];
 
   /** n elementos distintos de list, cada uno con probabilidad según weight(x). */

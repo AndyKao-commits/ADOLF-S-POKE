@@ -24,11 +24,11 @@ G.Spawner = (() => {
   const SHINY_RATE = 1 / 4096;
   let acc = 0, bossIdx = 0, surgeT = 32, announce = null, announceT = 0, preloadT = 0;
   let forceShiny = 0;           // para pruebas: los N próximos salen shiny
-  let eliteSeq = 0;
+  let eliteSeq = 0, endlessBossT = 90;
 
   function reset() {
     acc = 0; bossIdx = 0; surgeT = 32; announce = null; announceT = 0; preloadT = 0;
-    eliteSeq = 0;
+    eliteSeq = 0; endlessBossT = 90;
     G.Enemies.rollRun();
     G.Sprites.preload(G.Enemies.upcomingDex(0, 80));
   }
@@ -38,8 +38,8 @@ G.Spawner = (() => {
     return (1.6 + t * 0.028 + Math.pow(t / 60, 1.6) * 0.5) * DENSITY;
   }
 
-  /** Difícil / Reto / Pesadilla, fijada al empezar la partida. */
-  function diffMul() { return G.Settings.runDiff(G.Game && G.Game.diff); }
+  /** Difícil / Reto / Pesadilla, sólo en una partida sola. El asedio no entra. */
+  function diffMul() { return G.Difficulty ? G.Difficulty.combat() : { hp: 1, dmg: 1, rate: 1, healing: 1 }; }
 
   function ringPoint(pl, angle) {
     const d = G.Camera.outerRadius() + G.U.rand(10, 70);
@@ -112,6 +112,8 @@ G.Spawner = (() => {
 
   function spawnOne(pl, t, angle, opts) {
     let bag = G.Enemies.bagAt(t);
+    const mix = G.Endless && G.Endless.bag(bag, t);
+    if (mix) bag = mix;
     if (G.Modes && G.Modes.is('shiny')) {
       const only = bag.filter(d => G.Sprites.hasShiny(d.dex));
       if (only.length) bag = only;
@@ -125,17 +127,21 @@ G.Spawner = (() => {
         def = G.U.pick(rest);
       }
     }
-    const ang = angle == null ? Math.random() * 6.2832 : angle;
+    const ang = angle != null ? angle
+      : (G.Endless && G.Endless.side(t) != null ? G.Endless.side(t) + G.U.rand(-0.7, 0.7) : Math.random() * 6.2832);
     const pt = opts && opts.near ? nearPoint(pl, ang, isFlyer(def)) : freePoint(pl, ang, isFlyer(def));
     if (!pt) return null;
     const forced = shinyLook(def);
     const shiny = forced || rollShiny(def.dex);
     const m = diffMul();
-    const e = new G.Enemy(def, pt[0], pt[1], scaled(G.Enemies.scale(t), G.Coop.scaleHp(players.length) * hpK(t) * m.hp));
+    const grown = G.Endless ? G.Endless.tune(G.Enemies.scale(t), t) : G.Enemies.scale(t);
+    const e = new G.Enemy(def, pt[0], pt[1], scaled(grown, G.Coop.scaleHp(players.length) * hpK(t) * m.hp));
     e.dmg *= DMG_K * m.dmg; e.xp = Math.round(e.xp * XP_K);
     if (G.EnemyMgr.count >= CAP * ELITE_FROM) { e.maxHp = e.hp = Math.round(e.maxHp * 1.6); e.dmg *= 1.25; e.xp = Math.round(e.xp * 1.6); }
     if (shiny) e.makeShiny(forced);
     if (G.Events.golden) e.makeGolden();
+    if (G.Difficulty) G.Difficulty.dress(e);
+    if (G.Endless) G.Endless.dress(e);
     if (opts && opts.elite) {
       e.maxHp = e.hp = Math.round(e.maxHp * 1.3);
       e.dmg *= 1.3;
@@ -162,6 +168,7 @@ G.Spawner = (() => {
     say('¡' + e.name + (e.shiny ? ' shiny' : '') + ' salvaje apareció!', 3.2);
     G.Camera.kick(1.1);
     G.Audio.sfx('boss');
+    if (G.Endless) G.Endless.markBoss(e, false);
     return e;
   }
 
@@ -202,6 +209,15 @@ G.Spawner = (() => {
     // --- jefes ---
     const b = G.Enemies.BOSSES[bossIdx];
     if (b && t >= b.at) { spawnBoss(anchor(), t, b); bossIdx++; }
+    else if (G.Endless && G.Endless.on() && bossIdx >= G.Enemies.BOSSES.length && !G.EnemyMgr.bossAlive()) {
+      endlessBossT -= dt;
+      if (endlessBossT <= 0) {
+        endlessBossT = 90;
+        const mob = G.Enemies.bossMob(Math.min(t, 12 * 60));
+        const e = spawnBoss(anchor(), Math.min(t, 12 * 60), mob);
+        if (e) G.Endless.markBoss(e, true);
+      }
+    }
 
     // Combate de jefe: las oleadas bajan al 25% y no hay mareas, para que el
     // jefe sea un momento propio y se le pueda apuntar entre la multitud.
@@ -221,8 +237,9 @@ G.Spawner = (() => {
       surgeT = G.U.rand(38, 56);
       const base = Math.random() * 6.2832;
       const target = anchor();
+      const fan = 0.55 * (G.Difficulty ? G.Difficulty.spread() : 1) * (G.Endless ? G.Endless.fan(t) : 1);
       const n = Math.min(CAP - G.EnemyMgr.count, Math.round((14 + Math.floor(t / 22)) * G.Coop.scaleRate(players.length) * diffMul().rate * 0.4));
-      for (let i = 0; i < n; i++) spawnOne(target, t, base + G.U.rand(-0.55, 0.55));
+      for (let i = 0; i < n; i++) spawnOne(target, t, base + G.U.rand(-fan, fan));
       say('¡Marea de Pokémon!', 2.2);
       G.Audio.sfx('surge');
     }
@@ -231,7 +248,8 @@ G.Spawner = (() => {
   /** Unos cuantos de golpe desde un lado (al empezar una horda). */
   function burst(n) {
     const base = Math.random() * 6.2832, target = anchor() || G.Game.player, t = G.Game.st.time;
-    for (let i = 0; i < n && G.EnemyMgr.count < CAP + 10; i++) spawnOne(target, t, base + G.U.rand(-0.6, 0.6));
+    const fan = 0.6 * (G.Difficulty ? G.Difficulty.spread() : 1);
+    for (let i = 0; i < n && G.EnemyMgr.count < CAP + 10; i++) spawnOne(target, t, base + G.U.rand(-fan, fan));
   }
 
   /**
@@ -284,6 +302,15 @@ G.Spawner = (() => {
   /** Invitado en cooperativo: sólo corre el reloj del aviso. */
   function tickBanner(dt) { if (announceT > 0) announceT -= dt; }
 
-  return { reset, update, ahead, burst, tickBanner, banner, say, eliteWave, eliteDown, rate, SHINY_RATE, CAP,
+  function nextBossIn(t) {
+    if (G.Modes && (G.Modes.is('siege') || G.Modes.is('castle') || G.Modes.is('boss'))) return null;
+    if (G.EnemyMgr && G.EnemyMgr.bossAlive && G.EnemyMgr.bossAlive()) return null;
+    const b = G.Enemies.BOSSES[bossIdx];
+    if (b) return Math.max(0, b.at - t);
+    if (G.Endless && G.Endless.on()) return Math.max(0, endlessBossT);
+    return null;
+  }
+
+  return { reset, update, ahead, burst, tickBanner, banner, say, eliteWave, eliteDown, rate, nextBossIn, SHINY_RATE, CAP,
            debugForceShiny(n = 1) { forceShiny = n; } };
 })();

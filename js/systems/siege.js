@@ -12,11 +12,11 @@ G.Siege = (() => {
   const MAX_HP = 4800;
   const RESPAWN = 5;
   const CREEP_CAP = 4;
-  const BOSS_AT = 75;
   const KILL_CASTLE = 240;
   const PLAYER_CAP = 160;
   let on = false, castles = [], img = null, ended = false, respawnT = 0, bumpT = 0;
-  let bossSpawned = false, bossHit = new Map(), bestUid = null, best = 0;
+  let bossAlive = false, bossSpawns = 0, bossNextAt = 90, bossWarned = false, bossWarn = 0, bossPaid = {};
+  let bossByPlayer = new Map(), bossByTeam = new Map(), bossTime = 0, sawDead = {};
   const pk = {};
 
   function slots(n) {
@@ -43,7 +43,7 @@ G.Siege = (() => {
 
   function begin(members) {
     on = true; ended = false; respawnT = 0; bumpT = 0;
-    bossSpawned = false; bossHit = new Map(); bestUid = null; best = 0;
+    resetBoss();
     for (const k in pk) delete pk[k];
     let people;
     if (members && members.length) {
@@ -60,7 +60,7 @@ G.Siege = (() => {
     const pos = slots(people.length);
     castles = people.map((p, i) => ({
       uid: p.uid, name: p.name, color: p.color,
-      x: pos[i].x, y: pos[i].y, r: 26, hp: MAX_HP, maxHp: MAX_HP, cd: 0, spawnT: 0.35
+      x: pos[i].x, y: pos[i].y, r: 26, hp: MAX_HP, maxHp: MAX_HP, shield: 0, cd: 0, spawnT: 0.35
     }));
     const mine = castles.find(c => c.uid === meId()) || castles[0];
     const pl = G.Game.player;
@@ -78,9 +78,16 @@ G.Siege = (() => {
     G.Spawner.say('Asedio: los monstruos salen de los castillos. El jefe del centro no toca castillos.', 4);
   }
 
+  function bossCfg() { return (G.PvpBoss && G.PvpBoss.PVP_BOSS_CONFIG) || { firstSpawnAt: 90, respawnDelay: 120, maxSpawnCount: 3, warningSeconds: 10 }; }
+  function resetBoss() {
+    const cfg = bossCfg();
+    bossAlive = false; bossSpawns = 0; bossNextAt = cfg.firstSpawnAt; bossWarned = false; bossWarn = 0; bossPaid = {};
+    bossByPlayer = new Map(); bossByTeam = new Map(); bossTime = 0; sawDead = {};
+  }
+
   function end() {
-    on = false; castles = []; ended = false; bossSpawned = false;
-    bossHit = new Map(); bestUid = null; best = 0;
+    on = false; castles = []; ended = false;
+    resetBoss();
   }
 
   function clamp(e) {
@@ -158,9 +165,15 @@ G.Siege = (() => {
     if (!c || c.hp <= 0 || attackerUid === c.uid) return;
     const atk = attackerUid && castles.find(x => x.uid === attackerUid);
     if (atk && atk.hp <= 0) return;
-    dmg = clampDmg(dmg);
-    c.hp = Math.max(0, c.hp - dmg);
-    G.FX.dmgText(c.x + G.U.rand(-8, 8), c.y - 40, dmg, '#ff8b8b');
+    const hit = clampDmg(dmg);
+    let left = hit;
+    if (c.shield > 0) {
+      const use = Math.min(c.shield, left);
+      c.shield -= use;
+      left -= use;
+    }
+    if (left > 0) c.hp = Math.max(0, c.hp - left);
+    G.FX.dmgText(c.x + G.U.rand(-8, 8), c.y - 40, hit, left > 0 ? '#ff8b8b' : '#8fd4ff');
     if (c.hp <= 0) fall(c);
   }
 
@@ -273,27 +286,69 @@ G.Siege = (() => {
   }
 
   function noteBoss(uid, dmg) {
-    if (!on || !uid || uid === 'rival' || dmg <= 0) return;
-    let row = bossHit.get(uid);
-    if (!row) bossHit.set(uid, row = { dmg: 0 });
-    row.dmg += dmg;
-    if (row.dmg > best) { best = row.dmg; bestUid = uid; }
+    if (!on || !authority() || !uid || uid === 'rival' || dmg <= 0) return;
+    const n = Math.max(1, Math.round(dmg));
+    bossByPlayer.set(uid, (bossByPlayer.get(uid) || 0) + n);
+    bossByTeam.set(uid, (bossByTeam.get(uid) || 0) + n);
   }
 
-  function onBossDown() {
-    if (!authority()) return;
-    let sum = 0;
-    for (const row of bossHit.values()) sum += row.dmg;
-    if (sum > 0) {
-      for (const [uid, row] of bossHit) {
-        if (row.dmg <= 0) continue;
-        const xp = Math.round(80 * row.dmg / sum);
-        const coins = Math.round(40 * row.dmg / sum);
-        grant(uid, xp > 0 ? xp : 1, coins > 0 ? coins : 1);
-      }
-      if (bestUid) grantItem(bestUid, G.Items.roll());
+  function roster() {
+    const ids = castles.filter(c => c.uid !== 'rival' && c.hp > 0).map(c => c.uid);
+    const out = [];
+    const pl = G.Game && G.Game.player;
+    if (pl && ids.includes(pl.uid || 'me')) out.push(pl);
+    if (G.Coop.puppets) for (const o of G.Coop.puppets()) if (o && ids.includes(o.uid)) out.push(o);
+    return out;
+  }
+
+  function averageLevel() {
+    const people = roster();
+    if (!people.length) return 1;
+    let s = 0;
+    for (const p of people) s += Math.max(1, p.level || 1);
+    return s / people.length;
+  }
+
+  function payBoss(spawnIndex, maxHp) {
+    if (bossPaid[spawnIndex]) return;
+    const rewardId = 'boss:' + spawnIndex;
+    if (G.CombatAuthority && !G.CombatAuthority.claimReward(rewardId)) return;
+    bossPaid[spawnIndex] = true;
+    const reward = G.PvpBoss.rewardFor(spawnIndex);
+    if (!reward) return;
+    const entries = [];
+    for (const [uid, dmg] of bossByTeam) entries.push({ uid, dmg });
+    const people = [];
+    for (const [uid, dmg] of bossByPlayer) people.push({ uid, dmg });
+    const team = G.PvpBoss.winningTeam(entries);
+    const split = G.PvpBoss.splitCandy(reward.candy, people, maxHp);
+    const valid = new Set(split.rows.map(r => r.uid));
+    for (const uid of valid) grant(uid, reward.xp, 0);
+    for (const row of split.rows) if (G.Game.grantCandy) G.Game.grantCandy(row.uid, row.candy);
+    const castle = team && castles.find(c => c.uid === team && c.hp > 0);
+    if (castle) {
+      if (reward.kind === 'creep') castle.buffUntil = bossTime + 30;
+      if (reward.kind === 'shield') castle.shield = (castle.shield || 0) + Math.round(castle.maxHp * 0.15);
+      if (reward.kind === 'push') summonPush(castle, bossTime);
+      const others = castles.filter(c => c !== castle && c.hp > 0);
+      let lead = 0;
+      for (const c of others) lead = Math.max(lead, c.hp / c.maxHp);
+      if (others.length && castle.hp / castle.maxHp < lead) castle.shield = (castle.shield || 0) + Math.round(castle.maxHp * 0.10);
     }
-    bossHit = new Map(); bestUid = null; best = 0;
+    bossByPlayer = new Map();
+    bossByTeam = new Map();
+  }
+
+  function onBossDown(e) {
+    if (!authority() || !bossAlive) return;
+    bossAlive = false;
+    const index = bossSpawns - 1;
+    payBoss(index, (e && e.maxHp) || 1);
+    const cfg = bossCfg();
+    if (bossSpawns < cfg.maxSpawnCount) {
+      bossNextAt = bossTime + cfg.respawnDelay;
+      bossWarned = false;
+    }
   }
 
   /** Matar a un jugador: experiencia, y un golpe a su castillo. Menos si es siempre el mismo. */
@@ -324,33 +379,69 @@ G.Siege = (() => {
     const y = G.U.clamp(c.y - c.y / d * dist, -HALF + 24, HALF - 24);
     const e = new G.Enemy(def, x, y, { hp: 1, dmg: 1, spd: 1 });
     const grow = Math.floor((time || 0) / 45);
-    const m = G.Settings.runDiff(G.Game && G.Game.diff);
-    e.maxHp = e.hp = Math.round((18 + grow * 6) * m.hp);
-    e.dmg = (4 + grow) * m.dmg;
+    e.maxHp = e.hp = Math.round(18 + grow * 6);
+    e.dmg = 4 + grow;
     e.spd = 64;
     e.xp = 6;
     e.flying = true;
     e.owner = c.uid;
     e.ring = c.color;
     e.siegeCreep = true;
+    if ((c.buffUntil || 0) > (time || 0)) {
+      e.maxHp = e.hp = Math.round(e.maxHp * 1.2);
+      e.dmg *= 1.2;
+    }
     G.EnemyMgr.add(e);
+    return e;
   }
 
-  function maybeBoss(time) {
-    if (bossSpawned || time < BOSS_AT) return;
-    bossSpawned = true;
+  function summonPush(c, time) {
+    const e = summon(c, time);
+    if (!e) return;
+    e.siegePush = true;
+    e.maxHp = e.hp = Math.round(e.maxHp * 2.2);
+    e.dmg *= 1.8;
+  }
+
+  function spawnCenterBoss() {
+    const cfg = bossCfg();
+    const index = bossSpawns;
+    const count = Math.max(1, roster().length);
+    const avg = averageLevel();
     const def = G.Enemies.bossMob(0);
     const e = new G.Enemy(def, 0, 0, { hp: 1, dmg: 1, spd: 1 }, true);
-    const m = G.Settings.runDiff(G.Game && G.Game.diff);
-    e.maxHp = e.hp = Math.round(1200 * m.hp);
-    e.dmg = 12 * m.dmg;
+    e.maxHp = e.hp = G.PvpBoss.calculatePvpBossHp(count, avg, index);
+    e.dmg = G.PvpBoss.calculatePvpBossDamage(avg, index);
     e.spd = 68;
     e.xp = 0;
     e.siegeBoss = true;
     G.EnemyMgr.add(e);
-    G.Spawner.say('¡Jefe en el centro! Sólo ataca a jugadores.', 3.4);
+    bossSpawns += 1;
+    bossAlive = true;
+    bossByPlayer = new Map();
+    bossByTeam = new Map();
+    bossWarn = 0;
+    if (G.Spawner) G.Spawner.say('¡Jefe en el centro! Sólo ataca a jugadores.', 3.4);
     G.Audio.sfx('boss');
     G.Camera.kick(1.1);
+  }
+
+  function maybeBoss(time) {
+    bossTime = time || 0;
+    if (bossAlive || bossSpawns >= bossCfg().maxSpawnCount) { bossWarn = 0; return; }
+    const cfg = bossCfg();
+    const warnAt = bossNextAt - cfg.warningSeconds;
+    if (bossTime < warnAt) { bossWarn = 0; return; }
+    if (bossTime < bossNextAt) {
+      bossWarn = Math.max(0, bossNextAt - bossTime);
+      if (!bossWarned) {
+        bossWarned = true;
+        if (G.Spawner) G.Spawner.say('El jefe del centro llega en 10 s. Sólo ataca a jugadores.', 3.5);
+      }
+      return;
+    }
+    bossWarned = false;
+    spawnCenterBoss();
   }
 
   function creepTouch(dt) {
@@ -391,6 +482,18 @@ G.Siege = (() => {
     }
   }
 
+  function watchGuards(dt) {
+    const list = [];
+    if (G.Game && G.Game.player) list.push(G.Game.player);
+    if (G.Coop.puppets) for (const o of G.Coop.puppets()) if (o) list.push(o);
+    for (const p of list) {
+      const id = p.uid || 'me';
+      if (sawDead[id] && !p.dead) p.spawnGuard = 2;
+      sawDead[id] = !!p.dead;
+      if (p.spawnGuard > 0) p.spawnGuard -= dt;
+    }
+  }
+
   function tickWorld(dt, time) {
     if (!on) return;
     for (const c of castles) {
@@ -398,9 +501,10 @@ G.Siege = (() => {
       c.spawnT -= dt;
       if (c.spawnT > 0) continue;
       if (owned(c.uid) >= CREEP_CAP) { c.spawnT = 0.45; continue; }
-      c.spawnT = 1.65 / G.Settings.runDiff(G.Game && G.Game.diff).rate;
+      c.spawnT = 1.65;
       summon(c, time);
     }
+    if (on) watchGuards(dt);
     if (on) creepTouch(dt);
     if (on) creepFight();
     if (on) maybeBoss(time);
@@ -450,10 +554,21 @@ G.Siege = (() => {
       let best = null, bd = Infinity;
       for (const p of players) {
         if (!p || p.dead) continue;
+        if ((p.reviveSafe || 0) > 0 || (p.spawnGuard || 0) > 0) continue;
         const d = G.U.dist2(e.x, e.y, p.x, p.y);
         if (d < bd) { bd = d; best = p; }
       }
       return best;
+    }
+    if (e.siegePush) {
+      let best = null, bd = Infinity;
+      for (const c of castles) {
+        if (c.uid === e.owner || c.hp <= 0) continue;
+        const d = G.U.dist2(e.x, e.y, c.x, c.y);
+        if (d < bd) { bd = d; best = c; }
+      }
+      if (!best) return null;
+      return { x: best.x, y: best.y, r: best.r, dead: false, level: 1, _vx: 0, _vy: 0, hurt() {} };
     }
     if (!e.siegeCreep) return null;
     let best = null, bd = Infinity, castle = false;
@@ -481,13 +596,20 @@ G.Siege = (() => {
   function net(list) {
     if (!on || !list) return;
     list.forEach((pair, i) => {
-      if (!castles[i] || !pair) return;
+      if (!pair) return;
+      if (pair[0] === 'w') { bossWarn = Math.max(0, +pair[1] || 0); return; }
+      if (!castles[i]) return;
       castles[i].hp = Math.max(0, +pair[0] || 0);
       castles[i].maxHp = Math.max(1, +pair[1] || castles[i].maxHp);
+      castles[i].shield = Math.max(0, +pair[2] || 0);
     });
   }
 
-  function snapshot() { return castles.map(c => [Math.ceil(c.hp), Math.ceil(c.maxHp)]); }
+  function snapshot() {
+    const rows = castles.map(c => [Math.ceil(c.hp), Math.ceil(c.maxHp), Math.ceil(c.shield || 0)]);
+    rows.push(['w', Math.ceil(bossWarn || 0)]);
+    return rows;
+  }
 
   function target(x, y, range) {
     if (!on || ended) return null;
@@ -528,6 +650,11 @@ G.Siege = (() => {
     ctx.fillRect(-bw / 2, by, bw, 3.4);
     ctx.fillStyle = frac > 0.35 ? '#5fe08a' : '#ff5f6d';
     ctx.fillRect(-bw / 2, by, bw * frac, 3.4);
+    if (c.shield > 0 && c.maxHp > 0) {
+      const sh = Math.min(1 - frac, c.shield / c.maxHp);
+      ctx.fillStyle = '#8fd4ff';
+      ctx.fillRect(-bw / 2 + bw * frac, by, bw * sh, 3.4);
+    }
     ctx.font = '700 8px Pixelify,"Segoe UI",system-ui,sans-serif';
     ctx.textAlign = 'center';
     ctx.lineWidth = 3;
@@ -550,6 +677,17 @@ G.Siege = (() => {
     ctx.strokeStyle = '#e2b657';
     ctx.lineWidth = 8;
     ctx.strokeRect(-HALF, -HALF, HALF * 2, HALF * 2);
+    if (bossWarn > 0) {
+      const n = Math.max(1, Math.ceil(bossWarn));
+      const text = G.I18n && G.I18n.f ? G.I18n.f('Jefe del centro: {x}', n) : ('Jefe del centro: ' + n);
+      ctx.font = '700 14px Pixelify,"Segoe UI",system-ui,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(0,0,0,.8)';
+      ctx.strokeText(text, 0, -HALF + 28);
+      ctx.fillStyle = '#9fd4ff';
+      ctx.fillText(text, 0, -HALF + 28);
+    }
     ctx.restore();
   }
 
@@ -562,6 +700,11 @@ G.Siege = (() => {
     begin, end, clamp, contain, smack, strike, strikePlayers, marks, tick, net, snapshot, target, aimFor, drawBorder, drawables, applyHit,
     onCreepDown, onBossDown, noteBoss, playerDown, ally, knockOut,
     get up() { return on; },
-    get half() { return HALF; }
+    get half() { return HALF; },
+    bossSoon() { return bossWarn > 0 ? bossWarn : 0; },
+    self() {
+      const c = castles.find(x => x.uid === meId());
+      return c ? { hp: c.hp, maxHp: c.maxHp, shield: c.shield || 0, name: c.name } : null;
+    }
   };
 })();

@@ -287,7 +287,7 @@ G.Judgment = (() => {
 
   /** En la pelea (lo llama game.js en cada fotograma de juego). */
   function update(dt, pl, time) {
-    if (G.Modes && (G.Modes.is('siege') || G.Modes.is('castle'))) return;
+    if (G.Modes && (G.Modes.is('siege') || G.Modes.is('castle') || G.Modes.is('endless'))) return;
     if (!phase) {
       sampleDps(dt);                        // (para la vida del primer legendario)
       if (authority() && time >= AT && !G.Rift.inArena) start();
@@ -453,7 +453,7 @@ G.Judgment = (() => {
       if (G.Game.everyone().every(p => G.U.dist2(p.x, p.y, x, y) > 280 * 280)) break;
     }
     const k = Math.pow(HP_GROW, bossN), kd = Math.pow(DMG_GROW, bossN);
-    const m = G.Settings.runDiff(G.Game && G.Game.diff);
+    const m = G.Difficulty ? G.Difficulty.combat() : { hp: 1, dmg: 1, rate: 1 };
     const fast = Math.max(0, ...G.Game.everyone().map(p => (p.dead ? 0 : p.spd || 0)));
     const def = {
       dex, name: mon.name,

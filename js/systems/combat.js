@@ -27,6 +27,10 @@ G.Combat = (() => {
   function tickMove(dt, pl, m, now) {
     if (m.kind === 'orbit') { orbit(pl, m, dt, now); return; }
 
+    if (G.SkillAim && G.SkillAim.manual()) {
+      if (m.t > 0) m.t -= dt;
+      return;
+    }
     m.t -= dt;
     if (m.t > 0) return;
     // Los ataques que necesitan blanco esperan a tenerlo (no gastes animación al aire).
@@ -35,7 +39,7 @@ G.Combat = (() => {
       return;
     }
     // (Bromista: los potenciadores se recargan antes, ver data/ability-fx.js.)
-    m.t = Math.max(0.05, m.cd * pl.cdMul * (m.kind === 'buff' && pl.abil && pl.abil.statusCd || 1));
+    m.t = Math.max(0.05, m.cd * Math.max(0.45, pl.cdMul) * (m.kind === 'buff' && pl.abil && pl.abil.statusCd || 1));
     pl.cast(m);
     if (G.Coop.active) G.Coop.cast(pl, m);
     // Vínculo: su icono destella en el HUD al lanzarse (uno que explota pegado al
@@ -43,6 +47,39 @@ G.Combat = (() => {
     m.castAt = performance.now();
 
     run(pl, m);
+  }
+
+  /** Lo pide un botón del asedio. Si no está listo, no toca la recarga.
+   *  opt.asAuthority: el anfitrión dispara el muñeco de un invitado.
+   *  opt.silent: no reenvía el ataque (ya va el aviso de confirmación). */
+  function castNow(pl, m, point, opt) {
+    if (!pl || pl.dead || pl.frozen || !m || m.kind === 'orbit') return false;
+    if (pl.remote && !(opt && opt.asAuthority)) return false;
+    if (m.t > 0) return false;
+    pl.skillPoint = point || null;
+    m._castId = pl._castId || '';
+    try {
+      m.t = Math.max(0.05, m.cd * Math.max(0.45, pl.cdMul || 1) * (m.kind === 'buff' && pl.abil && pl.abil.statusCd || 1));
+      pl.cast(m);
+      if (G.Coop.active && pl === G.Coop.local && !(opt && opt.silent)) G.Coop.cast(pl, m);
+      m.castAt = performance.now();
+      run(pl, m);
+    } finally {
+      pl.skillPoint = null;
+      m._castId = '';
+    }
+    return true;
+  }
+
+  /** Animación local, sin daño y sin recarga. La usa el invitado mientras espera. */
+  function previewCast(pl, m, point) {
+    if (!pl || pl.dead || !m) return false;
+    const prev = ghost;
+    pl.skillPoint = point || null;
+    ghost = true;
+    try { pl.cast(m); run(pl, m); }
+    finally { ghost = prev; pl.skillPoint = null; }
+    return true;
   }
 
   function run(pl, m) {
@@ -95,7 +132,7 @@ G.Combat = (() => {
 
   function payload(m) {
     return { burn: m.burn || 0, poison: m.poison || 0, slow: m.slow || 0, knock: m.knock || 0, mtype: m.type, mcat: m.cat, src: m,
-             bounce: m.bounce | 0, drain: m.drain || 0 };
+             bounce: m.bounce | 0, drain: m.drain || 0, castId: (m && m._castId) || '' };
   }
 
   /** Tabla de tipos × clima para un ataque de tipo `type` contra `e`. */
@@ -299,7 +336,8 @@ G.Combat = (() => {
     const n = Math.max(1, m.count | 0);
     for (let i = 0; i < n; i++) {
       const a = Math.random() * 6.2832, d = n === 1 ? 0 : G.U.rand(18, 46);
-      fields.push({ kind: 'mine', owner: pl, ghost, m, col, vis, x: pl.x + Math.cos(a) * d, y: pl.y + Math.sin(a) * d * 0.8,
+      const ox = pl.skillPoint ? pl.skillPoint.x : pl.x, oy = pl.skillPoint ? pl.skillPoint.y : pl.y;
+      fields.push({ kind: 'mine', owner: pl, ghost, m, col, vis, x: ox + Math.cos(a) * d, y: oy + Math.sin(a) * d * 0.8,
                     t: 0, arm: 0.35, life: m.dur || 7, r: m.radius, dmg: m.dmg * pl.atkFor(m) });
     }
     // Como mucho unas pocas por jugador: las más viejas se van.
@@ -314,9 +352,9 @@ G.Combat = (() => {
     const near = aimPool(pl).filter(e => !e.dead && !isAlly(e, pl));
     G.U.shuffle ? G.U.shuffle(near) : near.sort(() => Math.random() - 0.5);
     for (let i = 0; i < n; i++) {
-      const e = near[i];
-      const x = e ? e.x + G.U.rand(-8, 8) : pl.x + G.U.rand(-140, 140);
-      const y = e ? e.y + G.U.rand(-6, 6) : pl.y + G.U.rand(-110, 110);
+      const e = pl.skillPoint ? null : near[i];
+      const x = pl.skillPoint ? pl.skillPoint.x + G.U.rand(-8, 8) : e ? e.x + G.U.rand(-8, 8) : pl.x + G.U.rand(-140, 140);
+      const y = pl.skillPoint ? pl.skillPoint.y + G.U.rand(-6, 6) : e ? e.y + G.U.rand(-6, 6) : pl.y + G.U.rand(-110, 110);
       fields.push({ kind: 'meteor', owner: pl, ghost, m, col, vis, x, y, t: -i * 0.09, fall: 0.5, r: m.radius, dmg: m.dmg * pl.atkFor(m) });
     }
   }
@@ -766,7 +804,7 @@ G.Combat = (() => {
 
   // Golpe crítico (Mejoras → Golpe Crítico): x1,75 de daño, número naranja y grande.
   const CRIT_MUL = 1.75;
-  const isCrit = pl => !ghost && pl.critChance > 0 && Math.random() < pl.critChance;
+  const isCrit = pl => !ghost && pl.critChance > 0 && Math.random() < Math.min(0.60, pl.critChance);
 
   /** En asedio, los monstruos de este jugador no reciben su ataque (ni lo paran). */
   function isAlly(e, who) { return !!(G.Siege && G.Siege.ally && G.Siege.ally(e, who)); }
@@ -794,9 +832,10 @@ G.Combat = (() => {
 
   function hit(pl, e, dmg, col, dx, dy, knock, m) {
     if (isAlly(e, pl)) return;
+    if (!ghost && pl && pl._castId && e && G.CombatAuthority && !G.CombatAuthority.claimDamage(pl._castId, e.id || e.uid || 'x')) return;
     const k = typeK(m.type, e) * G.Stats.taken(e.mon, m.cat) * abilOut(pl, m, e) * G.Items.outMul(pl, m.type, e) * (e.arceus && G.Judgment.dmgK ? G.Judgment.dmgK() : 1);
     const crit = isCrit(pl), sk = statusK(pl);
-    dmg *= k * (crit ? critMul(pl) * G.Items.critMul(pl) : 1);
+    dmg *= k * (crit ? Math.min(2, critMul(pl) * G.Items.critMul(pl)) : 1);
     e.hurt(dmg, col, dx, dy, sk ? knock : 0, crit ? 'crit' : G.Types.label(G.Types.mult(m.type, e.types)));
     if (!ghost) pl.onDealt(dmg);
     pl.dmgDealt += dmg;
@@ -898,6 +937,7 @@ G.Combat = (() => {
           if (p.hits.has(e.id)) continue;
           p.hits.add(e.id);
         }
+        if (!p.ghost && p.castId && G.CombatAuthority && !G.CombatAuthority.claimDamage(p.castId, e.id)) continue;
 
         // Disparo fantasma de un compañero: choca y se ve, pero no daña.
         if (p.ghost) {
@@ -910,7 +950,7 @@ G.Combat = (() => {
         }
 
         const crit = isCrit(pl), sk = statusK(pl);
-        const k = (p.mtype ? typeK(p.mtype, e) : 1) * G.Stats.taken(e.mon, p.mcat) * (crit ? critMul(pl) * G.Items.critMul(pl) : 1) * abilOut(pl, p.src, e) * G.Items.outMul(pl, p.mtype, e) * (e.arceus && G.Judgment.dmgK ? G.Judgment.dmgK() : 1);
+        const k = (p.mtype ? typeK(p.mtype, e) : 1) * G.Stats.taken(e.mon, p.mcat) * (crit ? Math.min(2, critMul(pl) * G.Items.critMul(pl)) : 1) * abilOut(pl, p.src, e) * G.Items.outMul(pl, p.mtype, e) * (e.arceus && G.Judgment.dmgK ? G.Judgment.dmgK() : 1);
         e.hurt(p.dmg * k, p.color, p.vx || (e.x - pl.x), p.vy || (e.y - pl.y), sk ? p.knock : 0,
                crit ? 'crit' : p.mtype ? G.Types.label(G.Types.mult(p.mtype, e.types)) : null);
         if (Math.random() < 0.5) G.FX.sp('impact', p.vis ? p.vis.pal : 'normal', e.x, e.y - e.bodyH * 0.5, { life: 0.12, scale: 1 });
@@ -945,13 +985,14 @@ G.Combat = (() => {
       e.touchCd = 0.55;
       e.strike(pl);
       pl.hurt(e.dmg * (pl.hasItem('protectivepads') ? 0.7 : 1), e.atkType, false, e.cat);
-      if (pl.hasItem('rockyhelmet')) e.hurt(25, '#9aa6b5', e.x - pl.x, e.y - pl.y, 80);
+      const thorns = G.Items.thorns(pl);
+      if (thorns) e.hurt(thorns, '#9aa6b5', e.x - pl.x, e.y - pl.y, 80);
       if (pl.abil && pl.abil.contact && !pl.dead && !e.dead) pl.abil.contact(pl, e);     // Elec. Estática, Cuerpo Llama...
       const [nx, ny] = G.U.norm(e.x - pl.x, e.y - pl.y);
       e.kx += nx * 150; e.ky += ny * 150;
     }
   }
 
-  return { tick, resolve, ghostCast, ghostOrbit, updateFields, drawGroundFields, drawAirFields, clearFields,
+  return { tick, resolve, castNow, previewCast, ghostCast, ghostOrbit, updateFields, drawGroundFields, drawAirFields, clearFields,
            get fieldCount() { return fields.length; } };
 })();

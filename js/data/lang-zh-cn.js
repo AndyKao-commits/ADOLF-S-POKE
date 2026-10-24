@@ -1098,7 +1098,19 @@ G.I18n.add({
   "Siniestro": "恶",
   "Tierra": "地面",
   "Veneno": "毒",
-  "Volador": "飞行"
+  "Volador": "飞行",
+  "Caramelo": "糖果",
+  "Faltan caramelos": "糖果不足",
+  "Tienes {x} caramelos": "你有 {x} 颗糖果",
+  "Cuesta {x} caramelos": "需要 {x} 颗糖果",
+  "{x} caramelos": "{x} 颗糖果",
+  "Caramelos conseguidos": "取得糖果",
+  "Caramelos gastados": "消费糖果",
+  "Caramelos que quedan": "剩余糖果",
+  "Los caramelos sólo valen en esta partida": "糖果只在本局有效",
+  "Cambiar: {x} caramelos": "刷新商品：{x} 颗糖果",
+  "Cada compra sube los precios {x} caramelos": "每次购买后价格增加 {x} 颗糖果",
+  "En la partida caen caramelos azules. Sirven para la tienda de Meowth y las Poké Balls de pago, y al terminar se pierden. Las Pokémonedas del menú siguen igual.": "对局中会掉落糖果，只能在这一局用来买喵喵商店、刷新商品和付费精灵球。不会保存，也不会换成宝可梦币。",
 }, 'zh-Hans');
 
 // Original endgame event and ranking reports (upstream 2026-10-13).

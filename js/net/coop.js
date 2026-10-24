@@ -47,12 +47,13 @@ G.Coop = (() => {
   // El anfitrión mueve a los enemigos: si cambia de pestaña (o se le congela),
   // todo se para para todos. Antes los enemigos se quedaban quietos y los demás
   // seguían jugando con una ventaja enorme.
-  let hostAway = false, stalled = false, lastHostAt = 0;
+  let hostAway = false, stalled = false, lastHostAt = 0, hostLostAt = 0;
   // Cartas de nivel: número de la ronda (anfitrión), la última que te ha llegado
   // y la última que has elegido (invitado). Y el último "quién elige" aplicado.
   let levelSeq = 0, levelNow = 1, seenSeq = 0, doneSeq = 0, lastHo = '';
   const STALL_MS = 2500;
   let members = [];
+  let spendPending = 0, hostCandy = 0;
 
   // ---------------- escalado de dificultad ----------------
   // mode 'auto': la fórmula usa a los que estáis. 'count': usa un número fijo
@@ -162,7 +163,9 @@ G.Coop = (() => {
     members = cfg.members;
     mates.clear();
     outEv = []; flushT = 0; waiting = new Set(); holds = new Set();
-    hostAway = false; stalled = false; lastHostAt = performance.now();
+    spendPending = 0; hostCandy = 0;
+    hostAway = false; stalled = false; lastHostAt = performance.now(); hostLostAt = 0;
+    if (G.CombatAuthority) G.CombatAuthority.reset();
     levelSeq = 0; levelNow = 1; seenSeq = 0; doneSeq = 0; lastHo = '';
     cfg.members.forEach((m, i) => {
       const x = (i - (cfg.members.length - 1) / 2) * 34, y = 0;
@@ -170,19 +173,21 @@ G.Coop = (() => {
       const mon = G.DEX_BY[m.dex] || G.DEX_BY[25];
       const p = new G.Player(mon, {}, !!m.shiny);
       p.remote = true; p.uid = m.uid; p.tag = m.name; p.tagColor = COLORS[i]; p.revLabel = 'Quédate a su lado';
+      p.masteryRank = G.MasteryFX ? G.MasteryFX.valid(m.mr) : '';
+      if (G.MasteryFX) { G.MasteryFX.init(p); G.MasteryFX.onSpawn(p); }
       p.x = x; p.y = y;
       p.net = { x, y, ang: Math.PI / 2, walk: 0, hp: p.maxHp, maxHp: p.maxHp, dead: 0, mv: G.baseStartOf(mon.dex), ml: 1, mag: 78, aim: Math.PI / 2, rev: 0 };
       G.Sprites.preload([mon.dex], 8000, p.shiny);
-      mates.set(m.uid, { uid: m.uid, name: m.name, color: COLORS[i], pl: p, connected: true, q: [], flushT: 0, xpMul: 1 });
+      mates.set(m.uid, { uid: m.uid, name: m.name, color: COLORS[i], pl: p, connected: true, q: [], flushT: 0, xpMul: 1, candy: 0 });
     });
   }
 
   function end() {
     active = false; host = false; local = null;
     mates.clear(); outEv = []; waiting = new Set(); holds = new Set();
+    spendPending = 0; hostCandy = 0; hostLostAt = 0;
+    if (G.CombatAuthority) G.CombatAuthority.reset();
   }
-
-  /** Te vas de la partida (los demás siguen). */
   function leave() {
     if (!active) return;
     if (host) {
@@ -226,7 +231,9 @@ G.Coop = (() => {
     const m = g.find(x => x.kind === 'orbit') || g[0];
     return [r1(local.x), r1(local.y), r2(local.moveAngle), local.walking ? 1 : 0, r1(local.hp), r1(local.maxHp),
             local.dead ? 1 : 0, m ? m.id : '', m ? m.lvl : 1, r1(local.magnet), r2(local.aim), r2(local.xpMul),
-            r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq, api.watching ? api.watching() : ''];
+            r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq, api.watching ? api.watching() : '',
+            r1(local.level || 1),
+            local.enabledMoves().filter(x => x.kind !== 'orbit').map(x => x.id + ':' + (x.lvl || 1)).join(',').slice(0, 180)];
   }
 
   /** Número que llega por la red: si no es un número de verdad vale `def`, y si se pasa se queda en el tope. */
@@ -240,7 +247,8 @@ G.Coop = (() => {
              mv: typeof a[7] === 'string' ? a[7].slice(0, 40) : '', ml: num(a[8], 1, 1, 99),
              mag: num(a[9], 0, 0, 5000), aim: num(a[10], 0, -10, 10), xpMul: num(a[11], 1, 0.1, 20),
              rev: num(a[12], 0, 0, 60), ch: a[13] === undefined ? undefined : a[13] ? 1 : 0, ld: num(a[14], 0, 0, 1e9),
-             wa: typeof a[15] === 'string' ? a[15].slice(0, 64) : '' };
+             wa: typeof a[15] === 'string' ? a[15].slice(0, 64) : '', lv: num(a[16], 1, 1, 9999),
+             skills: typeof a[17] === 'string' ? a[17].slice(0, 180) : '' };
   }
 
   /** Anfitrión: dónde mira un invitado (él mismo, o el compañero vivo que mira estando caído). */
@@ -257,7 +265,7 @@ G.Coop = (() => {
   /** Anfitrión: evento para todos los invitados (menos `except`). */
   function emit(ev, except) {
     if (!host) return;
-    for (const m of mates.values()) if (m.connected && m.uid !== except) m.q.push(ev);
+    for (const m of mates.values()) if (m.connected && m.linked !== false && m.uid !== except) m.q.push(ev);
   }
 
   /** Anfitrión: evento sólo para los que están cerca (números de daño). */
@@ -290,7 +298,7 @@ G.Coop = (() => {
       if (o.connected && o.uid !== m.uid && o.state) p[o.uid] = o.state;
     }
     const ev = m.q; m.q = [];
-    const f = { k: 'f', t: r2(st.time), lv: st.level, xp: r2(st.xp), xn: st.xpNext, ki: st.kills, bo: st.bosses, co: st.coins, tk: [st.t1, st.t10],
+    const f = { k: 'f', t: r2(st.time), lv: st.level, xp: r2(st.xp), xn: st.xpNext, ki: st.kills, bo: st.bosses, co: st.coins, cy: m.candy || 0, tk: [st.t1, st.t10],
                 p, e: enemyList(viewOf(m)), ev };
     const ja = G.Judgment.netState();       // Arceus en la Sentencia
     if (ja) f.ja = ja;
@@ -302,7 +310,7 @@ G.Coop = (() => {
     return f;
   }
 
-  function flushAll() { for (const m of mates.values()) if (m.connected) G.Net.send(m.uid, hostFrame(m)); }
+  function flushAll() { for (const m of mates.values()) if (m.connected && m.linked !== false) G.Net.send(m.uid, hostFrame(m)); }
 
   function flushClient(force) {
     if (!force && !outEv.length && flushT > 0) return;
@@ -313,16 +321,27 @@ G.Coop = (() => {
   /** Cada fotograma (también en la pantalla de subida de nivel). */
   function tick(dt) {
     if (!active) return;
+    if (host !== (me === hostUid)) host = me === hostUid;
+    const now = performance.now();
     if (host) {
       for (const m of mates.values()) {
-        if (!m.connected) continue;
+        if (m.goneAt && G.CombatAuthority && G.CombatAuthority.due(m.goneAt, now)) mateGone(m.uid);
+      }
+      for (const m of mates.values()) {
+        if (!m.connected || m.linked === false) continue;
         m.flushT -= dt;
         if (m.flushT > 0) continue;
         m.flushT = rateFor(m.uid);
         G.Net.send(m.uid, hostFrame(m));
       }
     } else {
-      if (!stalled && performance.now() - lastHostAt > STALL_MS) { stalled = true; updateAway(); }
+      if (hostLostAt && G.CombatAuthority && G.CombatAuthority.due(hostLostAt, now)) {
+        const cb = api && api.lost;
+        end();
+        if (cb) cb('Se ha perdido la conexión con el anfitrión.');
+        return;
+      }
+      if (!stalled && now - lastHostAt > STALL_MS) { stalled = true; updateAway(); }
       flushT -= dt;
       if (flushT <= 0) {
         flushT = rateFor(hostUid);
@@ -342,15 +361,30 @@ G.Coop = (() => {
   });
 
   G.Net.onPeer((u, mode) => {
-    if (!active || (mode !== 'closed' && mode !== 'failed')) return;
-    if (host) mateGone(u);
-    else if (u === hostUid) { const cb = api.lost; end(); if (cb) cb('Se ha perdido la conexión con el anfitrión.'); }
+    if (!active) return;
+    const down = mode === 'closed' || mode === 'failed';
+    if (host) {
+      const m = mates.get(u);
+      if (!m || !m.connected) return;
+      if (down) {
+        if (!m.goneAt) m.goneAt = performance.now();
+        m.linked = false;
+      } else {
+        m.goneAt = 0;
+        m.linked = true;
+      }
+      return;
+    }
+    if (u !== hostUid) return;
+    if (down) { if (!hostLostAt) hostLostAt = performance.now(); }
+    else hostLostAt = 0;
   });
 
   function mateGone(u) {
     const m = mates.get(u);
     if (!m || !m.connected) return;
     m.connected = false;
+    if (G.MasteryFX) G.MasteryFX.clear(m.pl);
     G.Projectiles.clearOrbs(m.pl);
     G.Spawner.say(m.name + ' ha dejado la partida', 2.6);
     if (waiting.has(u)) picked(u);
@@ -389,6 +423,9 @@ G.Coop = (() => {
           G.Combat.ghostCast(m.pl, ev[1], ev[2], ev[3], ev[4]);
           emit(['c', from, ev[1], ev[2], ev[3], ev[4]], from);
           break;
+        case 'sk':
+          applySkill(from, ev);
+          break;
         case 'pb':
           G.World.breakAt(ev[1], ev[2]);
           emit(['pb', ev[1], ev[2]], from);
@@ -404,8 +441,15 @@ G.Coop = (() => {
         case 're': G.Rift.enterRequest(); break;
         case 'bye': mateGone(from); break;
         case 'ft':
+          if (G.CombatAuthority && !G.CombatAuthority.claimPickup(ev[1])) break;
           if (G.Pickups.removeId(ev[1])) pickupGone(ev[1]);
           break;
+        case 'csp': {
+          const n = Math.floor(+ev[1] || 0);
+          if (n > 0 && (m.candy || 0) >= n) m.candy -= n;
+          else if (n < 0) m.candy = Math.max(0, (m.candy || 0) - n);
+          break;
+        }
         case 'cu':
           if (m && m.pl) G.Spawner.eliteWave(m.pl);
           break;
@@ -469,6 +513,7 @@ G.Coop = (() => {
     }
     api.syncTeam({ time: msg.t, level: msg.lv, xp: msg.xp, xpNext: msg.xn, kills: msg.ki, bosses: msg.bo, coins: msg.co,
                    t1: (msg.tk || [])[0], t10: (msg.tk || [])[1] });
+    if (typeof msg.cy === 'number') applyHostCandy(msg.cy);
     for (const u in msg.p || {}) {
       const m = mates.get(u);
       if (m) m.pl.net = readState(msg.p[u]);
@@ -502,12 +547,25 @@ G.Coop = (() => {
                               friendly: false, color: '#ff7a9e', vis: G.VFX.forType(ev[8]), mtype: ev[8], cat: ev[9], side: ev[10] || '' });
         break;
       case 'c': { const m = mates.get(ev[1]); if (m) G.Combat.ghostCast(m.pl, ev[2], ev[3], ev[4], ev[5]); break; }
+      case 'sk': break;
+      case 'ok':
+        if (ev[2] === me) { if (G.CombatAuthority) G.CombatAuthority.acceptLocal(ev[1]); }
+        else {
+          const mate = mates.get(ev[2]);
+          if (mate && G.Combat) G.Combat.ghostCast(mate.pl, ev[3], 1, Math.atan2(+ev[6] || 0, +ev[5] || 1), 0);
+        }
+        break;
+      case 'no':
+        if (ev[2] === me && G.CombatAuthority) G.CombatAuthority.rejectLocal(ev[1]);
+        break;
       case 'item': api.item(ev[1]); break;
       case 'ball': if (api.ball) api.ball(ev[1]); break;
       case 'egg': if (api.egg) api.egg(ev[1]); break;
       case 'orb': if (typeof ev[1] === 'string' && api.orb) api.orb(ev[1]); break;
       case 'ob': if (typeof ev[1] === 'string' && G.Orbs) G.Orbs.nearBuff(ev[1], +ev[2] || 0, +ev[3] || 0); break;
       case 'coin': if (api.coin) api.coin(ev[1]); break;
+      case 'candy': if (api.candy) api.candy(ev[1]); break;
+      case 'pv': if (G.Pickups.setValue) G.Pickups.setValue(ev[1], ev[2]); break;
       case 'pk': G.Pickups.addRemote(ev[1], ev[2], ev[3], ev[4], ev[5]); break;
       case 'pc': G.Pickups.removeId(ev[1]); break;
       case 'mag': G.Pickups.pullAll(); G.FX.ring(local.x, local.y, 10, 420, '#ff9ed8', 0.6, 4); break;
@@ -589,16 +647,21 @@ G.Coop = (() => {
 
   /** Anfitrión: alguien ha cogido un objeto. Devuelve true si es para ti. */
   function collected(p, who) {
+    if (G.CombatAuthority && p && p.id && !G.CombatAuthority.claimPickup(p.id)) return;
     emit(['pc', p.id]);
     if (p.kind === 'magnet') emit(['mag']);
     if (p.kind === 'bomb') emit(['bomb', r1(who.x), r1(who.y)]);
     if (who !== local) {
       const m = mates.get(who.uid);
-      if (m && p.kind === 'heal') m.q.push(['heal', 0.3]);
+      if (m && p.kind === 'heal') m.q.push(['heal', p.value > 0 ? p.value : 0.25]);
       else if (m && p.kind === 'item') m.q.push(['item', p.value]);
       else if (m && p.kind === 'ball') m.q.push(['ball', p.value]);
       else if (m && p.kind === 'egg') m.q.push(['egg', p.value]);
       else if (m && p.kind === 'coin') m.q.push(['coin', p.value]);
+      else if (m && p.kind === 'candy') {
+        m.candy = (m.candy || 0) + Math.max(0, p.value | 0);
+        m.q.push(['candy', p.value | 0]);
+      }
       else if (m && p.kind === 'sphere') m.q.push(['orb', p.value]);
     }
   }
@@ -677,6 +740,67 @@ G.Coop = (() => {
     end();
   }
 
+  function noteCandySpend(n) {
+    if (!active || host) return;
+    n = Math.floor(+n || 0);
+    if (!n) return;
+    spendPending += n;
+    outEv.push(['csp', n]);
+    flushClient(true);
+  }
+  function applyHostCandy(v) {
+    v = Math.max(0, Math.floor(+v || 0));
+    if (v < hostCandy) spendPending = Math.max(0, spendPending - (hostCandy - v));
+    hostCandy = v;
+    if (local) local.runCandy = Math.max(0, v - spendPending);
+  }
+  function grantCandy(uid, amount) {
+    amount = Math.max(0, Math.floor(+amount || 0));
+    if (!amount || !active || !host) return;
+    if (uid === me && local) { G.Game.addCandy(local, amount); return; }
+    const m = mates.get(uid);
+    if (!m) return;
+    m.candy = (m.candy || 0) + amount;
+    m.q.push(['candy', amount]);
+  }
+  function noteSkill(req) {
+    if (!active || !req || host) return;
+    const pack = ['sk', req.castId, req.skillId, r1(req.origin.x), r1(req.origin.y),
+      r2(req.direction.x), r2(req.direction.y), r1(req.targetPoint.x), r1(req.targetPoint.y), req.sequence | 0, req.level | 0];
+    outEv.push(pack);
+  }
+  function confirmSkill(c) {
+    if (!active || !host || !c) return;
+    emit(['ok', c.castId, c.playerId, c.skillId, r1(c.serverOrigin.x), r1(c.serverOrigin.y), r2(c.direction.x), r2(c.direction.y), r2(c.hostTime || 0)]);
+  }
+  function rejectSkill(castId, playerId) {
+    if (!active || !host) return;
+    emit(['no', castId, playerId]);
+  }
+  function applySkill(from, ev) {
+    if (!host || !G.CombatAuthority || !G.Combat) return;
+    const mate = mates.get(from);
+    if (!mate || !mate.pl) { rejectSkill(ev[1], from); return; }
+    const req = {
+      type: 'skill_cast_request', castId: String(ev[1] || ''), playerId: from, skillId: String(ev[2] || ''),
+      origin: { x: +ev[3] || 0, y: +ev[4] || 0 }, direction: { x: +ev[5] || 0, y: +ev[6] || 0 },
+      targetPoint: { x: +ev[7] || 0, y: +ev[8] || 0 }, sequence: ev[9] | 0, level: ev[10] | 0
+    };
+    const verdict = G.CombatAuthority.validate(req, mate.pl);
+    if (!verdict.ok) { rejectSkill(req.castId, from); return; }
+    const pl = mate.pl;
+    const m = G.Moves.instance(verdict.skillId, verdict.level);
+    pl.aim = Math.atan2(verdict.dir.y, verdict.dir.x);
+    pl._castId = req.castId;
+    const ok = G.Combat.castNow(pl, m, verdict.point, { asAuthority: true, silent: true });
+    pl._castId = '';
+    if (!ok) { G.CombatAuthority.undo(req); rejectSkill(req.castId, from); return; }
+    confirmSkill(verdict.confirm);
+  }
+  function pickupValue(o) {
+    if (active && host && o) emit(['pv', o.id, o.value | 0]);
+  }
+
   return {
     ANIMS, COLORS, ABS_MAX, begin, end, leave, tick, players, puppets, xpFactor, scaleRate, scaleHp,
     clampCap, normalizeRules, rulesFromSettings, publicRules, lockRun, unlockRun, activeRules, preview, fmtMul, autoRate, autoHp, autoXp,
@@ -685,6 +809,7 @@ G.Coop = (() => {
     /** Anfitrión: evento para todos. Invitado: evento para el anfitrión. */
     broadcast(ev) { emit(ev); },
     toHost(ev) { if (active && !host) { outEv.push(ev); flushClient(true); } },
+    noteCandySpend, grantCandy, pickupValue, noteSkill, confirmSkill, rejectSkill, applySkill,
     mate(u) { return mates.get(u); },
     get mates() { return [...mates.values()]; },
     get members() { return members; },

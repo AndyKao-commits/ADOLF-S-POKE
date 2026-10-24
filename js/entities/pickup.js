@@ -19,6 +19,7 @@ G.Pickups = (() => {
     magnet:{ color: '#ff9ed8', glow: '#b03d84', r: 6.5 },
     bomb:  { color: '#ff7b3d', glow: '#b03d10', r: 6.5 },
     coin:  { color: '#ffd23f', glow: '#b8860b', r: 5.5 },
+    candy: { color: '#5FA8FF', glow: '#BFE4FF', r: 4.5 },
     ticket:   { color: '#ffd23f', glow: '#c08a10', r: 7 },
     ticket10: { color: '#c47bff', glow: '#8a3fd0', r: 8 },
     item:     { color: '#ffd23f', glow: '#c08a10', r: 9 },      // value = id del objeto
@@ -47,6 +48,14 @@ G.Pickups = (() => {
     list.push(o);
     if (G.Coop.isHost) G.Coop.pickupAdded(o);
     if (list.length > MAX) {
+      const c0 = list.findIndex(p => p.kind === 'candy');
+      const c1 = c0 >= 0 ? list.findIndex((p, n) => n !== c0 && p.kind === 'candy') : -1;
+      if (c0 >= 0 && c1 >= 0) {
+        const a = list.splice(c0, 1)[0];
+        const b = list.find(p => p.kind === 'candy');
+        if (b) b.value += a.value;
+        if (G.Coop.isHost) { G.Coop.pickupGone(a.id); if (b) G.Coop.pickupValue(b); }
+      } else {
       // Fusiona los dos más antiguos de XP para no crecer sin límite.
       const i = list.findIndex(p => p.kind === 'xp' || p.kind === 'xpBig');
       if (i >= 0) {
@@ -57,6 +66,7 @@ G.Pickups = (() => {
       } else {
         const a = list.shift();
         if (G.Coop.isHost) G.Coop.pickupGone(a.id);
+      }
       }
     }
   }
@@ -79,7 +89,7 @@ G.Pickups = (() => {
   function pullAll() { for (const o of list) if (!WALK[o.kind] && !HOLD[o.kind]) o.pulled = true; }
 
   /** @param plain  sólo la experiencia (los legendarios de la Sentencia de Arceus) */
-  function dropXp(x, y, value, boss = false, legend = false, plain = false, rarity = 0) {
+  function dropXp(x, y, value, boss = false, legend = false, plain = false, rarity = 0, skipCandy = false) {
     if (boss) {
       // Los jefes revientan en un montón de orbes grandes + recompensas.
       for (let i = 0; i < 14; i++) {
@@ -87,7 +97,7 @@ G.Pickups = (() => {
         push(orb('xpBig', x + Math.cos(a) * d, y + Math.sin(a) * d, Math.ceil(value / 14)));
       }
       if (plain) return;
-      push(orb('heal', x + 24, y, 0));
+      push(orb('heal', x + 24, y, 0.30));
       push(orb('magnet', x - 24, y, 0));
       // Ticket ×10: siempre el legendario de la grieta; un jefe normal, 1 de cada 3 veces.
       // (Hasta el 12-10-2026 el legendario de la grieta daba siempre 2: salían demasiados.)
@@ -100,7 +110,7 @@ G.Pickups = (() => {
     push(orb(value >= 20 ? 'xpBig' : 'xp', x, y, value));
     if (Math.random() < TICKET_RATE) push(orb('ticket', x + G.U.rand(-6, 6), y, 1));
     if (G.Orbs && Math.random() < SPHERE_RATE) push(orb('sphere', x + G.U.rand(-6, 6), y, G.Orbs.roll()));
-    if (Math.random() < 0.08) push(orb('coin', x + G.U.rand(-8, 8), y, 2));
+    if (!skipCandy && Math.random() < 0.08) drop('candy', x + G.U.rand(-8, 8), y, 2);
     const lk = G.Items && G.Items.luckMul ? G.Items.luckMul(G.Game && G.Game.player) : 1;
     // 0,2 % al derrotar un Pokémon normal (antes 1 %). El nivel 1 y el 2 siguen en la misma proporción.
     if (Math.random() < 0.002 * lk) push(orb('ball', x + G.U.rand(-10, 10), y, Math.random() < 0.82 ? 1 : 2));
@@ -108,7 +118,7 @@ G.Pickups = (() => {
 
     // Drops ocasionales.
     const r = Math.random();
-    if (r < 0.012) push(orb('heal', x + G.U.rand(-8, 8), y, 0));
+    if (r < 0.012) push(orb('heal', x + G.U.rand(-8, 8), y, 0.25));
     else if (r < 0.020) push(orb('magnet', x, y, 0));
     else if (r < 0.026) push(orb('bomb', x, y, 0));
   }
@@ -124,9 +134,21 @@ G.Pickups = (() => {
     if (Math.random() < Math.min(0.02, HATCH_RATE[rarity] * lk)) push(orb('egg', x + G.U.rand(-12, 12), y, tier));
   }
 
-  /** Suelta un objeto suelto: 'heal' | 'magnet' | 'bomb' | 'coin'. */
+  /** Suelta un objeto suelto: 'heal' | 'magnet' | 'bomb' | 'coin' | 'candy'. */
   function drop(kind, x, y, value = 0) {
+    if (kind === 'candy' && mergeNearbyCandy(x, y, value)) return;
     push(orb(kind, x, y, value));
+  }
+  function mergeNearbyCandy(x, y, value) {
+    const near = list.find(p => p.kind === 'candy' && G.U.dist2(p.x, p.y, x, y) < 18 * 18);
+    if (!near) return false;
+    near.value += Math.max(0, Math.floor(+value || 0));
+    if (G.Coop.isHost) G.Coop.pickupValue(near);
+    return true;
+  }
+  function setValue(id, value) {
+    const p = list.find(o => o.id === id);
+    if (p) p.value = Math.max(0, Math.floor(+value || 0));
   }
 
   function orb(kind, x, y, value) {
@@ -251,6 +273,23 @@ G.Pickups = (() => {
         ctx.moveTo(p.x, y - r); ctx.lineTo(p.x + r * 0.78, y);
         ctx.lineTo(p.x, y + r); ctx.lineTo(p.x - r * 0.78, y);
         ctx.closePath(); ctx.fill();
+      } else if (p.kind === 'candy') {
+        // Misma altura que el orbe de XP (r 4.5). El dibujo es más ancho por los lazos.
+        drawCandy(ctx, p.x, y, r * 2);
+        if (p.value > 2) {
+          const w = (r * 2) * CANDY_ASPECT;
+          ctx.save();
+          ctx.font = '700 9px sans-serif';
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#000';
+          ctx.fillStyle = '#e9f6ff';
+          ctx.strokeText('×' + p.value, p.x + w / 2, y);
+          ctx.fillText('×' + p.value, p.x + w / 2, y);
+          ctx.restore();
+        }
+        continue;
       } else if (p.kind === 'coin') {
         // Moneda que gira: elipse que se estrecha.
         const sx = Math.max(0.25, Math.abs(Math.cos(p.t * 0.9)));
@@ -280,14 +319,14 @@ G.Pickups = (() => {
           drawLoot(ctx, p, y);
           if (p.kind === 'vend' && G.Game.vendPrice) {
             const price = String(G.Game.vendPrice());
-            const afford = G.Game.player && G.Game.player.coins >= G.Game.vendPrice();
+            const afford = G.Game.player && G.Game.player.runCandy >= G.Game.vendPrice();
             ctx.save();
             ctx.font = '700 13px sans-serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'bottom';
             ctx.lineWidth = 3;
             ctx.strokeStyle = '#000';
-            ctx.fillStyle = afford ? '#ffd23f' : '#ff6b7a';
+            ctx.fillStyle = afford ? '#5FA8FF' : '#ff6b7a';
             ctx.strokeText(price, p.x, y - 22);
             ctx.fillText(price, p.x, y - 22);
             ctx.restore();
@@ -303,5 +342,32 @@ G.Pickups = (() => {
     ctx.globalAlpha = 1;
   }
 
-  return { clear, all, dropXp, drop, update, draw, addRemote, removeId, pullAll, KIND, ballImg, curseImg, get count() { return list.length; } };
+  const candyPic = new Image();
+  candyPic.src = 'assets/future-use/candy/candy-token.png';
+  // Recorte del cuerpo (el PNG trae un borde casi vacío). Proporción ancho/alto.
+  const CANDY_CUT = [109, 199, 1322, 652];
+  const CANDY_ASPECT = CANDY_CUT[2] / CANDY_CUT[3];
+  /** Dibuja la piruleta centrada. `h` es la altura; el ancho sigue el dibujo. */
+  function drawCandy(ctx, cx, cy, h) {
+    const w = h * CANDY_ASPECT;
+    const x = cx - w / 2, y = cy - h / 2;
+    const smooth = ctx.imageSmoothingEnabled;
+    // El PNG es grande: al bajarlo al tamaño del orbe de XP hay que suavizar,
+    // si no el píxel más cercano sale un manchón.
+    ctx.imageSmoothingEnabled = true;
+    if (candyPic.complete && candyPic.naturalWidth) ctx.drawImage(candyPic, CANDY_CUT[0], CANDY_CUT[1], CANDY_CUT[2], CANDY_CUT[3], x, y, w, h);
+    else {
+      ctx.fillStyle = '#5FA8FF';
+      ctx.beginPath();
+      ctx.moveTo(cx, y + 1);
+      ctx.lineTo(cx + w / 2 - 1, cy);
+      ctx.lineTo(cx, y + h - 1);
+      ctx.lineTo(cx - w / 2 + 1, cy);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.imageSmoothingEnabled = smooth;
+  }
+
+  return { clear, all, dropXp, drop, update, draw, drawCandy, addRemote, removeId, setValue, pullAll, KIND, ballImg, curseImg, get count() { return list.length; } };
 })();

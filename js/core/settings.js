@@ -28,17 +28,18 @@
  *   G.Settings.fx   nivel efectivo 0 (bajo) .. 2 (alto), ya resuelto el 'auto'
  */
 G.Settings = (() => {
-  // Corriente no cambia. Las otras tres suben vida, daño y cuántos salen.
-  const RUN_DIFF = {
-    normal:    { hp: 1, dmg: 1, rate: 1 },
-    hard:      { hp: 1.5, dmg: 1.25, rate: 1.2 },
-    challenge: { hp: 2, dmg: 1.55, rate: 1.4 },
-    nightmare: { hp: 2.8, dmg: 1.9, rate: 1.65 }
-  };
-  function runDiff(id) { return RUN_DIFF[id] || RUN_DIFF.normal; }
+  // Los números de verdad están en difficulty-system.js. Esto sólo evita
+  // un fallo si algo pregunta antes de que ese archivo haya cargado.
+  function runDiff(id) {
+    if (G.Difficulty) {
+      const table = G.Difficulty.RUN_DIFFICULTY[id] || G.Difficulty.RUN_DIFFICULTY.normal;
+      return { hp: table.enemyHp, dmg: table.enemyDamage, rate: table.spawnRate, healing: table.healing };
+    }
+    return { hp: 1, dmg: 1, rate: 1, healing: 1 };
+  }
 
   const KEY = 'ps.settings';
-  const DEF = { quality: 'auto', dmgNumbers: true, calm: false, fps: false, stick: 1, stickMode: 'float', pad: null, gamepad: true, padRumble: true, aimManual: false, partyCap: 10, diffMode: 'auto', diffN: 4, diffRate: 3.25, diffHp: 1.9, diffXp: 2.8, bossN: 5, runMode: 'normal', soloDiff: 'normal', region: 'kanto' };
+  const DEF = { quality: 'auto', dmgNumbers: true, calm: false, fps: false, stick: 1, stickMode: 'float', pad: null, gamepad: true, padRumble: true, aimManual: false, partyCap: 10, diffMode: 'auto', diffN: 4, diffRate: 3.25, diffHp: 1.9, diffXp: 2.8, bossN: 5, runMode: 'normal', soloDiff: 'normal', region: 'random' };
   let s = Object.assign({}, DEF);
   try { Object.assign(s, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) { /* nada */ }
   const fns = new Set();

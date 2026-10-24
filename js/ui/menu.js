@@ -88,11 +88,11 @@ G.MenuUI = (() => {
 
   // ---------------- menú principal ----------------
 
-  const MODE_ART = { normal: [25, false], shiny: [6, true], boss: [150, false], siege: [68, false] };
+  const MODE_ART = { normal: [25, false], shiny: [6, true], boss: [150, false], siege: [68, false], endless: [133, false] };
   let modeArtReady = null;
   function ensureModeArt() {
     if (!modeArtReady) modeArtReady = Promise.all([
-      G.Sprites.preload([25, 6, 150, 68], 8000, false),
+      G.Sprites.preload([25, 6, 150, 68, 133], 8000, false),
       G.Sprites.preload([6], 8000, true)
     ]);
     return modeArtReady;
@@ -128,11 +128,23 @@ G.MenuUI = (() => {
   }
 
   const DIFFS = [
-    ['normal', 'Corriente', 'ball'],
-    ['hard', 'Difícil', 'ball2'],
-    ['challenge', 'Reto', 'ball4'],
-    ['nightmare', 'Pesadilla', 'ball3']
+    ['normal', 'Corriente', 'ball', 'La partida de siempre.'],
+    ['hard', 'Difícil', 'ball2', 'Más élites y salen más dispersos.'],
+    ['challenge', 'Reto', 'ball4', 'El élite trae una dote y el jefe un ataque más.'],
+    ['nightmare', 'Pesadilla', 'ball3', 'Más dotes, el suelo se agrieta y curas menos.']
   ];
+  const MODE_LINE = {
+    normal: 'Hordas, jefes y experiencia.',
+    shiny: 'Sólo ves Pokémon shiny.',
+    boss: 'Tres jefes a la vez. Empiezas en el nivel 20.',
+    castle: 'Cincuenta oleadas. Protege al cachorro.',
+    siege: 'Gana el último castillo en pie.',
+    endless: 'No acaba. Cada oleada cambia el peligro.'
+  };
+  const TERRAIN = {
+    forest: 'Bosque', ruins: 'Ruinas', river: 'Río', ridge: 'Nieve',
+    city: 'Ciudad', garden: 'Jardín', coast: 'Costa', moor: 'Pradera', crater: 'Meseta'
+  };
   let setupKind = null;
   function soloDiff() {
     const v = G.Settings.get('soloDiff');
@@ -157,6 +169,10 @@ G.MenuUI = (() => {
     const mode = G.Settings.get('runMode') || 'normal';
     const map = mapChoice();
     const diff = DIFFS.find(d => d[0] === soloDiff());
+    const pvp = mode === 'siege';
+    const diffRow = document.querySelector('#scr-menu [data-setup=diff]');
+    if (diffRow) diffRow.classList.toggle('hidden', pvp);
+    if (pvp && setupKind === 'diff') closeSetup();
     const modeEl = $('setup-mode-v');
     const mapEl = $('setup-map-v');
     const diffEl = $('setup-diff-v');
@@ -179,19 +195,24 @@ G.MenuUI = (() => {
       } else if (G.RegionUI && G.RegionUI.paint) G.RegionUI.paint(thumb, G.Regions.get(map));
     }
     const sum = $('menu-sum');
-    if (sum && modeEl && mapEl && diffEl) sum.textContent = modeEl.textContent + ' · ' + mapEl.textContent + ' · ' + diffEl.textContent;
+    if (sum && modeEl && mapEl) {
+      sum.textContent = pvp
+        ? modeEl.textContent + ' · ' + mapEl.textContent
+        : modeEl.textContent + ' · ' + mapEl.textContent + ' · ' + (diffEl ? diffEl.textContent : '');
+    }
     ensureModeArt().then(() => { if (G.UI.isOpen('scr-menu')) paintModeIcons(document.querySelector('#scr-menu [data-setup=mode]')); });
   }
   function openSetup(kind) {
     const pop = $('setup-pop');
     if (!pop) return;
+    if (kind === 'diff' && (G.Settings.get('runMode') || 'normal') === 'siege') return;
     if (setupKind === kind) { closeSetup(); return; }
     setupKind = kind;
     pop.classList.remove('hidden');
     document.querySelectorAll('#scr-menu .setup-row').forEach(b => b.classList.toggle('on', b.dataset.setup === kind));
     $('setup-pop-title').textContent = kind === 'mode' ? 'Elegir modo' : kind === 'map' ? 'Elegir mapa' : 'Elegir dificultad';
     const body = $('setup-pop-body');
-    body.className = 'setup-grid ' + kind;
+    body.className = 'selection-grid';
     body.replaceChildren();
     if (kind === 'mode') {
       const cur = G.Settings.get('runMode') || 'normal';
@@ -199,8 +220,9 @@ G.MenuUI = (() => {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'pick-card' + (id === cur ? ' on' : '');
-        b.innerHTML = `<span class="mode-ico" data-mode-ico="${id}"></span><b></b>`;
+        b.innerHTML = `<span class="mode-ico" data-mode-ico="${id}"></span><b></b><small></small>`;
         b.querySelector('b').textContent = label;
+        b.querySelector('small').textContent = MODE_LINE[id] || '';
         b.onclick = () => {
           G.Settings.set('runMode', id);
           if (G.Social.room && G.Social.room.isHost) G.Social.pushRules();
@@ -223,14 +245,21 @@ G.MenuUI = (() => {
         if (id === 'random') {
           b.innerHTML = '<span class="qmark">?</span>';
           name.textContent = 'Al azar';
+          const tag = document.createElement('small');
+          tag.textContent = 'Cualquier terreno';
+          b.appendChild(name);
+          b.appendChild(tag);
         } else {
           name.setAttribute('translate', 'no');
           name.textContent = mapLabel(id);
           const cv = document.createElement('canvas');
           b.appendChild(cv);
           if (G.RegionUI && G.RegionUI.paint) G.RegionUI.paint(cv, region);
+          const tag = document.createElement('small');
+          tag.textContent = TERRAIN[region.layout] || region.layout;
+          b.appendChild(name);
+          b.appendChild(tag);
         }
-        b.appendChild(name);
         b.onclick = () => {
           G.Settings.set('region', id);
           G.Audio.sfx('click');
@@ -241,12 +270,13 @@ G.MenuUI = (() => {
       }
     } else {
       const cur = soloDiff();
-      for (const [id, label, icon] of DIFFS) {
+      for (const [id, label, icon, line] of DIFFS) {
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'pick-card' + (id === cur ? ' on' : '');
-        b.innerHTML = G.Icons.html(icon, 28) + '<b></b>';
+        b.innerHTML = G.Icons.html(icon, 28) + '<b></b><small></small>';
         b.querySelector('b').textContent = label;
+        b.querySelector('small').textContent = line;
         b.onclick = () => {
           G.Settings.set('soloDiff', id);
           G.Audio.sfx('click');
@@ -257,7 +287,7 @@ G.MenuUI = (() => {
       }
       const note = document.createElement('p');
       note.className = 'setup-note';
-      note.textContent = 'Difícil: vida ×1,5, daño ×1,25 y salen ×1,2. Reto: ×2, ×1,55 y ×1,4. Pesadilla: ×2,8, ×1,9 y ×1,65. Corriente no cambia.';
+      note.textContent = 'Difícil: vida ×1,15, daño ×1,08, salen ×1,15 y curas ×0,85. Reto: ×1,35, ×1,15, ×1,25 y ×0,70. Pesadilla: ×1,60, ×1,25, ×1,35 y ×0,55. Corriente no cambia. El asedio no usa esta dificultad.';
       body.appendChild(note);
     }
   }

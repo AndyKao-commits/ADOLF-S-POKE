@@ -372,8 +372,7 @@ G.HUD = (() => {
       ctx.fillText('>>', bx + bs / 2, by + bs / 2);
     }
     ctx.font = F(700, 10); ctx.fillStyle = '#f4f8ff'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-    const zh = String((G.I18n && G.I18n.lang) || '').startsWith('zh');
-    ctx.fillText(zh ? '衝刺' : (touch ? '衝刺' : 'SPACE'), bx + bs / 2, by + bs + 14);
+    ctx.fillText(touch ? 'Esprint' : 'Espacio', bx + bs / 2, by + bs + 14);
     G.Touch.addButton(bx, by, bs, bs, () => { if (G.Game.state === 'playing' && pl.tryDash) pl.tryDash(); }, 8);
   }
 
@@ -445,15 +444,16 @@ G.HUD = (() => {
         const ix = bx0 + (i % per) * (icon + igap);
         const iy = xpY + xpH + 4 + Math.floor(i / per) * (icon + 2);
         G.Icons.draw(ctx, it.id, ix, iy, icon);
-        if (n > 1) {
+        if (n > 0) {
           ctx.font = F(800, 10);
           ctx.textAlign = 'right';
           ctx.textBaseline = 'bottom';
           ctx.lineWidth = 3;
           ctx.strokeStyle = 'rgba(0,0,0,.75)';
-          ctx.strokeText(String(n), ix + icon + 1, iy + icon + 1);
-          ctx.fillStyle = '#ffd23f';
-          ctx.fillText(String(n), ix + icon + 1, iy + icon + 1);
+          const label = n + '/' + it.max;
+          ctx.strokeText(label, ix + icon + 1, iy + icon + 1);
+          ctx.fillStyle = n >= it.max ? '#9aa6b5' : '#ffd23f';
+          ctx.fillText(label, ix + icon + 1, iy + icon + 1);
         }
       });
     }
@@ -482,6 +482,7 @@ G.HUD = (() => {
 
     // ---------- reloj, mapa, derrotas y monedas ----------
     drawRunPlate(ctx, w, sa, pl, st);
+    drawHudExtra(ctx, w, sa, st);
 
     // ---------- clima (arriba a la derecha) ----------
     const wx = G.Weather.current;
@@ -667,7 +668,7 @@ G.HUD = (() => {
       sy = G.U.clamp(pb[1] * h - S / 2, 24, h - S - 6);
     }
     const BOND = '#ff8ad8';
-    const cdOf = m => m.kind === 'orbit' ? 0 : G.U.clamp(m.t / (m.cd * pl.cdMul), 0, 1);
+    const cdOf = m => m.kind === 'orbit' ? 0 : G.U.clamp(m.t / (m.cd * Math.max(0.45, pl.cdMul)), 0, 1);
 
     if (G.Orbs) {
       const orbs = pl.orbs || [], ob = pl.orbBuff || {};
@@ -839,8 +840,9 @@ G.HUD = (() => {
       ctx.font = F(600, 10);
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(180,200,230,.55)';
-      ctx.fillText(touch ? '拖曳移動  ·  點招式開關  ·  右上角地圖  ·  右下角衝刺'
-                         : 'WASD move  ·  1-4 toggle moves  ·  M map  ·  Space dash  ·  Esc pause', w / 2, h - 4);
+      ctx.fillText(touch
+        ? 'Arrastra para moverte · toca un ataque para encenderlo o apagarlo · mapa arriba a la derecha · sprint abajo a la derecha'
+        : 'WASD mover · 1-4 encender o apagar · M mapa · Espacio sprint · Esc pausa', w / 2, h - 4);
     }
 
     ctx.restore();
@@ -945,6 +947,46 @@ G.HUD = (() => {
     }
   }
 
+  /** Bajo el reloj: oleada, cuenta del jefe y, en el asedio, la vida del castillo propio. */
+  function drawHudExtra(ctx, w, sa, st) {
+    const bits = [];
+    if (G.Endless && G.Endless.on()) bits.push(G.I18n.f('Oleada {x}', G.Endless.waveOf(st.time)));
+    let left = null;
+    if (G.Siege && G.Siege.up && G.Siege.bossSoon) left = G.Siege.bossSoon();
+    else if (G.Spawner && G.Spawner.nextBossIn) left = G.Spawner.nextBossIn(st.time);
+    if (left != null && left > 0 && left <= 15) bits.push(G.I18n.f('Jefe: {x}', Math.ceil(left)));
+    let y = 6 + sa.top + 68;
+    if (bits.length) {
+      ctx.font = F(800, 13);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(0,0,0,.7)';
+      const text = bits.join(' · ');
+      G.I18n.rawCanvas(ctx, 'strokeText', text, w / 2, y);
+      ctx.fillStyle = '#9fd4ff';
+      G.I18n.rawCanvas(ctx, 'fillText', text, w / 2, y);
+      y += 16;
+    }
+    if (!(G.Siege && G.Siege.up && G.Siege.self)) return;
+    const c = G.Siege.self();
+    if (!c || !(c.maxHp > 0)) return;
+    const bw = Math.min(220, w * 0.42), bh = 12;
+    const x = (w - bw) / 2;
+    const frac = c.hp / c.maxHp;
+    bar(ctx, x, y, bw, bh, frac, frac > 0.35 ? '#5fe08a' : '#ff5f6d');
+    if (c.shield > 0) {
+      const sh = Math.min(Math.max(0, 1 - frac), c.shield / c.maxHp);
+      ctx.fillStyle = '#8fd4ff';
+      ctx.fillRect(x + bw * frac, y, bw * sh, bh);
+    }
+    ctx.font = F(800, 10);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#06210f';
+    ctx.fillText(Math.ceil(c.hp) + '/' + Math.round(c.maxHp), w / 2, y + bh / 2 + 1);
+  }
+
   /** Placa oscura del centro: tiempo, mapa, derrotas y monedas. */
   function drawRunPlate(ctx, w, sa, pl, st) {
     const id = G.World.regionId && G.World.regionId();
@@ -952,16 +994,16 @@ G.HUD = (() => {
     const rawMap = !!id;
     const time = G.U.mmss(st.time);
     const kills = String(pl.kills | 0);
-    const coins = String(pl.coins | 0);
-    const icon = 15, gap = 12;
+    const candy = String((pl.runCandy || 0) | 0);
+    const icon = 15, candyH = 12, candyW = Math.round(candyH * (1322 / 652)), gap = 12;
     ctx.font = F(800, 13);
     const mapW = (rawMap ? G.I18n.rawCanvas(ctx, 'measureText', map) : ctx.measureText(map)).width;
     ctx.font = F(800, 15);
     const kW = ctx.measureText(kills).width;
-    const cW = ctx.measureText(coins).width;
+    const cW = ctx.measureText(candy).width;
     ctx.font = F(800, 22);
     const timeW = ctx.measureText(time).width;
-    const rowW = mapW + gap + icon + 4 + kW + gap + icon + 4 + cW;
+    const rowW = mapW + gap + icon + 4 + kW + gap + candyW + 4 + cW;
     const topW = 16 + 8 + timeW;
     const padX = 16;
     const boxW = Math.ceil(Math.max(topW, rowW) + padX * 2);
@@ -1010,9 +1052,20 @@ G.HUD = (() => {
     ctx.fillStyle = '#f7fbff';
     ctx.fillText(kills, bx, by);
     bx += kW + gap;
-    G.Icons.draw(ctx, 'coin', bx, by - 12, icon);
-    bx += icon + 4;
-    ctx.fillText(coins, bx, by);
+    const pop = pl.candyT > 0 ? 1 + (pl.candySign > 0 ? 0.16 : -0.08) * Math.max(0, pl.candyT / 0.45) : 1;
+    ctx.save();
+    ctx.translate(bx + candyW / 2, by);
+    ctx.scale(pop, pop);
+    if (G.Pickups.drawCandy) G.Pickups.drawCandy(ctx, 0, 0, candyH);
+    ctx.restore();
+    bx += candyW + 4;
+    ctx.fillStyle = pl.candyT > 0 && pl.candySign > 0 ? '#bfe4ff' : '#f7fbff';
+    ctx.fillText(candy, bx, by);
+    if (pl.candyT > 0 && pl.candyNote) {
+      ctx.font = F(800, 11);
+      ctx.fillStyle = pl.candySign > 0 ? '#9fd4ff' : '#ffb4c0';
+      ctx.fillText(pl.candyNote, bx + cW + 4, by - 11);
+    }
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
   }

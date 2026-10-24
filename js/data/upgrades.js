@@ -22,10 +22,10 @@ G.Upgrades = (() => {
     { id: 'start',  icon: 'cursor', name: 'Movimiento inicial', unit: 'Eliges con qué ataque empiezas la partida', max: 1, base: 400, grow: 1 },
     // 20-10-2026: igual, para el segundo de Repertorio (save.pstart2, ver G.startMove2Of). Sin Repertorio no se compra.
     { id: 'start2', icon: 'cursor', name: 'Segundo movimiento inicial', unit: 'Eliges el segundo ataque con el que empiezas (necesita Repertorio)', max: 1, base: 400, grow: 1, needs: 'moves' },
-    { id: 'luck', icon: 'star', name: 'Suerte', unit: '+5 de suerte por nivel. En las Poké Balls salen objetos de rareza más alta.', max: 6, base: 280, grow: 10 / 7 },
+    { id: 'luck', icon: 'star', name: 'Suerte', unit: '+5 de suerte por nivel. La misma suerte sube un poco la rareza, las Poké Balls y los huevos.', max: 6, base: 280, grow: 10 / 7 },
     { id: 'skip', icon: 'cards', name: 'Saltar', unit: '+1 salto de carta de nivel por partida.', max: 5, base: 160, grow: 1.5 },
     { id: 'fourth', icon: 'cards', name: 'Cuarta carta', unit: 'Al subir de nivel salen 4 cartas en vez de 3.', max: 1, base: 6000, grow: 1 },
-    { id: 'revival', icon: 'heart', name: 'Reponerse', unit: 'Una vez por partida, revives con el 50 % de vida.', max: 1, base: 10000, grow: 1 },
+    { id: 'revival', icon: 'heart', name: 'Reponerse', unit: 'Una vez por partida, revives con el 35 % de vida. Lo comparte con Revivir y Revivir Máximo.', max: 1, base: 10000, grow: 1 },
     { id: 'seal', icon: 'ban', name: 'Sellar', unit: '+1 objeto que deja de salir. Hay que elegir cuáles.', max: 2, base: 1600, grow: 1.6 }
   ];
   const BY = {};

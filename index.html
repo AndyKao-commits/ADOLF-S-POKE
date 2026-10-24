@@ -80,7 +80,7 @@
   ]
 }
 </script>
-<link rel="stylesheet" href="css/style.css?v=map52">
+<link rel="stylesheet" href="css/style.css?v=map54">
 <script src="js/core/locales.js?v=b8a3ce7ae9"></script>
 </head>
 <body>
@@ -220,7 +220,7 @@
     <button class="menu-item" data-go="rank">Ranking<small>Quién aguanta más</small></button>
     <button class="menu-item" data-go="settings">Ajustes<small>Sonido, gráficos, controles y cuenta</small></button>
   </nav>
-  <div id="setup-pop" class="setup-pop box hidden">
+  <div id="setup-pop" class="setup-pop menu-shell box hidden">
     <div class="setup-pop-top"><b id="setup-pop-title"></b><button id="setup-pop-x" class="btn small ghost" type="button">×</button></div>
     <div id="setup-pop-body"></div>
   </div>
@@ -643,6 +643,7 @@
     <h2 id="stall-title">喵喵的商店</h2>
     <p id="stall-sub" class="sub">每次購買後價格上漲 3 金幣</p>
     <p id="stall-coins" class="sub"></p>
+    <p id="stall-status" class="sub"></p>
     <div id="stall-cards" class="cards"></div>
     <div class="row stall-actions">
       <button id="stall-refresh" class="btn" type="button"></button>
@@ -745,10 +746,16 @@
 <script defer src="js/systems/stats.js"></script>
 <script defer src="js/systems/modes.js"></script>
 <script defer src="js/systems/castle.js"></script>
+<script defer src="js/systems/pvp-boss-system.js"></script>
 <script defer src="js/systems/siege.js"></script>
 <script defer src="js/systems/mons.js"></script>
 <script defer src="js/data/ability-fx.js"></script>
 <script defer src="js/systems/combat.js"></script>
+<script defer src="js/systems/combat-authority-system.js"></script>
+<script defer src="js/systems/skill-aim-system.js"></script>
+<script defer src="js/systems/difficulty-system.js"></script>
+<script defer src="js/systems/endless-system.js"></script>
+<script defer src="js/systems/result-system.js"></script>
 <script defer src="js/systems/spawner.js"></script>
 <script defer src="js/systems/levelup.js"></script>
 <script defer src="js/systems/gacha.js"></script>
@@ -771,9 +778,12 @@
 <script defer src="js/ui/icons.js"></script>
 <script defer src="js/ui/ui.js"></script>
 <script defer src="js/ui/hud.js"></script>
+<script defer src="js/ui/aim-preview.js"></script>
+<script defer src="js/ui/skill-controls.js"></script>
 <script defer src="js/ui/login.js"></script>
 <script defer src="js/ui/test.js"></script>
 <script defer src="js/systems/mastery.js"></script>
+<script defer src="js/systems/mastery-fx.js"></script>
 <script defer src="assets/future-use/egg-hatching/egg-hatching.js"></script>
 <script defer src="js/systems/research.js"></script>
 <script defer src="js/systems/hatch.js"></script>

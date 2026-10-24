@@ -6,6 +6,46 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-24', title: ['Marcador', 'Results'], chg: [
+    ['El marcador enseña el modo, el mapa, la dificultad, el daño y los caramelos. El récord de un jugador, el de un grupo y el del asedio se guardan aparte. La tienda no cobra si faltan caramelos o el objeto está al tope.',
+     'The results show the mode, map, difficulty, damage and candy. Solo, group and siege records are kept apart. The shop does not charge when candy is short or the item is at its cap.']
+  ] },
+  { d: '2026-10-24', title: ['Mazmorra sin fin', 'Endless dungeon'], new: [
+    ['La mazmorra sin fin no llama a Arceus. Cada oleada cambia el peligro y la vida sólo sube un poco. El récord se guarda aparte.',
+     'The endless dungeon does not call Arceus. Each wave changes the danger and HP only rises a little. The record is kept apart.']
+  ] },
+  { d: '2026-10-24', title: ['Menú', 'Menu'], chg: [
+    ['El menú abre el modo, el mapa y la dificultad en una cuadrícula. El asedio no enseña la dificultad de un jugador. El mapa nuevo empieza al azar.',
+     'The menu opens mode, map and difficulty in a grid. Siege does not show the solo difficulty. A new game starts on a random map.']
+  ] },
+  { d: '2026-10-24', title: ['Asedio', 'Siege'], chg: [
+    ['En el asedio en línea el anfitrión confirma cada ataque, cada caramelo y el premio del jefe. Si alguien se corta, su personaje espera 10 s. Si se va el anfitrión, la partida termina.',
+     'In online siege the host confirms every attack, every candy pickup and the boss reward. If someone drops, their character waits 10 s. If the host leaves, the match ends.']
+  ] },
+  { d: '2026-10-24', title: ['Asedio', 'Siege'], chg: [
+    ['En el asedio los ataques de la derecha se lanzan con un toque, o manteniendo y arrastrando. Volver al centro del botón cancela sin gastar la recarga.',
+     'In siege, the attacks on the right fire with a tap, or by holding and dragging. Dragging back to the button center cancels without using the cooldown.']
+  ] },
+  { d: '2026-10-24', title: ['Dificultad', 'Difficulty'], chg: [
+    ['Difícil, Reto y Pesadilla de un jugador suben menos la vida, bajan las curas y cambian élites y ataques. El asedio no usa estos números.',
+     'Solo Hard, Challenge and Nightmare raise HP less, lower healing, and change elites and attacks. Siege does not use these numbers.']
+  ] },
+  { d: '2026-10-24', title: ['Asedio', 'Siege'], new: [
+    ['El jefe del centro del asedio sale a los 90 s, hasta tres veces, y no usa la dificultad de un jugador. Quien participe se lleva experiencia y caramelos según el daño.',
+     'The siege center boss appears at 90 seconds, up to three times, and it does not use the solo difficulty. People who take part get XP and candy based on the damage.']
+  ] },
+  { d: '2026-10-24', title: ['Caramelos', 'Candy'], new: [
+    ['En la partida caen caramelos azules. Sirven para la tienda de Meowth y las Poké Balls de pago, y al terminar se pierden. Las Pokémonedas del menú siguen igual.',
+     'Blue candy drops during a run. It pays for Meowth\'s shop and the paid Poké Balls, and it is gone when the run ends. Menu PokéCoins stay the same.']
+  ] },
+  { d: '2026-10-24', title: ['Maestría', 'Mastery'], new: [
+    ['Bronce, plata, oro y diamante se ven en la partida: un anillo, polvo, un brillo suave o un aura dorada. Solo es visual: no cambia el daño, la vida ni la velocidad.',
+     'Bronze, silver, gold and diamond show in the run: a ring, dust, a soft glow or a gold aura. It is only visual: it does not change damage, HP or speed.']
+  ] },
+  { d: '2026-10-24', title: ['Objetos', 'Items'], chg: [
+    ['Los objetos repetidos ya no multiplican el efecto entero. Los básicos rinden menos desde la segunda copia, y los de tipo dan +20 % y +2 % la primera y luego +5 % y +1 %. Revivir, Revivir Máximo y Reponerse comparten un solo levantamiento por partida. La suerte de las mejoras y la de los objetos es la misma.',
+     'Repeated items no longer multiply the whole effect. Basic ones fall off from the second copy, and type items give +20% and +2% first, then +5% and +1%. Revive, Max Revive and Revival share one get-up per run. Upgrade luck and item luck are the same luck.']
+  ] },
   { d: '2026-10-24', title: ['Dificultad', 'Difficulty'], chg: [
     ['Difícil, Reto y Pesadilla ya cambian la partida: los enemigos tienen más vida, pegan más fuerte y salen más a menudo. Difícil es ×1,5, ×1,25 y ×1,2. Reto es ×2, ×1,55 y ×1,4. Pesadilla es ×2,8, ×1,9 y ×1,65. Corriente se queda igual. Cada una sigue con su ranking.',
      'Hard, Challenge and Nightmare now change the run: enemies have more HP, hit harder and show up more often. Hard is ×1.5, ×1.25 and ×1.2. Challenge is ×2, ×1.55 and ×1.4. Nightmare is ×2.8, ×1.9 and ×1.65. Normal stays the same. Each one still has its own ranking.']

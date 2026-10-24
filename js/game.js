@@ -39,6 +39,7 @@ G.Game = (() => {
     if (window.visualViewport) visualViewport.addEventListener('resize', resizeSoon);
     if (window.ResizeObserver) new ResizeObserver(() => resize()).observe(cv);
     G.Touch.init(cv);
+    if (G.SkillControls) G.SkillControls.init(cv);
     // En móvil: al cambiar de app o girarlo en vertical, la partida se pausa.
     document.addEventListener('visibilitychange', () => { if (document.hidden) autoPause(); });
     G.RunUI.wirePause(() => { state = 'playing'; G.UI.hideAll(); }, quitRun);
@@ -155,11 +156,19 @@ G.Game = (() => {
     G.Weather.reset();
     G.Path.clear();
     G.Hazards.clear();
+    if (G.Difficulty) G.Difficulty.reset();
+    if (G.Endless) G.Endless.reset();
+    if (G.Result) G.Result.reset();
+    if (G.SkillAim) G.SkillAim.reset();
+    if (G.CombatAuthority) G.CombatAuthority.reset();
+    if (G.MasteryFX) G.MasteryFX.reset();
     biome = 0;
     time = 0; pendingLevels = 0;
     runReal = performance.now(); tampered = false;
 
     pl = new G.Player(mon, perks, !!save.partnerShiny && G.DB.ownsShiny(mon.dex));
+    pl.masteryRank = (G.Mastery && G.Mastery.rankId(G.Mastery.row(mon.dex))) || '';
+    if (G.MasteryFX) { G.MasteryFX.init(pl); G.MasteryFX.onSpawn(pl); }
     if (G.Research) G.Research.apply(pl);
     pl.setAbility(G.Mons.abilityOf(mon.dex).id);
     banked = { t1: 0, t10: 0 };
@@ -219,7 +228,7 @@ G.Game = (() => {
   /** Experiencia que hace falta para el siguiente nivel (cofres con candado). */
   function levelXp() {
     if (!pl) return 20;
-    const k = (G.Coop.active ? G.Coop.xpFactor() : 1) * (pl.xpMul || 1);
+    const k = (G.Coop.active ? G.Coop.xpFactor() : 1) * Math.min(2, pl.xpMul || 1);
     return Math.ceil((pl.xpNext - pl.xp + 1) / k);
   }
 
@@ -307,6 +316,12 @@ G.Game = (() => {
     ball(tier) { offerBall(tier); },
     egg(tier) { if (pl) takeEgg(tier); },
     coin(n) { if (pl) { pl.coins += n | 0; G.FX.dmgText(pl.x, pl.y - pl.bodyH - 6, '+' + (n | 0), '#ffd23f'); } },
+    candy(n) {
+      n = Math.max(0, Math.floor(+n || 0));
+      if (!pl || !n) return;
+      pl.candyEarned += n;
+      pl.candyT = 0.45; pl.candySign = 1; pl.candyNote = '+' + n;
+    },
     mateLeft() {},
     /** Grupo: quién está eligiendo fusión. Mientras haya alguien, todo parado. */
     hold(names) {
@@ -366,14 +381,23 @@ G.Game = (() => {
 
   function endRun(dead = true) {
     if (state === 'over' || !pl) return;
-    let waveMark = 0;
+    let waveMark = 0, waveNow = 0;
     if (G.Modes.is('castle') && G.Castle && G.Castle.up) {
       const sec = Math.max(0, Math.min(9999, Math.floor(time)));
       const w = castleWon ? 51 : (G.Castle.wave || 1);
       waveMark = w * 10000 + (9999 - sec);
-    }
+      waveNow = w;
+    } else if (G.Endless && G.Endless.on()) waveNow = G.Endless.waveOf(time);
+    const sheet = G.Result ? G.Result.seal({
+      pl, time, wave: waveNow,
+      mapId: (G.World.regionId && G.World.regionId()) || '',
+      diff: (G.Modes.is('siege') || (G.Coop && G.Coop.active)) ? '' : runDiff,
+      win: G.Modes.is('siege') ? !!(siegeResult && siegeResult.win === (pl.uid || 'me')) : (G.Modes.is('castle') ? !!castleWon : !dead),
+      group: !!(G.Coop && G.Coop.active)
+    }) : null;
     G.Castle.end();
     if (G.Siege) G.Siege.end();
+    if (G.MasteryFX) G.MasteryFX.reset();
     const coop = !!pl.uid;                    // sólo las partidas en grupo le ponen uid
     const wasHost = !!pl.coopHost;
     const team = coop ? G.Coop.members.slice() : [];
@@ -391,19 +415,30 @@ G.Game = (() => {
       recogidas: pl.coins
     };
     const coins = Math.round((parts.tiempo + parts.derrotados + parts.jefes + parts.recogidas) * mul);
-    const record = !G.Modes.is('siege') && time > save.stats.bestTime;
+    const endlessRun = G.Modes.is('endless');
+    const record = !G.Modes.is('siege') && !endlessRun && time > save.stats.bestTime;
 
     save.coins += coins;
     bankTickets(false);
     save.stats.runs++;
     save.pused = save.pused || {};
     save.pused[pl.dex] = (+save.pused[pl.dex] || 0) + 1;     // para "más usados" en la colección
-    if (G.Mastery) G.Mastery.note(pl.dex, pl.kills, G.Modes.is('siege') ? null : time, pl.speciesEvo);
+    if (G.Mastery) G.Mastery.note(pl.dex, pl.kills, (G.Modes.is('siege') || endlessRun) ? null : time, pl.speciesEvo);
     if (G.Hatch) G.Hatch.noteRun(pl);
     save.stats.totalKills += pl.kills;
-    if (!G.Modes.is('siege')) {
+    if (!G.Modes.is('siege') && !endlessRun) {
       save.stats.bestTime = Math.max(save.stats.bestTime, Math.floor(time));
       if (coop) save.stats.bestGroupTime = Math.max(save.stats.bestGroupTime || 0, Math.floor(time));
+    }
+    let endless = null;
+    if (endlessRun && G.Endless) {
+      endless = G.Endless.snapshot(pl, time);
+      const prev = save.stats.endlessBest;
+      endless.record = !prev || endless.survivalTime > (prev.survivalTime || 0);
+      if (endless.record) save.stats.endlessBest = {
+        survivalTime: endless.survivalTime, wave: endless.wave, kills: endless.kills,
+        bossKills: endless.bossKills, totalDamage: endless.totalDamage, candyEarned: endless.candyEarned
+      };
     }
     save.stats.bestLevel = Math.max(save.stats.bestLevel, pl.level);
     save.stats.coinsEarned += coins;
@@ -426,7 +461,7 @@ G.Game = (() => {
     const group = coop && team.length >= 2;
     const siegeWin = G.Modes.is('siege') && siegeResult && siegeResult.win === (pl.uid || 'me');
     const castleRank = G.Modes.is('castle') && (lostCastle || castleWon);
-    const sent = !ok ? null
+    const sent = !ok || endlessRun ? null
                : G.Modes.is('siege') ? (siegeWin ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny, runMode: group ? 'siegeParty' : 'siege' })) : null)
                : G.Modes.is('castle') && !castleRank ? null
                : !group ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny, runMode: G.Modes.id }))
@@ -437,6 +472,7 @@ G.Game = (() => {
     G.RunUI.showOver({
       dead, cause: castleWon ? 'castle-win' : lostCastle ? 'castle' : (G.Modes.is('siege') && siegeResult ? (siegeWin ? 'siege-win' : 'siege-lose') : ''), time, level: pl.level, kills: pl.kills, bosses: pl.bosses, coins, record, t1: pl.t1, t10: pl.t10, judge,
       moves: pl.moves, caught,
+      candyEarned: pl.candyEarned || 0, candySpent: pl.candySpent || 0, candyLeft: pl.runCandy || 0, endless, sheet,
       breakdown: Object.entries(parts).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(' · ') +
                  (mul > 1 ? ` · ×${mul.toFixed(2)} Fortuna` : '')
     }, () => { pl = null; G.Flow.afterRun(); });
@@ -558,7 +594,7 @@ G.Game = (() => {
 
   // ---------------- recogida ----------------
 
-  const PICK_SFX = { xp: 'xp', xpBig: 'xp', coin: 'coin', heal: 'heal', bomb: 'break', magnet: 'confirm', ticket: 'shiny', ticket10: 'legend', item: 'legend', ball: 'confirm', egg: 'shiny', sphere: 'confirm' };
+  const PICK_SFX = { xp: 'xp', xpBig: 'xp', coin: 'coin', candy: 'coin', heal: 'heal', bomb: 'break', magnet: 'confirm', ticket: 'shiny', ticket10: 'legend', item: 'legend', ball: 'confirm', egg: 'shiny', sphere: 'confirm' };
 
   /*
    * Cooperativo: la elección de objeto y las cartas de nivel no pueden taparse.
@@ -600,7 +636,7 @@ G.Game = (() => {
     tier = Math.max(1, Math.min(3, tier | 0 || 1));
     if (state === 'levelup' || G.UI.isOpen('scr-levelup') || G.UI.isOpen('scr-item')) { laterBalls.push(tier); return; }
     const options = G.Items.rollChoices(tier, pl, G.Items.choices(pl));
-    if (!options.length) return;
+    if (!options.length) return false;
     let mine = false;
     const take = id => {
       openItem = null;
@@ -653,6 +689,10 @@ G.Game = (() => {
       }
       return;
     }
+    if (p.kind === 'candy') {
+      if (mine) addCandy(who, p.value);
+      return;
+    }
     if (p.kind === 'ball') {
       if (mine) offerBall(p.value);
       return;
@@ -677,7 +717,7 @@ G.Game = (() => {
       return;
     }
     if (p.kind === 'heal') {
-      if (mine) pl.heal(pl.maxHp * 0.3);
+      if (mine) pl.heal(pl.maxHp * (p.value > 0 ? p.value : 0.25));
       G.FX.ring(who.x, who.y, 6, 60, '#5fe08a', 0.4, 3);
       return;
     }
@@ -746,6 +786,46 @@ G.Game = (() => {
     if (G.Coop.active && !G.Coop.isHost) G.Coop.toHost(['ft', p.id]);
     else if (G.Coop.isHost) G.Coop.pickupGone(p.id);
   }
+  function markCandy(player, text, sign) {
+    player.candyT = 0.45;
+    player.candySign = sign;
+    player.candyNote = text;
+  }
+  function addCandy(player, amount) {
+    amount = Math.max(0, Math.floor(Number(amount) || 0));
+    if (!player || !amount) return 0;
+    player.runCandy += amount;
+    player.candyEarned += amount;
+    markCandy(player, '+' + amount, 1);
+    return amount;
+  }
+  function spendCandy(player, amount) {
+    amount = Math.max(0, Math.floor(Number(amount) || 0));
+    if (!player || !amount || player.runCandy < amount) return false;
+    player.runCandy -= amount;
+    player.candySpent += amount;
+    markCandy(player, '-' + amount, -1);
+    if (G.Coop.active && !G.Coop.isHost && G.Coop.noteCandySpend) G.Coop.noteCandySpend(amount);
+    return true;
+  }
+  function refundCandy(player, amount) {
+    amount = Math.max(0, Math.floor(Number(amount) || 0));
+    if (!player || !amount) return;
+    player.runCandy += amount;
+    player.candySpent = Math.max(0, (player.candySpent || 0) - amount);
+    if (G.Coop.active && !G.Coop.isHost && G.Coop.noteCandySpend) G.Coop.noteCandySpend(-amount);
+  }
+  function showCandyShortage() {
+    if (!pl) return;
+    G.FX.dmgText(pl.x, pl.y - pl.bodyH - 8, 'Faltan caramelos', '#ff6b7a', true);
+    G.Audio.sfx('error');
+  }
+  function grantCandy(uid, amount) {
+    amount = Math.max(0, Math.floor(Number(amount) || 0));
+    if (!amount) return;
+    if (G.Coop.active && G.Coop.grantCandy) G.Coop.grantCandy(uid, amount);
+    else if (pl) addCandy(pl, amount);
+  }
   function useField(p) {
     if (!p || !pl) return;
     if (p.kind === 'curse') {
@@ -756,15 +836,10 @@ G.Game = (() => {
       return;
     }
     const price = vendPrice();
-    if (pl.coins < price) {
-      G.FX.dmgText(pl.x, pl.y - pl.bodyH - 8, 'Faltan monedas', '#ff6b7a', true);
-      G.Audio.sfx('error');
-      return;
-    }
-    pl.coins -= price;
+    if (!spendCandy(pl, price)) { showCandyShortage(); return; }
     pl.vendN = (pl.vendN || 0) + 1;
     takeField(p);
-    offerBall(1);
+    if (offerBall(1) === false) refundCandy(pl, price);
   }
   function useNear() {
     const shop = nearestShop();
@@ -790,8 +865,7 @@ G.Game = (() => {
     return best;
   }
   function rollStall(shop) {
-    const have = id => (pl.stacks && pl.stacks[id]) || 0;
-    const pool = G.Items.LIST.filter(i => have(i.id) < i.max && !(pl.sealed && pl.sealed.has(i.id)));
+    const pool = G.Items.LIST.filter(i => G.Items.canOffer(pl, i));
     shop.stock = G.U.pickN(pool, Math.min(3, pool.length)).map(i => i.id);
   }
   function stallPrice(it, shop) {
@@ -800,14 +874,15 @@ G.Game = (() => {
   }
   function paintStall() {
     if (!stallShop) return;
-    G.RunUI.showStall(stallShop, { buy: buyStall, refresh: refreshStall, leave: closeStall });
+    G.RunUI.showStall(stallShop, { buy: buyStall, refresh: refreshStall, leave: closeStall, note: stallNote });
   }
-  let stallShop = null;
+  let stallShop = null, stallNote = '';
   function openStall() {
     const s = nearestShop();
     if (!s) return;
     if (!s.stock) rollStall(s);
     stallShop = s;
+    stallNote = '';
     state = 'stall';
     pl.frozen = true;
     paintStall();
@@ -823,20 +898,24 @@ G.Game = (() => {
   function buyStall(id) {
     if (!stallShop || !pl) return;
     const it = G.Items.BY[id];
-    if (!it) return;
+    if (!it) { stallNote = 'Ese objeto no está.'; paintStall(); return; }
     const price = stallPrice(it, stallShop);
-    if ((pl.stacks && pl.stacks[id] || 0) >= it.max || pl.coins < price) return;
-    if (!G.Items.gain(pl, id)) return;
+    if ((pl.runCandy | 0) < price) { stallNote = 'No tienes bastantes caramelos.'; showCandyShortage(); paintStall(); return; }
+    if (!G.Items.canOffer(pl, it)) { stallNote = 'Has llegado al tope de este objeto.'; paintStall(); return; }
+    if (!spendCandy(pl, price)) { stallNote = 'No tienes bastantes caramelos.'; showCandyShortage(); paintStall(); return; }
+    if (!G.Items.gain(pl, id)) { refundCandy(pl, price); stallNote = 'Has llegado al tope de este objeto.'; paintStall(); return; }
     pl.hatchItems = (pl.hatchItems || 0) + 1;
-    pl.coins -= price;
     stallShop.markup = (stallShop.markup || 0) + 3;
+    stallNote = 'Compra hecha.';
     G.Audio.sfx('buy');
     paintStall();
   }
   function refreshStall() {
-    if (!stallShop || !pl || pl.coins < 15) return;
-    pl.coins -= 15;
+    if (!stallShop || !pl) return;
+    if ((pl.runCandy | 0) < 15) { stallNote = 'No tienes bastantes caramelos.'; showCandyShortage(); paintStall(); return; }
+    if (!spendCandy(pl, 15)) { stallNote = 'No tienes bastantes caramelos.'; showCandyShortage(); paintStall(); return; }
     rollStall(stallShop);
+    stallNote = 'Compra hecha.';
     G.Audio.sfx('select');
     paintStall();
   }
@@ -1031,6 +1110,8 @@ G.Game = (() => {
     if (!coop || G.Coop.isHost) {
       G.Path.update(dt, aimers);
       G.Spawner.update(dt, all, time);
+      if (G.Difficulty) G.Difficulty.tick(dt);
+      if (G.Endless) G.Endless.tick(dt, time);
       if (G.Castle.up) {
         G.Castle.tick(dt);
         if (state === 'over') return;
@@ -1170,7 +1251,9 @@ G.Game = (() => {
       ctx.fillStyle = g;
       ctx.fillRect(0, 0, w, h);
     }
+    if (!G.Judgment.cinematic && G.AimPreview) G.AimPreview.draw(ctx);
     if (!G.Judgment.cinematic) G.HUD.draw(ctx, w, h, pl, st);
+    if (!G.Judgment.cinematic && G.SkillControls && pl) G.SkillControls.draw(ctx, w, h, pl);
     G.Judgment.drawOverlay(ctx, w, h);
     G.Touch.draw(ctx);
     drawAimMark();
@@ -1288,6 +1371,7 @@ G.Game = (() => {
   return {
     init, startRun, everyone, levelXp, flash, offerBond, siegeOver, castleClear, noteXp,
     nearestShop, nearestField, useNear, vendPrice, openStall, closeStall, stallPrice,
+    addCandy, spendCandy, grantCandy,
     giveItem: offerItem,
     /** Para pruebas: salta el reloj de la run. */
     debugTime(t) { tampered = true; time = t; },

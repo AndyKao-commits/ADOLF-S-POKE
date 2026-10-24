@@ -1,0 +1,72 @@
+{
+  "status": "specification-and-preview-only; not runtime integrated",
+  "candy": {
+    "id": "candy_token",
+    "name": "糖果代幣",
+    "type": "in-run-currency",
+    "asset": {
+      "path": "assets/future-use/candy/candy-token.png",
+      "width": 1536,
+      "height": 1024,
+      "mode": "RGBA",
+      "sha256": "03029a3167e3178027848d292a6d35db691e5d5c604660705de220442e9f7f56"
+    },
+    "rule_source": "使用者明確指定：遊戲中掉落的代幣，用於局內商店購買道具。",
+    "acquisition": "遊戲中掉落後由玩家拾取取得。",
+    "usage": "於同一局遊戲中的商店支付糖果代幣購買道具。",
+    "drop_rate": null,
+    "value_per_pickup": null,
+    "balance_cap": null,
+    "carry_over_between_runs": null,
+    "shop_prices": null,
+    "pending_rules": "掉落來源與機率、每次拾取面額、餘額上限、跨局是否保留及商品價格尚未指定。",
+    "distinct_from": "assets/future-use/item-icons/rare-candy.png 是 70 道具之一的 Rare Candy，仍保留其原能力、神話級與持有上限 10；此處糖果代幣不套用該設定。",
+    "implementation_requirements": [
+      "以獨立糖果代幣餘額保存，與永久強化金幣及 Rare Candy 道具數量分開。",
+      "拾取同一個掉落物只入帳一次，入帳成功後移除該掉落物。",
+      "商店顯示商品所需糖果代幣及玩家餘額；確認購買時重新檢查餘額與道具每局持有上限。",
+      "只有購買成功才扣款並發放道具；不足額、超出持有上限或失敗時不扣款。"
+    ],
+    "implementation_status": "規格記錄，尚未接入遊戲程式。"
+  },
+  "egg": {
+    "name": "四級孵化蛋",
+    "asset": {
+      "path": "assets/future-use/eggs/pokemon-egg-design.png",
+      "width": 1122,
+      "height": 1402,
+      "mode": "RGBA",
+      "sha256": "a11a024961fb25e4fdd6213ed37543488ef7ca998a183a306a0b7b0425d64229",
+      "role": "舊版通用設計參考，不再作為目前四級預設圖"
+    },
+    "role": "新版四級孵化蛋外觀",
+    "tier_assets": [
+      "assets/future-use/hatching-eggs/hatching-egg-common.png",
+      "assets/future-use/hatching-eggs/hatching-egg-rare.png",
+      "assets/future-use/hatching-eggs/hatching-egg-legendary.png",
+      "assets/future-use/hatching-eggs/hatching-egg-epic.png"
+    ],
+    "hatching_animation": "assets/future-use/egg-hatching/egg-hatching.js",
+    "animation_role": "四級共用 Canvas 視覺模組，1.8 秒播放；不代表實際孵化等待時間。",
+    "tier_rules": "1 普通紅白、2 稀有藍紅、3 傳說黑金、4 史詩紫粉；依精靈球配色。",
+    "hatching_duration_seconds": null,
+    "cost": null,
+    "reward_pool": null,
+    "rarity_probabilities": null,
+    "inventory_limit": null,
+    "rules_status": "尚未定義孵化數值與獎勵；不可當作已可玩的功能。",
+    "implementation_proposal": [
+      "取得蛋後保存蛋的唯一 ID、等級與狀態。",
+      "孵化條件達成後先保存結果，再播放動畫；動畫結束顯示已保存的結果。",
+      "同一顆蛋只結算一次，重新整理或動畫重播不重複發獎。"
+    ],
+    "proposal_status": "工程接入建議，尚未實作",
+    "legacy_tier_assets": [
+      "assets/future-use/eggs/egg-level-1.png",
+      "assets/future-use/eggs/egg-level-2.png",
+      "assets/future-use/eggs/egg-level-3.png",
+      "assets/future-use/eggs/egg-level-4.png"
+    ],
+    "legacy_animation": "assets/future-use/egg-hatching/egg-hatching.gif"
+  }
+}

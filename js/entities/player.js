@@ -29,7 +29,7 @@ G.Player = class Player {
     this.coinMul = perks.coinMul || 1;
     this.armor = 0;
     this.armorMul = 1;
-    this.luck = 0;
+    this.luck = perks.luck || 0;
     this.evade = 0;
     this.healMul = 1;
     this.ballCut = 0;
@@ -63,15 +63,22 @@ G.Player = class Player {
     this.rerolls = 0;          // veces que ha cambiado las cartas de nivel en esta run
     this.rerollBonus = perks.rerolls || 0;   // cambios comprados en Mejoras (más el gratis)
     this.critChance = perks.crit || 0;       // probabilidad de golpe crítico (Mejoras)
-    this.itemLuck = perks.luck || 0;         // Suerte: rareza de los objetos, no cuántos caen
+    this.itemLuck = 0;             // antigua suerte de mejoras: ya va en this.luck
     this.skipBonus = perks.skips || 0;       // saltos de carta de nivel en esta run
     this.skips = 0;
     this.fourthCard = perks.fourth || 0;
-    this.revival = perks.revival || 0;       // una vez: te levantas con el 50 %
+    this.revival = perks.revival || 0;       // entra en el único levantamiento, al 35 %
+    this.reviveCharge = this.revival ? { source: 'upgrade', hpRatio: 0.35, used: false } : { source: null, hpRatio: 0, used: false };
     this.banned = new Set();                 // movimientos vetados (Mejoras → Veto): no salen en las cartas
     this.sealed = new Set();                 // objetos que dejas de ver (Mejoras → Sellar)
     this.bind = {};                          // movimiento -> hueco fijo (0-3), elegido en Mejoras
-    this.coins = 0;            // monedas recogidas en esta run
+    this.coins = 0;            // monedas de la partida que sí pasan a la cuenta
+    this.runCandy = 0;         // caramelos de esta partida (tienda y bolas de pago)
+    this.candyEarned = 0;
+    this.candySpent = 0;
+    this.candyT = 0;
+    this.candySign = 1;
+    this.candyNote = '';
     this.t1 = 0; this.t10 = 0; // tickets del gacha recogidos en esta run
     this.dmgDealt = 0;
 
@@ -85,6 +92,7 @@ G.Player = class Player {
     this.lavaTick = 0;
     this.attackFace = 0;       // tiempo que sigue mirando al objetivo tras atacar
     this.dead = false;
+    this.masteryRank = '';     // bronce, plata, oro o diamante; se fija al empezar
     this.power = null;         // poder de altar activo: { def, t, dur }
     this.slowT = 0;            // pegado por una trampa
     this.item = null;          // último objeto cogido (data/items.js)
@@ -123,7 +131,11 @@ G.Player = class Player {
   cy() { return this.y; }
 
   // ---------------- stats efectivos ----------------
-  get atk() { return this.baseAtk * this.atkMul * (1 + this.buffs.atk.n * this.buffs.atk.amount); }
+  get atk() {
+    const prod = this._atkItemProd || 1;
+    const scale = prod > 2.5 ? 2.5 / prod : 1;
+    return this.baseAtk * this.atkMul * scale * (1 + this.buffs.atk.n * this.buffs.atk.amount);
+  }
   /**
    * Ataque con un movimiento: el físico o el especial de tu Pokémon (ver
    * G.Stats), con las danzas que sean de su lado (las de mejora, sin ninguna).
@@ -138,17 +150,24 @@ G.Player = class Player {
   get spd() {
     // (Habilidades: "steady" no se frena; speed() multiplica, ver data/ability-fx.js.)
     const ab = this.abil || {}, stuck = this.slowT > 0 && !ab.steady;
-    const s = this.baseSpd * this.spdMul * (this._orbQuick ? 1.4 : 1) * (1 + this.buffs.spd.n * this.buffs.spd.amount) * (stuck ? 0.5 : 1) * (ab.speed ? ab.speed(this) : 1);
+    const perm = this.baseSpd * Math.min(this.spdMul, 1.60);
+    let s = perm * (this._orbQuick ? 1.4 : 1) * (1 + this.buffs.spd.n * this.buffs.spd.amount) * (stuck ? 0.5 : 1) * (ab.speed ? ab.speed(this) : 1);
     const w = G.Weather.speedFor(this.mon.types);
     const slow = this.inLiquid && !ab.steady ? G.World.liquidEffect(this.mon.types).slow || 1 : 1;
-    return G.Judgment && G.Judgment.active ? G.Judgment.capSpd(s * slow * w) : s * slow * w;
+    s *= slow * w;
+    if (s > this.baseSpd * 2) s = this.baseSpd * 2;
+    return G.Judgment && G.Judgment.active ? G.Judgment.capSpd(s) : s;
   }
   get reduction() {
     const arm = (this.armor || 0) * (this.armorMul || 1);
     const fromArm = arm > 0 ? arm / (arm + 100) : 0;
-    return Math.min(0.8, this.dmgReduce + fromArm + this.buffs.def.n * this.buffs.def.amount);
+    return Math.min(0.70, this.dmgReduce + fromArm + this.buffs.def.n * this.buffs.def.amount);
   }
-  get regen() { return (this.regenFlat + this.buffs.regen.n * this.buffs.regen.amount) * (this.healMul || 1); }
+  get regen() {
+    const run = G.Difficulty ? G.Difficulty.healing() : 1;
+    const raw = (this.regenFlat + this.buffs.regen.n * this.buffs.regen.amount) * (this.healMul || 1) * run;
+    return Math.min(raw, 8 + this.maxHp * 0.02);
+  }
 
   // ---------------- movimientos ----------------
   addMove(id) {
@@ -288,7 +307,7 @@ G.Player = class Player {
     if (this.anim.busy() && this.anim.progress() < 0.65) return;
     const meta = G.Sprites.animMeta(this.dex, anim);
     const len = meta ? meta.d.reduce((a, b) => a + b, 0) / 60 : 0.4;
-    const cd = Math.max(0.12, m.cd * this.cdMul);
+    const cd = Math.max(0.12, m.cd * Math.max(0.45, this.cdMul));
     this.anim.play(anim, { speed: Math.max(1, len / (cd * 0.9)) });
     this.attackFace = 0.35;
   }
@@ -355,19 +374,11 @@ G.Player = class Player {
       G.FX.ring(this.x, this.y, 6, 70, '#c9b48a', 0.5, 4);
     }
     if (this.hp <= 0) G.Items.revive(this);
-    if (this.hp <= 0 && !this.remote && this.revival && !this._upgRev) {
-      this._upgRev = true;
-      this.hp = this.maxHp * 0.5;
-      this.dead = false;
-      this.invuln = 1.5;
-      this.reviveSafe = 1.5;
-      G.FX.dmgText(this.x, this.y - this.bodyH - 16, '50%', '#7dffb3', true);
-      G.FX.ring(this.x, this.y, 6, 70, '#7dffb3', 0.5, 4);
-    }
     if (ab && ab.hurt && this.hp > 0) ab.hurt(this, type, cls);
     G.Items.onDamaged(this);
     if (this.hp <= 0) {
       this.hp = 0; this.dead = true;
+      if (G.MasteryFX) G.MasteryFX.clear(this);
       this.anim.play('Faint', { hold: true });
       G.Projectiles.clearOrbs(this);
       this.reviveT = 0;
@@ -375,6 +386,7 @@ G.Player = class Player {
   }
 
   heal(amount) {
+    if (G.Difficulty) amount *= G.Difficulty.healing();
     if (this.healMul) amount *= this.healMul;
     if (this.abil && this.abil.healMul) amount *= this.abil.healMul;     // Gula, Recogida
     const before = this.hp;
@@ -387,7 +399,7 @@ G.Player = class Player {
 
   /** Devuelve cuántos niveles ha subido (pueden ser varios de golpe). */
   gainXp(amount) {
-    const add = amount * this.xpMul;
+    const add = amount * Math.min(2, this.xpMul || 1);
     if (!Number.isFinite(add) || add <= 0) return 0;     // una experiencia infinita no acababa nunca de subir niveles
     this.xp += add;
     let leveled = 0;
@@ -442,10 +454,12 @@ G.Player = class Player {
   // ---------------- ciclo ----------------
   update(dt) {
     this.anim.update(dt);
+    if (G.MasteryFX) G.MasteryFX.update(this, dt);
     if (this.dead) return;
     if (this.invuln > 0) this.invuln -= dt;
     if (this.reviveSafe > 0) this.reviveSafe -= dt;
     if (this.flash > 0) this.flash -= dt;
+    if (this.candyT > 0) this.candyT -= dt;
     if (this.attackFace > 0) this.attackFace -= dt;
 
     for (const k in this.buffs) {
@@ -453,7 +467,12 @@ G.Player = class Player {
       if (b.n > 0) { b.t -= dt; if (b.t <= 0) b.n = 0; }
     }
     if (this.slowT > 0) this.slowT -= dt;
-    if (this.bellHeal > 0) { const h = this.bellHeal * Math.min(1, dt * 4); this.hp = Math.min(this.maxHp, this.hp + h); this.bellHeal -= h; }
+    if (this.bellHeal > 0) {
+      const room = Math.max(0, (8 + this.maxHp * 0.02) * dt - Math.max(0, this.regen) * dt);
+      const h = Math.min(this.bellHeal, this.maxHp * 0.015 * dt, room);
+      if (h > 0) this.hp = Math.min(this.maxHp, this.hp + h * (G.Difficulty ? G.Difficulty.healing() : 1));
+      this.bellHeal -= h;
+    }
     if (this.power && (this.power.t -= dt) <= 0) { this.power.def.off(this); this.power = null; }
     if (this.regen > 0) this.hp = Math.min(this.maxHp, this.hp + this.regen * dt);
     if (G.Items && G.Items.tick) G.Items.tick(this, dt);
@@ -591,6 +610,7 @@ G.Player = class Player {
     this.reviveSafe = 2;
     this.reviveT = 0;
     this.anim._start('Idle', false);
+    if (G.MasteryFX) G.MasteryFX.onRevive(this);
     G.FX.ring(this.x, this.y, 6, 70, '#5fe08a', 0.5, 4);
     G.FX.burst(this.x, this.y - this.bodyH * 0.5, '#9dffb8', 18, 150);
     G.Audio.sfx('heal');
@@ -607,6 +627,7 @@ G.Player = class Player {
     this.anim.update(dt);
     const n = this.net;
     if (!n) return;
+    if (typeof n.lv === 'number') this.level = n.lv;
     if (this.flash > 0) this.flash -= dt;
     if (this.attackFace > 0) this.attackFace -= dt;
     if (G.U.dist2(this.x, this.y, n.x, n.y) > 300 * 300) { this.x = n.x; this.y = n.y; }
@@ -615,7 +636,7 @@ G.Player = class Player {
     this.hp = n.hp; this.maxHp = n.maxHp;
     this.magnet = n.mag || this.magnet;
     this.reviveT = n.rev || 0;
-    if (n.dead && !this.dead) { this.dead = true; this.anim.play('Faint', { hold: true }); G.Projectiles.clearOrbs(this); }
+    if (n.dead && !this.dead) { this.dead = true; if (G.MasteryFX) G.MasteryFX.clear(this); this.anim.play('Faint', { hold: true }); G.Projectiles.clearOrbs(this); }
     else if (!n.dead && this.dead) this.revive(n.hp / (n.maxHp || 1));
     // Movimiento activo (para el halo, el HUD y los orbes).
     if (n.mv && (!this.moves[0] || this.moves[0].id !== n.mv || this.moves[0].lvl !== n.ml) && G.Moves.BY_ID[n.mv]) {
@@ -631,6 +652,7 @@ G.Player = class Player {
     const face = this.attackFace > 0 || !this.walking ? this.aim : this.moveAngle;
     this.anim.dir = G.Sprites.dirFromAngle(face);
     this.anim.loop(this.walking ? 'Walk' : 'Idle', this.walking ? this.baseSpd / 110 : 1);
+    if (G.MasteryFX) G.MasteryFX.update(this, dt);
   }
 
   draw(ctx) {
@@ -653,6 +675,7 @@ G.Player = class Player {
       ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r * 2.2, this.r * 0.9, 0, 0, 6.2832); ctx.stroke();
       ctx.restore();
     }
+    if (G.MasteryFX) { G.MasteryFX.drawGround(ctx, this); G.MasteryFX.drawBehind(ctx, this); }
     // Poder de altar: aro de su color latiendo bajo los pies.
     if (this.power && !this.dead) {
       ctx.save();
@@ -664,6 +687,7 @@ G.Player = class Player {
 
     const alpha = this.invuln > 0 && !this.dead ? (Math.floor(this.invuln * 18) % 2 ? 0.45 : 1) : 1;
     this.anim.draw(ctx, this.x, this.y, { flash: this.flash > 0, softFlash: true, alpha, color: '#ffcb3d' });
+    if (G.MasteryFX) G.MasteryFX.drawFront(ctx, this);
 
     // Arcos de buff alrededor de los pies.
     const COL = { atk: '#ff6b4d', patk: '#ff6b4d', satk: '#c47bff', spd: '#7fe0ff', def: '#b0b8c8', regen: '#5fe08a' };

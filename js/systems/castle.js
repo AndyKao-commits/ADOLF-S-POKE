@@ -11,7 +11,7 @@ G.Castle = (() => {
   let wave = 1, queued = 0, acc = 0, won = false, bondWave = 0;
 
   function spec(w) {
-    const m = G.Settings.runDiff(G.Game && G.Game.diff);
+    const m = G.Difficulty ? G.Difficulty.combat() : { hp: 1, dmg: 1, rate: 1 };
     return {
       n: Math.max(1, Math.round((6 + Math.round(w * 0.62)) * m.rate)),
       hp: Math.round(22 + w * 13 + Math.pow(w, 1.32) * 0.9),
@@ -95,12 +95,13 @@ G.Castle = (() => {
     const def = G.U.pick(bag);
     const pt = spot();
     const e = new G.Enemy(def, pt[0], pt[1], { hp: 1, dmg: 1, spd: 1 });
-    const m = G.Settings.runDiff(G.Game && G.Game.diff);
+    const m = G.Difficulty ? G.Difficulty.combat() : { hp: 1, dmg: 1, rate: 1 };
     e.maxHp = e.hp = Math.round(s.hp * m.hp);
     e.dmg = s.dmg * m.dmg;
     e.spd = s.spd;
     e.xp = 4 + wave;
     e.castleWave = wave;
+    if (G.Difficulty) G.Difficulty.dress(e);
     G.EnemyMgr.add(e);
   }
 
@@ -109,7 +110,7 @@ G.Castle = (() => {
     const def = G.Enemies.bossMob(w * 12);
     const pt = spot();
     const e = new G.Enemy(def, pt[0], pt[1], { hp: 1, dmg: 1, spd: 1 }, true);
-    const m = G.Settings.runDiff(G.Game && G.Game.diff);
+    const m = G.Difficulty ? G.Difficulty.combat() : { hp: 1, dmg: 1, rate: 1 };
     e.maxHp = e.hp = Math.round(s.hp * (8 + tier) * m.hp);
     e.dmg = s.dmg * 1.35 * m.dmg;
     e.spd = Math.min(92, Math.round(s.spd * 0.82));

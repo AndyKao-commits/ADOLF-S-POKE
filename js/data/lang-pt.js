@@ -1261,5 +1261,17 @@ G.I18n.add({
   "Ya la has reportado": "Você já denunciou",
   "Ya has reportado esta marca": "Você já denunciou este recorde",
   "¿Reportar la marca de {x} como trampa?": "Denunciar o recorde de {x} como trapaça?",
-  "Gracias: la revisaremos": "Obrigado: vamos analisar"
+  "Gracias: la revisaremos": "Obrigado: vamos analisar",
+  "Caramelo": "Doce",
+  "Faltan caramelos": "Doces insuficientes",
+  "Tienes {x} caramelos": "Você tem {x} doces",
+  "Cuesta {x} caramelos": "Custa {x} doces",
+  "{x} caramelos": "{x} doces",
+  "Caramelos conseguidos": "Doces obtidos",
+  "Caramelos gastados": "Doces gastos",
+  "Caramelos que quedan": "Doces restantes",
+  "Los caramelos sólo valen en esta partida": "Os doces só valem nesta partida",
+  "Cambiar: {x} caramelos": "Trocar: {x} doces",
+  "Cada compra sube los precios {x} caramelos": "Cada compra aumenta os preços em {x} doces",
+  "En la partida caen caramelos azules. Sirven para la tienda de Meowth y las Poké Balls de pago, y al terminar se pierden. Las Pokémonedas del menú siguen igual.": "Doces azuis caem na partida. Servem para a loja do Meowth e as Poké Bolas pagas, e somem no fim. As Pokémoedas do menu continuam iguais.",
 }, 'pt-BR');

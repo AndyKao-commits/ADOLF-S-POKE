@@ -200,21 +200,34 @@ G.RunUI = (() => {
       : r.cause === 'siege-lose' ? 'Tu castillo ha caído…'
       : r.dead ? 'Has caído…' : 'Run terminada';
     $('over-stats').innerHTML = `
+      <div><span>Modo</span><b>${r.sheet ? r.sheet.modeName : ''}</b></div>
+      <div><span>Mapa</span><b translate="no">${r.sheet ? r.sheet.mapName : ''}</b></div>
+      <div><span>Dificultad</span><b>${r.sheet ? r.sheet.diffName : '—'}</b></div>
       <div><span>Tiempo</span><b>${G.U.mmss(r.time)}</b></div>
       <div><span>Nivel</span><b>${r.level}</b></div>
       <div><span>Derrotados</span><b>${r.kills}</b></div>
       <div><span>Jefes</span><b>${r.bosses}</b></div>
+      <div><span>Daño total</span><b>${r.sheet ? r.sheet.totalDamage : 0}</b></div>
+      <div><span>Daño a jefes</span><b>${r.sheet ? r.sheet.bossDamage : 0}</b></div>
       ${r.judge ? `<div style="grid-column:1/-1"><span>Ante Arceus</span><b class="gold">${G.U.mmss(r.judge.time)} · ${r.judge.bosses} ${r.judge.bosses === 1 ? 'legendario' : 'legendarios'}${r.judge.dmg ? ' · ' + r.judge.dmg.toLocaleString(G.I18n.locale) : ''}</b></div>` : ''}
       <div style="grid-column:1/-1"><span>Pokémonedas ganadas</span>
         <b class="gold"><span class="coin"></span> +${r.coins}</b>
         <div style="font-size:12px;color:var(--muted)">${r.breakdown}</div></div>
+      <div><span>Caramelos conseguidos</span><b>${r.candyEarned || 0}</b></div>
+      <div><span>Caramelos gastados</span><b>${r.candySpent || 0}</b></div>
+      ${r.endless ? `<div><span>Oleada</span><b>${r.endless.wave}</b></div>` : ''}
+      <div style="grid-column:1/-1"><span>Caramelos que quedan</span>
+        <b><img src="assets/future-use/candy/candy-token.png" alt="" style="height:14px;width:auto;image-rendering:pixelated;vertical-align:middle" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'◆'}))"> ${r.candyLeft || 0}</b>
+        <div style="font-size:12px;color:var(--muted)">Los caramelos sólo valen en esta partida</div></div>
       ${r.t1 || r.t10 ? `<div style="grid-column:1/-1"><span>Tickets del gacha</span><b>
         ${r.t1 ? G.Icons.html('ticket', 22) + ' +' + r.t1 + ' ' : ''}${r.t10 ? G.Icons.html('ticket10', 22) + ' +' + r.t10 + ' ×10' : ''}</b></div>` : ''}
       <div style="grid-column:1/-1"><span>Movimientos</span><b style="font-size:15px">
         ${r.moves.map(m => `${G.Icons.html('move:' + m.id, 16)} ${G.T(m.name, 'move')} Nv.${m.lvl}`).join(' · ') || '—'}</b></div>
       ${r.caught && r.caught.length ? `<div style="grid-column:1/-1" class="caught"><span>${G.Icons.html('shiny', 12)} Shinies conseguidos</span>
         <div class="caught-row" id="over-caught"></div></div>` : ''}
-      ${r.record ? '<div style="grid-column:1/-1;text-align:center" class="gold">¡Nuevo récord de tiempo!</div>' : ''}`;
+      ${r.record ? '<div style="grid-column:1/-1;text-align:center" class="gold">¡Nuevo récord de tiempo!</div>' : ''}
+      ${r.sheet && r.sheet.record ? '<div style="grid-column:1/-1;text-align:center" class="gold">¡Nuevo récord de esta modalidad!</div>' : ''}
+      ${r.endless && r.endless.record && !(r.sheet && r.sheet.record) ? '<div style="grid-column:1/-1;text-align:center" class="gold">¡Nuevo récord de la mazmorra sin fin!</div>' : ''}`;
     $('btn-again').onclick = onBack;
     if (r.caught && r.caught.length) {
       const row = $('over-caught');
@@ -246,7 +259,7 @@ G.RunUI = (() => {
       const el = document.createElement('div');
       el.className = 'card' + (it.tier >= 3 ? ' evo' : '');
       el.innerHTML = `<div class="ico">${G.Icons.html(it.id, 36)}</div>
-        <div class="txt"><div class="nm">${G.Items.text(it, 'name')} <span class="tag-chip">${n}/${it.max}</span></div><div class="ds">${G.Items.text(it, 'desc')}</div></div>
+        <div class="txt"><div class="nm">${G.Items.text(it, 'name')} <span class="tag-chip">${n}/${it.max}</span></div><div class="ds">${G.Items.text(it, 'desc')}</div><div class="ds">${G.Items.stackText(G.Game.player, it).replace(/\n/g, '<br>')}</div></div>
         <div class="key">${i + 1}</div>`;
       el.onclick = () => { if (guarded()) return; G.UI.hide('scr-item'); cb(it.id); };
       box.appendChild(el);
@@ -459,9 +472,12 @@ G.RunUI = (() => {
     const zh = String(lang).startsWith('zh');
     const en = lang === 'en';
     $('stall-title').textContent = zh ? '喵喵的商店' : en ? "Meowth's shop" : 'Tienda de Meowth';
-    $('stall-sub').textContent = zh ? '每次購買後價格上漲 3 金幣' : en ? 'Each purchase raises prices by 3 coins' : 'Cada compra sube los precios 3 monedas';
+    $('stall-sub').textContent = G.I18n.f('Cada compra sube los precios {x} caramelos', 3);
     const pl = G.Game.player;
-    $('stall-coins').textContent = zh ? '你有 ' + pl.coins + ' 金幣' : en ? 'You have ' + pl.coins + ' coins' : 'Tienes ' + pl.coins + ' monedas';
+    const candyMark = '<img src="assets/future-use/candy/candy-token.png" alt="" style="height:14px;width:auto;image-rendering:pixelated;vertical-align:middle">';
+    $('stall-coins').innerHTML = candyMark + ' ' + G.I18n.f('Tienes {x} caramelos', pl.runCandy | 0);
+    const status = $('stall-status');
+    if (status) status.textContent = api.note ? G.I18n.t(api.note) : '';
     const box = $('stall-cards');
     box.innerHTML = '';
     const have = id => (pl.stacks && pl.stacks[id]) || 0;
@@ -470,24 +486,24 @@ G.RunUI = (() => {
       if (!it) return;
       const n = have(id);
       const price = G.Game.stallPrice(it, shop);
-      const full = n >= it.max;
+      const full = !G.Items.canOffer(pl, it);
       const rare = G.Items.RARITY[it.rarity] || G.Items.RARITY.common;
       const label = zh ? rare.zh : en ? rare.en : rare.es;
       const el = document.createElement('div');
       el.className = 'card stall-card' + (full ? ' off' : '');
       el.innerHTML = `<div class="ico">${G.Icons.html(it.id, 40)}</div>
         <div class="txt" style="flex:1">
-          <div class="nm"><b>${G.Items.text(it, 'name')}</b> <span class="stall-rarity" style="background:${rare.color}">${label}</span><span class="stall-count">${n}/${it.max}</span></div>
-          <div class="ds">${G.Items.text(it, 'desc')}</div>
-          <div class="stall-price">${price} ${zh ? '金幣' : en ? 'coins' : 'monedas'}</div>
+          <div class="nm"><b>${G.Items.text(it, 'name')}</b> <span class="stall-rarity" style="background:${rare.color}">${label}</span><span class="stall-count">${G.I18n.f('Llevas x{x} · tope x{x}', n, it.max)}</span></div>
+          <div class="ds">${G.Items.text(it, 'desc')}<br>${G.Items.stackText(pl, it).replace(/\n/g, '<br>')}</div>
+          <div class="stall-price">${full ? G.I18n.t('Has llegado al tope de este objeto.') : candyMark + ' ' + G.I18n.f('Cuesta {x} caramelos', price)}</div>
         </div>`;
       el.onclick = () => { if (!full) api.buy(id); };
       box.appendChild(el);
     });
     const refresh = $('stall-refresh');
     const cost = 15;
-    refresh.textContent = (zh ? '刷新貨物：' : en ? 'Refresh: ' : 'Cambiar: ') + cost + (zh ? ' 金幣' : en ? ' coins' : ' monedas');
-    refresh.disabled = pl.coins < cost;
+    refresh.textContent = G.I18n.f('Cambiar: {x} caramelos', cost);
+    refresh.disabled = (pl.runCandy | 0) < cost;
     refresh.onclick = () => api.refresh();
     $('stall-leave').textContent = zh ? '離開' : en ? 'Leave' : 'Salir';
     $('stall-leave').onclick = () => api.leave();

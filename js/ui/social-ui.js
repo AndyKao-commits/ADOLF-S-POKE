@@ -306,7 +306,7 @@
       }
       const cfg = {
         k: 'start', seed: Math.floor(Math.random() * 1e6), host: room.host,
-        members: room.members.map(m => ({ uid: m.uid, name: m.name, dex: m.dex, shiny: !!m.shiny })),
+        members: room.members.map(m => ({ uid: m.uid, name: m.name, dex: m.dex, shiny: !!m.shiny, mr: G.MasteryFX ? G.MasteryFX.valid(m.mr) : '' })),
         rules: G.Coop.publicRules(Object.assign({}, room.rules || G.Coop.rulesFromSettings(), { runMode: rm })),
         mode: rm
       };

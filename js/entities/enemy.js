@@ -129,6 +129,7 @@
       if (this.dead) return;
       if (this.siegeCreep && this.owner && striker && striker === this.owner) return;
       if (striker) this.lastUid = striker;
+      if (!this.remote && this.eliteMods && this.eliteMods.guard) amount *= 0.85;
       const d = Math.max(1, Math.round(amount));
       if (!this.remote && this.siegeBoss && striker && G.Siege) G.Siege.noteBoss(striker, d);
       if (this.arceus) {
@@ -158,6 +159,8 @@
       }
       this.hp -= Math.max(1, Math.round(amount));
       G.Judgment.noteDmg(amount, this);
+      if (G.Endless) G.Endless.noteDmg(amount);
+      if (G.Result) G.Result.note(amount, this);
       this.showHurt(d, color, dirX, dirY, eff);
       if (knock > 0 && !this.boss) {
         const [nx, ny] = G.U.norm(dirX, dirY);
@@ -241,7 +244,7 @@
       // (Los legendarios de la Sentencia de Arceus sólo dan experiencia.)
       if (this.boss && !this.judge) {
         G.Camera.kick(0.9);
-        for (let i = 0; i < 10; i++) G.Pickups.drop('coin', this.x + G.U.rand(-40, 40), this.y + G.U.rand(-30, 30), 5);
+        if (!this.legend) for (let i = 0; i < 5; i++) G.Pickups.drop('candy', this.x + G.U.rand(-48, 48), this.y + G.U.rand(-36, 36), G.U.randInt(4, 6));
         // Mazmorra: el jefe de cada asalto sí suelta objeto.
         // Desafío de jefes: cada baja es un jefe, y elegir objeto paraba la partida.
         // Una de cada quince suelta objeto (antes, una de cada tres).
@@ -249,7 +252,7 @@
         if (Math.random() < (bossMode ? 0.2 : 1) / 15) G.Pickups.drop('ball', this.x - 26, this.y - 10, bossMode ? 2 : 3);
       }
       const spec = G.DEX_BY && G.DEX_BY[this.dex];
-      G.Pickups.dropXp(this.x, this.y, this.xp, this.boss, !!this.legend, !!this.judge, spec ? spec.rarity : 1);
+      G.Pickups.dropXp(this.x, this.y, this.xp, this.boss, !!this.legend, !!this.judge, spec ? spec.rarity : 1, !!this.eliteWave);
       if (this.golden && Math.random() < 0.35) G.Pickups.drop('coin', this.x + 6, this.y - 4, 3);
       // Duende del tesoro: Meowth suelta monedas; Gholdengo, un ticket ×10.
       if (this.behavior === 'thief') {
@@ -262,8 +265,14 @@
         // El legendario de la grieta: tickets sueltos y monedas (el ×10, como
         // la mitad de las veces; antes daba 2 siempre).
         for (let i = 0; i < 3; i++) G.Pickups.drop('ticket', this.x + G.U.rand(-30, 30), this.y + G.U.rand(-20, 20), 1);
-        for (let i = 0; i < 10; i++) G.Pickups.drop('coin', this.x + G.U.rand(-50, 50), this.y + G.U.rand(-35, 35), 8);
+        let left = G.U.randInt(35, 50);
+        while (left > 0) {
+          const n = Math.min(left, G.U.randInt(5, 8));
+          G.Pickups.drop('candy', this.x + G.U.rand(-56, 56), this.y + G.U.rand(-40, 40), n);
+          left -= n;
+        }
       }
+      if (this.eliteWave) G.Pickups.drop('candy', this.x, this.y, G.U.randInt(3, 5));
       if (this.eliteWave && G.Spawner.eliteDown) G.Spawner.eliteDown(this);
       G.Audio.sfx(this.boss ? 'bossDown' : 'faint');
       if (this.shiny) {
@@ -364,7 +373,15 @@
       }
       if (this.stunT > 0) { this.stunT -= dt; this.anim.loop('Idle'); return; }
 
-      const spd = this.spd * (1 - this.slow) * terrainMul * G.Weather.speedFor(this.types);
+      let spd = this.spd * (1 - this.slow) * terrainMul * G.Weather.speedFor(this.types);
+      if (this.eliteMods && this.eliteMods.haste) spd *= 1.16;
+      if (this.eliteMods && this.eliteMods.regen && !this.dead) {
+        this._reg = (this._reg || 0) + dt;
+        if (this._reg >= 2) {
+          this._reg = 0;
+          this.hp = Math.min(this.maxHp, this.hp + Math.max(1, Math.round(this.maxHp * 0.02)));
+        }
+      }
       let [dx, dy] = G.U.norm(pl.x - this.x, pl.y - this.y);
       const dist = G.U.dist(this.x, this.y, pl.x, pl.y);
       // Duende del tesoro: huye de ti (en zigzag) en cuanto te acercas.
@@ -504,8 +521,15 @@
       const others = ['rain', 'beam', 'nova', 'volley'].filter(x => x !== pref);
       const ranged = [pref, others[Math.floor(G.U.hash(this.dex, 5, 9) * 3) % 3]];
       const far = this.behavior === 'ranged';
+      if (G.Difficulty && G.Difficulty.bossExtra()) melee.push('ring');
+      if (G.Difficulty && G.Difficulty.bossCombo()) ranged.push('cross');
+      if (this.endlessAtk && !melee.includes(this.endlessAtk) && !ranged.includes(this.endlessAtk)) {
+        if (this.endlessAtk === 'cross' || this.endlessAtk === 'rain' || this.endlessAtk === 'beam') ranged.push(this.endlessAtk);
+        else melee.push(this.endlessAtk);
+      }
       this.ai = { melee, ranged, farLike: far ? 0.65 : 0.35, mode: far ? 'far' : 'close', modeT: G.U.rand(6, 8),
-                  cd: 1.6, cast: null, fury: false, side: Math.random() < 0.5 ? -1 : 1 };
+                  cd: 1.6, cast: null, fury: false, side: Math.random() < 0.5 ? -1 : 1,
+                  mix: G.Difficulty && G.Difficulty.bossCombo() ? 0.55 : 0.8 };
     }
 
     bossMove(dt, pl, dist, dx, dy, spd) {
@@ -532,7 +556,7 @@
         if (ai.mode === 'close') {
           const ok = ai.melee.filter(m => m === 'slam' ? dist < 125 : dist < 320);
           // De vez en cuando, aunque esté cerca, también dispara.
-          id = ok.length && Math.random() < 0.8 ? G.U.pick(ok) : dist < 480 ? G.U.pick(ai.ranged) : null;
+          id = ok.length && Math.random() < (ai.mix || 0.8) ? G.U.pick(ok) : dist < 480 ? G.U.pick(ai.ranged) : null;
         } else {
           id = dist < 115 ? 'slam' : dist < 430 ? G.U.pick(ai.ranged) : null;
         }
@@ -567,6 +591,20 @@
                           delay: c.wind + c.dur, dmg: this.dmg * 1.2, type, color: col });
           this.anim.play('Charge', { speed: 1.3 });
           break;
+        case 'ring':       // círculo avisado: se sale andando
+          c.wind = 0.95 * f;
+          this.hazard({ kind: 'zone', x: pl.x, y: pl.y, r: 64, delay: c.wind, dmg: this.dmg * 1.1, type, color: col });
+          this.anim.play('Charge', { speed: 1.2 });
+          break;
+        case 'cross': {    // cuatro rayos con hueco en medio
+          c.wind = 1.0 * f;
+          for (let i = 0; i < 4; i++) {
+            this.hazard({ kind: 'beam', x: this.x, y: this.y, angle: ang + i * 1.5708, len: 340, w: 16,
+                            delay: c.wind, dmg: this.shotDmg() * 1.05, type, color: col });
+          }
+          this.anim.play('Charge', { speed: 1.1 });
+          break;
+        }
         case 'leap':       // salto y caída sobre ti
           this.jump = { sx: this.x, sy: this.y, tx: pl.x, ty: pl.y, t: -0.5 * f, dur: 0.65 };
           this.hazard({ kind: 'zone', x: pl.x, y: pl.y, r: 82, delay: 0.5 * f + 0.65, dmg: this.dmg * 1.25, type, color: col });

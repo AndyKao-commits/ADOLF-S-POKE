@@ -584,5 +584,17 @@ G.I18n.add({
   'Bloquea 1 movimiento: no te sale en las cartas': 'Blocca 1 mossa: non apparirà mai tra le carte', 'Elegir ({x})': 'Scegli ({x})',
   'Toca los movimientos que no quieres que te salgan en las cartas ({x}). El movimiento de inicio no se puede vetar.': 'Tocca le mosse che non vuoi vedere tra le carte ({x}). La mossa iniziale non può essere esclusa.',
   'Ya tienes {x} vetados: quita uno primero': 'Hai già escluso {x} mosse: rimuovine prima una',
-  'En iPhone, Safari no deja poner las webs a pantalla completa. Pulsa Compartir y luego "Añadir a pantalla de inicio": abriendo el juego desde ese icono se juega a pantalla completa.': 'Su iPhone, Safari non supporta lo schermo intero per i siti web. Tocca Condividi e seleziona "Aggiungi a schermata Home": avviando il gioco da quell\'icona si giocherà a schermo intero.'
+  'En iPhone, Safari no deja poner las webs a pantalla completa. Pulsa Compartir y luego "Añadir a pantalla de inicio": abriendo el juego desde ese icono se juega a pantalla completa.': 'Su iPhone, Safari non supporta lo schermo intero per i siti web. Tocca Condividi e seleziona "Aggiungi a schermata Home": avviando il gioco da quell\'icona si giocherà a schermo intero.',
+  "Caramelo": "Caramella",
+  "Faltan caramelos": "Non hai abbastanza caramelle",
+  "Tienes {x} caramelos": "Hai {x} caramelle",
+  "Cuesta {x} caramelos": "Costa {x} caramelle",
+  "{x} caramelos": "{x} caramelle",
+  "Caramelos conseguidos": "Caramelle ottenute",
+  "Caramelos gastados": "Caramelle spese",
+  "Caramelos que quedan": "Caramelle rimaste",
+  "Los caramelos sólo valen en esta partida": "Le caramelle valgono solo in questa partita",
+  "Cambiar: {x} caramelos": "Cambia: {x} caramelle",
+  "Cada compra sube los precios {x} caramelos": "Ogni acquisto alza i prezzi di {x} caramelle",
+  "En la partida caen caramelos azules. Sirven para la tienda de Meowth y las Poké Balls de pago, y al terminar se pierden. Las Pokémonedas del menú siguen igual.": "Nella partita cadono caramelle blu. Servono per il negozio di Meowth e le Poké Ball a pagamento, e a fine partita spariscono. I Pokémonini del menu restano uguali.",
 }, 'it');

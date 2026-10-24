@@ -14,27 +14,54 @@ G.Items = (() => {
 
   function add(it) { it.file = ICON + it.file; LIST.push(it); }
 
-  function mul(field, per, id) {
+  // La 1.ª copia entera; las siguientes rinden menos. No es efecto × copias.
+  const BASIC_STACK_WEIGHTS = [1, 0.70, 0.50, 0.30, 0.30, 0.15, 0.15, 0.15, 0.15, 0.15];
+  function stackPower(count, weights) {
+    const w = weights || BASIC_STACK_WEIGHTS;
+    let total = 0;
+    for (let i = 0; i < count && i < w.length; i++) total += w[i];
+    return total;
+  }
+  function scaled(per, n, curve) {
+    if (!n) return 0;
+    return curve === 'dim' ? per * stackPower(n) : per * n;
+  }
+  function typeItemBonus(count) {
+    if (count <= 0) return { typeDamage: 0, allDamage: 0 };
+    return { typeDamage: 0.20 + Math.max(0, count - 1) * 0.05, allDamage: 0.02 + Math.max(0, count - 1) * 0.01 };
+  }
+  function leftRegen(n) { return n <= 0 ? 0 : 1.2 + Math.max(0, n - 1) * 0.4; }
+  function noteAtk(p, id, factor) {
+    p._atkPart = p._atkPart || {};
+    p._atkPart[id] = factor;
+    let prod = 1;
+    for (const k in p._atkPart) prod *= p._atkPart[k] || 1;
+    p._atkItemProd = prod;
+  }
+
+  function mul(field, per, id, curve) {
     return {
       on(p, n) {
         p._itemK = p._itemK || {};
-        const prev = p._itemK[id] || 1, next = 1 + per * n;
+        const prev = p._itemK[id] || 1, next = 1 + scaled(per, n, curve);
         p[field] = p[field] / prev * next;
         p._itemK[id] = next;
+        if (field === 'atkMul') noteAtk(p, id, next);
       },
       off(p) {
         const prev = (p._itemK && p._itemK[id]) || 1;
         p[field] /= prev;
         if (p._itemK) p._itemK[id] = 1;
+        if (field === 'atkMul') noteAtk(p, id, 1);
       }
     };
   }
   /* rate > 0 dispara más rápido (la recarga baja). */
-  function haste(id, rate) {
+  function haste(id, rate, curve) {
     return {
       on(p, n) {
         p._itemK = p._itemK || {};
-        const prev = p._itemK[id] || 1, next = 1 / (1 + rate * n);
+        const prev = p._itemK[id] || 1, next = 1 / (1 + scaled(rate, n, curve));
         p.cdMul = p.cdMul / prev * next;
         p._itemK[id] = next;
       },
@@ -45,11 +72,11 @@ G.Items = (() => {
       }
     };
   }
-  function flat(field, per, id) {
+  function flat(field, per, id, curve) {
     return {
       on(p, n) {
         p._itemF = p._itemF || {};
-        const prev = p._itemF[id] || 0, next = per * n;
+        const prev = p._itemF[id] || 0, next = scaled(per, n, curve);
         p[field] = (p[field] || 0) + next - prev;
         p._itemF[id] = next;
       },
@@ -62,6 +89,11 @@ G.Items = (() => {
   }
   function pctHp(p, id, frac) {
     p._hpPct = p._hpPct || {};
+    p._hpFrac = p._hpFrac || {};
+    let others = 0;
+    for (const k in p._hpFrac) if (k !== id && p._hpFrac[k] > 0) others += p._hpFrac[k];
+    if (frac > 0) frac = Math.min(frac, Math.max(0, 1 - others));
+    p._hpFrac[id] = frac;
     const prev = p._hpPct[id] || 0;
     const bare = p.maxHp - prev;
     const next = bare * frac;
@@ -112,33 +144,42 @@ G.Items = (() => {
     ['fairyfeather', 'Pluma Hada', '妖精之羽', 'Fairy Feather', 'fairy-feather.png', 'fairy']
   ];
   const TYPE_ZH = {
-    normal: '一般招式傷害 +30%，傷害 +3%。', fire: '火招式傷害 +30%，傷害 +3%。', water: '水招式傷害 +30%，傷害 +3%。',
-    grass: '草招式傷害 +30%，傷害 +3%。', electric: '電招式傷害 +30%，傷害 +3%。', ice: '冰招式傷害 +30%，傷害 +3%。',
-    fighting: '格鬥招式傷害 +30%，傷害 +3%。', poison: '毒招式傷害 +30%，傷害 +3%。', ground: '地面招式傷害 +30%，傷害 +3%。',
-    flying: '飛行招式傷害 +30%，傷害 +3%。', psychic: '超能力招式傷害 +30%，傷害 +3%。', bug: '蟲招式傷害 +30%，傷害 +3%。',
-    rock: '岩石招式傷害 +30%，傷害 +3%。', ghost: '幽靈招式傷害 +30%，傷害 +3%。', dragon: '龍招式傷害 +30%，傷害 +3%。',
-    dark: '惡招式傷害 +30%，傷害 +3%。', steel: '鋼招式傷害 +30%，傷害 +3%。', fairy: '妖精招式傷害 +30%，傷害 +3%。'
+    normal: '第一份：一般招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。', fire: '第一份：火招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。', water: '第一份：水招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。',
+    grass: '第一份：草招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。', electric: '第一份：電招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。', ice: '第一份：冰招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。',
+    fighting: '第一份：格鬥招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。', poison: '第一份：毒招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。', ground: '第一份：地面招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。',
+    flying: '第一份：飛行招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。', psychic: '第一份：超能力招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。', bug: '第一份：蟲招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。',
+    rock: '第一份：岩石招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。', ghost: '第一份：幽靈招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。', dragon: '第一份：龍招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。',
+    dark: '第一份：惡招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。', steel: '第一份：鋼招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。', fairy: '第一份：妖精招式 +20%，全部傷害 +2%。之後每份 +5% 與 +1%。'
   };
   for (const [id, name, zh, en, file, type] of TYPES) {
     const zd = TYPE_ZH[type];
     add(Object.assign({
-      id, name, zh, en, file, tier: 1, max: 1,
-      desc: 'Los ataques de su tipo hacen un 30 % más, y todo el daño un 3 % más.',
-      zd, ed: 'Moves of its type deal 30% more, and all damage is 3% higher.'
+      id, name, zh, en, file, tier: 1, max: 10, stackType: 'basic',
+      desc: 'La primera copia: su tipo +20 % y todo el daño +2 %. Cada copia de más: +5 % de tipo y +1 % de daño.',
+      zd, ed: 'First copy: its type +20% and all damage +2%. Each further copy: type +5% and all damage +1%.'
     }, {
       on(p, n) {
+        const b = typeItemBonus(n);
         p.typeBonus = p.typeBonus || {};
         p._tb = p._tb || {};
-        const prev = p._tb[id] || 0, next = 0.30 * n;
-        p.typeBonus[type] = (p.typeBonus[type] || 0) - prev + next;
-        p._tb[id] = next;
-        mul('atkMul', 0.03, id + '-a').on(p, n);
+        const prev = p._tb[id] || 0;
+        p.typeBonus[type] = (p.typeBonus[type] || 0) - prev + b.typeDamage;
+        p._tb[id] = b.typeDamage;
+        p._itemK = p._itemK || {};
+        const ida = id + '-a', prevK = p._itemK[ida] || 1, nextK = 1 + b.allDamage;
+        p.atkMul = p.atkMul / prevK * nextK;
+        p._itemK[ida] = nextK;
+        noteAtk(p, ida, nextK);
       },
       off(p) {
         const prev = (p._tb && p._tb[id]) || 0;
         if (p.typeBonus) p.typeBonus[type] = (p.typeBonus[type] || 0) - prev;
         if (p._tb) p._tb[id] = 0;
-        mul('atkMul', 0.03, id + '-a').off(p);
+        const ida = id + '-a';
+        const prevK = (p._itemK && p._itemK[ida]) || 1;
+        p.atkMul /= prevK;
+        if (p._itemK) p._itemK[ida] = 1;
+        noteAtk(p, ida, 1);
       }
     }));
   }
@@ -146,10 +187,10 @@ G.Items = (() => {
   function card(o, fx) { add(Object.assign(o, fx)); }
 
   card({ id: 'leftovers', name: 'Restos', zh: '吃剩的東西', en: 'Leftovers', file: 'leftovers.png', tier: 1, max: 1,
-    desc: 'Recuperas 1,2 de vida por segundo.', zd: '每秒恢復 +1.2 HP。', ed: 'Recover 1.2 HP per second.' }, {
+    desc: 'La primera copia recupera 1,2 de vida por segundo. Cada copia de más, +0,4.', zd: '第一份每秒恢復 1.2 HP，之後每份 +0.4。', ed: 'The first copy recovers 1.2 HP per second. Each further copy adds 0.4.' }, {
     on(p, n) {
       p._itemF = p._itemF || {};
-      const prev = p._itemF.leftovers || 0, next = 1.2 * n;
+      const prev = p._itemF.leftovers || 0, next = leftRegen(n);
       p.regenFlat += next - prev;
       p._itemF.leftovers = next;
     },
@@ -160,56 +201,56 @@ G.Items = (() => {
   });
   card({ id: 'oranberry', name: 'Baya Aranja', zh: '橙橙果', en: 'Oran Berry', file: 'oran-berry.png', tier: 1, max: 1,
     desc: '+15 de vida máxima.', zd: '最大 HP +15。', ed: 'Max HP +15.' }, {
-    on(p, n) { bumpHp(p, 'oranberry', 15 * n); }, off(p) { bumpHp(p, 'oranberry', 0); }
+    on(p, n) { bumpHp(p, 'oranberry', 15 * stackPower(n)); }, off(p) { bumpHp(p, 'oranberry', 0); }
   });
   card({ id: 'sitrusberry', name: 'Baya Zidra', zh: '文柚果', en: 'Sitrus Berry', file: 'sitrus-berry.png', tier: 2, max: 1,
-    desc: 'Por debajo del 30 % de vida, recuperas un 35 %. Como mucho una vez cada 45 s.',
-    zd: 'HP 低於 30% 時恢復 35% HP，每 45 秒一次。',
-    ed: 'Below 30% HP, recover 35% HP, once every 45 seconds.' }, { on() {}, off() {} });
+    desc: 'Por debajo del 30 % de vida, recuperas un 25 %. Como mucho una vez cada 60 s. No se apila.',
+    zd: 'HP 低於 30% 時恢復 25% HP，每 60 秒一次。不可重複。',
+    ed: 'Below 30% HP, recover 25% HP, once every 60 seconds. Does not stack.' }, { on() {}, off() {} });
   card({ id: 'shellbell', name: 'Cascabel Concha', zh: '貝殼之鈴', en: 'Shell Bell', file: 'shell-bell.png', tier: 1, max: 1,
     desc: 'Recuperas el 1 % del daño que haces.', zd: '恢復所造成傷害的 1%。', ed: 'Recover 1% of the damage you deal.' }, { on() {}, off() {} });
   card({ id: 'rockyhelmet', name: 'Casco Dentado', zh: '凸凸頭盔', en: 'Rocky Helmet', file: 'rocky-helmet.png', tier: 1, max: 1,
     desc: 'Quien te toca recibe 25 de daño.', zd: '接觸你的敵人受到 25 傷害。', ed: 'An enemy that touches you takes 25 damage.' }, { on() {}, off() {} });
   card({ id: 'amuletcoin', name: 'Moneda Amuleto', zh: '護身金幣', en: 'Amulet Coin', file: 'amulet-coin.png', tier: 1, max: 1,
-    desc: '+25 % de monedas.', zd: '金幣 +25%。', ed: 'Coins +25%.' }, mul('coinMul', 0.25, 'amuletcoin'));
+    desc: '+25 % de monedas, menos a partir de la segunda copia.', zd: '金幣 +25%，第二份起遞減。', ed: 'Coins +25%, less from the second copy.' }, mul('coinMul', 0.25, 'amuletcoin', 'dim'));
   card({ id: 'luckyegg', name: 'Huevo Suerte', zh: '幸運蛋', en: 'Lucky Egg', file: 'lucky-egg.png', tier: 1, max: 1,
-    desc: '+15 % de experiencia.', zd: '經驗 +15%。', ed: 'Experience +15%.' }, mul('xpMul', 0.15, 'luckyegg'));
+    desc: '+15 % de experiencia, menos a partir de la segunda copia.', zd: '經驗 +15%，第二份起遞減。', ed: 'Experience +15%, less from the second copy.' }, mul('xpMul', 0.15, 'luckyegg', 'dim'));
   card({ id: 'quickclaw', name: 'Garra Rápida', zh: '先制之爪', en: 'Quick Claw', file: 'quick-claw.png', tier: 2, max: 1,
-    desc: '+10 % de velocidad de ataque.', zd: '攻擊速度 +10%。', ed: 'Attack speed +10%.' }, haste('quickclaw', 0.10));
+    desc: '+10 % de velocidad de ataque, menos a partir de la segunda copia.', zd: '攻擊速度 +10%，第二份起遞減。', ed: 'Attack speed +10%, less from the second copy.' }, haste('quickclaw', 0.10, 'dim'));
   card({ id: 'choicescarf', name: 'Pañuelo Elección', zh: '講究圍巾', en: 'Choice Scarf', file: 'choice-scarf.png', tier: 2, max: 1,
-    desc: '+20 % de velocidad de movimiento y +10 % de velocidad de ataque.',
-    zd: '移動速度 +20%，攻擊速度 +10%。', ed: 'Move speed +20%, attack speed +10%.' },
-    both(mul('spdMul', 0.20, 'choicescarf'), haste('choicescarf-h', 0.10)));
+    desc: 'Cada copia: +10 % de velocidad de movimiento y +6 % de velocidad de ataque. Hasta x3.',
+    zd: '每份移動速度 +10%、攻擊速度 +6%。最多 x3。', ed: 'Each copy: move speed +10% and attack speed +6%. Up to x3.' },
+    both(mul('spdMul', 0.10, 'choicescarf'), haste('choicescarf-h', 0.06)));
   card({ id: 'muscleband', name: 'Cinta Fuerte', zh: '力量頭帶', en: 'Muscle Band', file: 'muscle-band.png', tier: 2, max: 1,
-    desc: '+15 % de daño.', zd: '傷害 +15%。', ed: 'Damage +15%.' }, mul('atkMul', 0.15, 'muscleband'));
+    desc: '+15 % de daño, menos a partir de la segunda copia. Hasta x5.', zd: '傷害 +15%，第二份起遞減。最多 x5。', ed: 'Damage +15%, less from the second copy. Up to x5.' }, mul('atkMul', 0.15, 'muscleband', 'dim'));
   card({ id: 'expertbelt', name: 'Cinta Experto', zh: '達人力帶', en: 'Expert Belt', file: 'expert-belt.png', tier: 2, max: 1,
     desc: '+30 % de daño a quien es débil a tu tipo.', zd: '對弱於招式屬性的目標傷害 +30%。',
     ed: 'Damage +30% against targets weak to the move\'s type.' }, { on() {}, off() {} });
   card({ id: 'assaultvest', name: 'Chaleco Asalto', zh: '突擊背心', en: 'Assault Vest', file: 'assault-vest.png', tier: 2, max: 1,
-    desc: '+12 de armadura y +12 % de vida máxima.', zd: '護甲 +12，最大 HP +12%。', ed: 'Armor +12, max HP +12%.' }, {
-    on(p, n) { flat('armor', 12, 'assaultvest').on(p, n); pctHp(p, 'assaultvest', 0.12 * n); },
-    off(p) { flat('armor', 12, 'assaultvest').off(p); pctHp(p, 'assaultvest', 0); }
+    desc: 'Cada copia: +10 de armadura y +8 % de vida máxima. Hasta x3.', zd: '每份護甲 +10、最大 HP +8%。最多 x3。', ed: 'Each copy: armor +10 and max HP +8%. Up to x3.' }, {
+    on(p, n) { flat('armor', 10, 'assaultvest').on(p, n); pctHp(p, 'assaultvest', 0.08 * n); },
+    off(p) { flat('armor', 10, 'assaultvest').off(p); pctHp(p, 'assaultvest', 0); }
   });
   card({ id: 'safetygoggles', name: 'Gafas de Seguridad', zh: '防塵護目鏡', en: 'Safety Goggles', file: 'safety-goggles.png', tier: 1, max: 1,
-    desc: '+5 de armadura.', zd: '護甲 +5。', ed: 'Armor +5.' }, flat('armor', 5, 'safetygoggles'));
+    desc: '+5 de armadura, menos a partir de la segunda copia.', zd: '護甲 +5，第二份起遞減。', ed: 'Armor +5, less from the second copy.' }, flat('armor', 5, 'safetygoggles', 'dim'));
   card({ id: 'focussash', name: 'Banda Focus', zh: '氣勢頭帶', en: 'Focus Sash', file: 'focus-sash.png', tier: 2, max: 1,
     desc: 'Un 15 % de las veces, un golpe mortal te deja con 1 de vida. Como mucho una vez cada 20 s.',
     zd: '15% 機率以 1 HP 抵擋致命一擊，每 20 秒一次。',
     ed: '15% chance to survive a fatal hit at 1 HP, once every 20 seconds.' }, { on() {}, off() {} });
   card({ id: 'razorclaw', name: 'Garra Afilada', zh: '銳利之爪', en: 'Razor Claw', file: 'razor-claw.png', tier: 2, max: 1,
     desc: '+6 % de probabilidad de crítico.', zd: '暴擊率 +6%。', ed: 'Critical hit chance +6%.' }, {
-    on(p, n) { bumpCrit(p, 'razorclaw', 0.06 * n); }, off(p) { bumpCrit(p, 'razorclaw', 0); }
+    on(p, n) { bumpCrit(p, 'razorclaw', 0.06 * stackPower(n)); }, off(p) { bumpCrit(p, 'razorclaw', 0); }
   });
   card({ id: 'scopelens', name: 'Periscopio', zh: '焦點鏡', en: 'Scope Lens', file: 'scope-lens.png', tier: 3, max: 1,
     desc: '+30 % de daño crítico.', zd: '暴擊傷害 +30%。', ed: 'Critical hit damage +30%.' }, { on() {}, off() {} });
   card({ id: 'choiceband', name: 'Cinta Elección', zh: '講究頭帶', en: 'Choice Band', file: 'choice-band.png', tier: 3, max: 1,
-    desc: '+35 % de daño y -8 % de velocidad de ataque.', zd: '傷害 +35%，攻擊速度 -8%。',
-    ed: 'Damage +35%, attack speed -8%.' }, both(mul('atkMul', 0.35, 'choiceband'), haste('choiceband-h', -0.08)));
+    desc: 'Cada copia: +15 % de daño y -4 % de velocidad de ataque. Hasta x3.', zd: '每份傷害 +15%、攻擊速度 -4%。最多 x3。',
+    ed: 'Each copy: damage +15% and attack speed -4%. Up to x3.' }, both(mul('atkMul', 0.15, 'choiceband'), haste('choiceband-h', -0.04)));
   card({ id: 'lifeorb', name: 'Vidasfera', zh: '生命寶珠', en: 'Life Orb', file: 'life-orb.png', tier: 3, max: 1,
-    desc: '+30 % de daño y -10 % de vida máxima.', zd: '傷害 +30%，最大 HP -10%。',
-    ed: 'Damage +30%, max HP -10%.' }, {
-    on(p, n) { mul('atkMul', 0.30, 'lifeorb').on(p, n); pctHp(p, 'lifeorb', -0.10 * n); },
-    off(p) { mul('atkMul', 0.30, 'lifeorb').off(p); pctHp(p, 'lifeorb', 0); }
+    desc: 'Cada copia: +15 % de daño y -5 % de vida máxima. Hasta x3.', zd: '每份傷害 +15%、最大 HP -5%。最多 x3。',
+    ed: 'Each copy: damage +15% and max HP -5%. Up to x3.' }, {
+    on(p, n) { mul('atkMul', 0.15, 'lifeorb').on(p, n); pctHp(p, 'lifeorb', -0.05 * n); },
+    off(p) { mul('atkMul', 0.15, 'lifeorb').off(p); pctHp(p, 'lifeorb', 0); }
   });
   card({ id: 'metronome', name: 'Metrónomo', zh: '揮指公', en: 'Metronome', file: 'metronome.png', tier: 2, max: 1,
     desc: 'Cada 10 s sin recibir daño, +4 % de daño, hasta +40 %. Al recibirlo, vuelve a cero.',
@@ -218,11 +259,11 @@ G.Items = (() => {
   card({ id: 'widelens', name: 'Lupa', zh: '廣角鏡', en: 'Wide Lens', file: 'wide-lens.png', tier: 2, max: 1,
     desc: '+10 % de alcance.', zd: '範圍 +10%。', ed: 'Area +10%.' }, { on() {}, off() {} });
   card({ id: 'brightpowder', name: 'Polvo Brillo', zh: '光粉', en: 'Bright Powder', file: 'bright-powder.png', tier: 1, max: 1,
-    desc: '+4 % de evasión.', zd: '閃避 +4%。', ed: 'Evasion +4%.' }, flat('evade', 0.04, 'brightpowder'));
+    desc: '+4 % de evasión, menos a partir de la segunda copia.', zd: '閃避 +4%，第二份起遞減。', ed: 'Evasion +4%, less from the second copy.' }, flat('evade', 0.04, 'brightpowder', 'dim'));
   card({ id: 'quickpowder', name: 'Polvo Veloz', zh: '速度粉', en: 'Quick Powder', file: 'quick-powder.png', tier: 2, max: 1,
-    desc: '+7 % de velocidad de movimiento.', zd: '移動速度 +7%。', ed: 'Move speed +7%.' }, mul('spdMul', 0.07, 'quickpowder'));
+    desc: '+7 % de velocidad de movimiento, menos a partir de la segunda copia.', zd: '移動速度 +7%，第二份起遞減。', ed: 'Move speed +7%, less from the second copy.' }, mul('spdMul', 0.07, 'quickpowder', 'dim'));
   card({ id: 'nugget', name: 'Pepita', zh: '金珠', en: 'Nugget', file: 'nugget.png', tier: 1, max: 1,
-    desc: '+15 % de monedas.', zd: '金幣 +15%。', ed: 'Coins +15%.' }, mul('coinMul', 0.15, 'nugget'));
+    desc: '+15 % de monedas, menos a partir de la segunda copia.', zd: '金幣 +15%，第二份起遞減。', ed: 'Coins +15%, less from the second copy.' }, mul('coinMul', 0.15, 'nugget', 'dim'));
   card({ id: 'bignugget', name: 'Pepita Grande', zh: '巨大金珠', en: 'Big Nugget', file: 'big-nugget.png', tier: 3, max: 5,
     desc: 'Las Poké Balls cuestan un 8 % menos, hasta un 40 %.', zd: '精靈球價格降低 8%，最多 40%。',
     ed: 'Poké Ball prices drop 8%, up to 40%.' }, {
@@ -230,7 +271,7 @@ G.Items = (() => {
     off(p) { p.ballCut = 0; }
   });
   card({ id: 'starpiece', name: 'Trozo Estrella', zh: '星星碎片', en: 'Star Piece', file: 'star-piece.png', tier: 2, max: 1,
-    desc: '+20 de suerte.', zd: '幸運 +20。', ed: 'Luck +20.' }, flat('luck', 20, 'starpiece'));
+    desc: '+20 de suerte, menos a partir de la segunda copia. Es la misma suerte que las mejoras.', zd: '幸運 +20，第二份起遞減。和永久強化是同一項幸運。', ed: 'Luck +20, less from the second copy. This is the same luck as upgrades.' }, flat('luck', 20, 'starpiece', 'dim'));
   card({ id: 'eviolite', name: 'Mineral Evolutivo', zh: '進化奇石', en: 'Eviolite', file: 'eviolite.png', tier: 2, max: 1,
     desc: 'Si tu compañero aún puede evolucionar: +50 % de armadura y +25 % de vida máxima.',
     zd: '伙伴仍可進化時：護甲 +50%，最大 HP +25%。',
@@ -253,17 +294,21 @@ G.Items = (() => {
     both(mul('atkMul', 0.25, 'masterball'), flat('luck', 10, 'masterball')));
 
   card({ id: 'maxrevive', name: 'Revivir Máximo', zh: '活力塊', en: 'Max Revive', file: 'max-revive.png', tier: 3, max: 1,
-    desc: 'Revivir una vez con el 60 % de vida. Una vez por partida.', zd: '以 60% HP 復活一次。每局一次。',
-    ed: 'Revive once at 60% HP. Once per run.' }, { on() {}, off() {} });
+    desc: 'Prepara un levantamiento al 70 % de vida. Solo uno por partida, compartido.', zd: '倒下時恢復 70% HP。本局自動復活只限一次。',
+    ed: 'Prepares a revival at 70% HP. Only one automatic revival per run, shared.', stackType: 'revive', reviveRatio: 0.70 }, { on() {}, off() {} });
   card({ id: 'rarecandy', name: 'Caramelo Raro', zh: '神奇糖果', en: 'Rare Candy', file: 'rare-candy.png', tier: 3, max: 1,
     desc: 'Subes 2 niveles al momento y +5 % de daño.', zd: '立即升級 +2，傷害 +5%。',
     ed: 'Level up by 2 right away, and damage +5%.' }, {
-    on(p) {
+    on(p, n) {
       mul('atkMul', 0.05, 'rarecandy').on(p, 1);
+      const prev = p._candy || 0;
+      const add = Math.max(0, (n || 1) - prev);
+      p._candy = Math.max(prev, n || 1);
+      if (!add) return;
       let need = 0, lv = p.level, xp = p.xp, next = p.xpNext;
-      for (let i = 0; i < 2; i++) { need += Math.max(1, next - xp); xp = 0; lv++; next = G.Player.xpFor(lv); }
-      const n = p.gainXp(need);
-      if (G.Game && G.Game.noteXp) G.Game.noteXp(n);
+      for (let i = 0; i < add * 2; i++) { need += Math.max(1, next - xp); xp = 0; lv++; next = G.Player.xpFor(lv); }
+      const got = p.gainXp(need);
+      if (G.Game && G.Game.noteXp) G.Game.noteXp(got);
     },
     off(p) { mul('atkMul', 0.05, 'rarecandy').off(p); }
   });
@@ -275,19 +320,19 @@ G.Items = (() => {
     desc: '+40 % de monedas y +30 de suerte.', zd: '金幣 +40%，幸運 +30。', ed: 'Coins +40%, luck +30.' },
     both(mul('coinMul', 0.40, 'cometshard'), flat('luck', 30, 'cometshard')));
   card({ id: 'moonstone', name: 'Piedra Lunar', zh: '月之石', en: 'Moon Stone', file: 'moon-stone.png', tier: 2, max: 1,
-    desc: '+2 proyectiles y +25 % de alcance.', zd: '彈體 +2，範圍 +25%。', ed: 'Projectiles +2, area +25%.' }, { on() {}, off() {} });
+    desc: 'Cada copia: +1 proyectil y +10 % de alcance. Hasta x2.', zd: '每份彈體 +1、範圍 +10%。最多 x2。', ed: 'Each copy: projectiles +1 and area +10%. Up to x2.' }, { on() {}, off() {} });
   card({ id: 'maxpp', name: 'PP Máximos', zh: 'PP提升劑', en: 'Max PP', file: 'max-pp.png', tier: 2, max: 1,
-    desc: '+1 proyectil en disparos, órbitas y cadenas.', zd: '彈射、環繞和連鎖招式彈體 +1。',
-    ed: 'Shots, orbits and chains gain 1 projectile.' }, { on() {}, off() {} });
+    desc: 'Cada copia: +1 proyectil en disparos, órbitas y cadenas. Hasta x3.', zd: '每份讓彈射、環繞和連鎖招式彈體 +1。最多 x3。',
+    ed: 'Each copy: shots, orbits and chains gain 1 projectile. Up to x3.' }, { on() {}, off() {} });
   card({ id: 'maxelixir', name: 'Elixir Máximo', zh: '極限全復藥', en: 'Max Elixir', file: 'max-elixir.png', tier: 2, max: 1,
-    desc: '+20 % de velocidad de ataque.', zd: '攻擊速度 +20%。', ed: 'Attack speed +20%.' }, haste('maxelixir', 0.20));
+    desc: 'Cada copia: +12 % de velocidad de ataque. Hasta x3.', zd: '每份攻擊速度 +12%。最多 x3。', ed: 'Each copy: attack speed +12%. Up to x3.' }, haste('maxelixir', 0.12));
   card({ id: 'shinystone', name: 'Piedra Día', zh: '光之石', en: 'Shiny Stone', file: 'shiny-stone.png', tier: 2, max: 1,
-    desc: '+15 % de daño y +15 % de alcance.', zd: '傷害 +15%，範圍 +15%。', ed: 'Damage +15%, area +15%.' },
-    mul('atkMul', 0.15, 'shinystone'));
+    desc: 'Cada copia: +10 % de daño y +8 % de alcance. Hasta x3.', zd: '每份傷害 +10%、範圍 +8%。最多 x3。', ed: 'Each copy: damage +10% and area +8%. Up to x3.' },
+    mul('atkMul', 0.10, 'shinystone'));
   card({ id: 'duskstone', name: 'Piedra Noche', zh: '暗之石', en: 'Dusk Stone', file: 'dusk-stone.png', tier: 2, max: 1,
-    desc: '+40 % de daño crítico y +8 % de probabilidad de crítico.', zd: '暴擊傷害 +40%，暴擊率 +8%。',
-    ed: 'Critical damage +40%, critical chance +8%.' }, {
-    on(p, n) { bumpCrit(p, 'duskstone', 0.08 * n); }, off(p) { bumpCrit(p, 'duskstone', 0); }
+    desc: 'Cada copia: +5 % de probabilidad de crítico y +20 % de daño crítico. Hasta x3.', zd: '每份暴擊率 +5%、暴擊傷害 +20%。最多 x3。',
+    ed: 'Each copy: critical chance +5% and critical damage +20%. Up to x3.' }, {
+    on(p, n) { bumpCrit(p, 'duskstone', 0.05 * n); }, off(p) { bumpCrit(p, 'duskstone', 0); }
   });
   card({ id: 'honey', name: 'Miel', zh: '甜甜蜜', en: 'Honey', file: 'honey.png', tier: 3, max: 1,
     desc: 'Una Poké Ball ofrece 4 objetos en vez de 3.', zd: '精靈球提供 4 個道具而非 3 個。',
@@ -297,16 +342,16 @@ G.Items = (() => {
   card({ id: 'icestone', name: 'Piedra Hielo', zh: '冰之石', en: 'Ice Stone', file: 'ice-stone.png', tier: 2, max: 1,
     desc: 'Un enemigo frenado explota al caer.', zd: '減速敵人倒下時爆炸。', ed: 'A slowed enemy explodes when it falls.' }, { on() {}, off() {} });
   card({ id: 'revive', name: 'Revivir', zh: '復活草', en: 'Revive', file: 'revive.png', tier: 3, max: 1,
-    desc: 'Revivir una vez con el 35 % de vida. Una vez por partida.', zd: '以 35% HP 復活一次。每局一次。',
-    ed: 'Revive once at 35% HP. Once per run.' }, { on() {}, off() {} });
+    desc: 'Prepara un levantamiento al 50 % de vida. Solo uno por partida, compartido.', zd: '倒下時恢復 50% HP。本局自動復活只限一次。',
+    ed: 'Prepares a revival at 50% HP. Only one automatic revival per run, shared.', stackType: 'revive', reviveRatio: 0.50 }, { on() {}, off() {} });
   card({ id: 'powerbracer', name: 'Brazal Firme', zh: '力量護腕', en: 'Power Bracer', file: 'power-bracer.png', tier: 3, max: 1,
-    desc: '+40 % de daño y -15 % de velocidad de movimiento.', zd: '傷害 +40%，移動速度 -15%。',
-    ed: 'Damage +40%, move speed -15%.' }, both(mul('atkMul', 0.40, 'powerbracer'), mul('spdMul', -0.15, 'powerbracer')));
+    desc: '+30 % de daño y -15 % de velocidad de movimiento. Solo una copia.', zd: '傷害 +30%，移動速度 -15%。只能持有一份。',
+    ed: 'Damage +30% and move speed -15%. Only one copy.' }, both(mul('atkMul', 0.30, 'powerbracer'), mul('spdMul', -0.15, 'powerbracer')));
   card({ id: 'expshare', name: 'Repartir Exp', zh: '學習裝置', en: 'Exp. Share', file: 'exp-share.png', tier: 2, max: 1,
-    desc: '+25 % de experiencia y +20 % de radio de recogida.', zd: '經驗 +25%，拾取半徑 +20%。',
-    ed: 'Experience +25%, pickup radius +20%.' }, both(mul('xpMul', 0.25, 'expshare'), mul('magnet', 0.20, 'expshare')));
+    desc: 'Cada copia: +15 % de experiencia y +10 % de radio de recogida. Hasta x3.', zd: '每份經驗 +15%、拾取半徑 +10%。最多 x3。',
+    ed: 'Each copy: experience +15% and pickup radius +10%. Up to x3.' }, both(mul('xpMul', 0.15, 'expshare'), mul('magnet', 0.10, 'expshare')));
   card({ id: 'lumberry', name: 'Baya Zonlan', zh: '木子果', en: 'Lum Berry', file: 'lum-berry.png', tier: 2, max: 1,
-    desc: 'Cada 30 s recuperas un 20 % de vida.', zd: '每 30 秒恢復 20% HP。', ed: 'Every 30 seconds, recover 20% HP.' }, { on() {}, off() {} });
+    desc: 'Cada 40 s recuperas un 15 % de vida. No se apila.', zd: '每 40 秒恢復 15% HP。不可重複。', ed: 'Every 40 seconds, recover 15% HP. Does not stack.' }, { on() {}, off() {} });
   card({ id: 'lightclay', name: 'Refleluz', zh: '光之黏土', en: 'Light Clay', file: 'light-clay.png', tier: 2, max: 1,
     desc: '+20 % de duración.', zd: '持續時間 +20%。', ed: 'Duration +20%.' }, { on() {}, off() {} });
   card({ id: 'smokeball', name: 'Bola Humo', zh: '煙霧球', en: 'Smoke Ball', file: 'smoke-ball.png', tier: 2, max: 1,
@@ -319,7 +364,7 @@ G.Items = (() => {
   card({ id: 'snowball', name: 'Bola de Nieve', zh: '雪球', en: 'Snowball', file: 'snowball.png', tier: 1, max: 1,
     desc: 'Al golpear, un 6 % de frenar.', zd: '命中時 6% 機率減速。', ed: 'On hit, 6% chance to slow.' }, { on() {}, off() {} });
   card({ id: 'bigroot', name: 'Raíz Grande', zh: '大根莖', en: 'Big Root', file: 'big-root.png', tier: 1, max: 1,
-    desc: '+15 % de curación.', zd: '治療 +15%。', ed: 'Healing +15%.' }, mul('healMul', 0.15, 'bigroot'));
+    desc: '+15 % de curación, menos a partir de la segunda copia.', zd: '治療 +15%，第二份起遞減。', ed: 'Healing +15%, less from the second copy.' }, mul('healMul', 0.15, 'bigroot', 'dim'));
   card({ id: 'kingsrock', name: 'Roca del Rey', zh: '王者之證', en: "King's Rock", file: 'king-s-rock.png', tier: 2, max: 1,
     desc: 'Al golpear, un 6 % de aturdir 0,5 s.', zd: '命中時 6% 機率暈眩 0.5 秒。', ed: 'On hit, 6% chance to stun for 0.5 seconds.' }, { on() {}, off() {} });
   card({ id: 'protectivepads', name: 'Protectores', zh: '部位護具', en: 'Protective Pads', file: 'protective-pads.png', tier: 1, max: 1,
@@ -341,6 +386,7 @@ G.Items = (() => {
     if (prev === next) return;
     p.atkMul = p.atkMul / (1 + prev * 0.04) * (1 + next * 0.04);
     p._metro = next;
+    noteAtk(p, 'metro', 1 + next * 0.04);
   }
   function reaper(p, next) {
     const prev = p._reaper || 0;
@@ -348,6 +394,7 @@ G.Items = (() => {
     if (prev === next) return;
     p.atkMul = p.atkMul / (1 + prev * 0.01) * (1 + next * 0.01);
     p._reaper = next;
+    noteAtk(p, 'reaper', 1 + next * 0.01);
   }
   function say(p, txt, col) {
     G.FX.dmgText(p.x, p.y - p.bodyH - 16, txt, col, true);
@@ -381,12 +428,34 @@ G.Items = (() => {
     charcoal: [10, 'common'], mysticwater: [10, 'common'], miracleseed: [10, 'common'], magnet: [10, 'common'], nevermeltice: [10, 'common'], blackbelt: [10, 'common'], poisonbarb: [10, 'common'], softsand: [10, 'common'], sharpbeak: [10, 'common'], twistedspoon: [10, 'common'], silverpowder: [10, 'common'], hardstone: [10, 'common'], spelltag: [10, 'common'], dragonfang: [10, 'common'], blackglasses: [10, 'common'], metalcoat: [10, 'common'], fairyfeather: [10, 'common'],
     oranberry: [10, 'common'], quickpowder: [10, 'common'], brightpowder: [10, 'common'], razorclaw: [10, 'common'], widelens: [10, 'common'], safetygoggles: [10, 'common'], nugget: [10, 'common'], bignugget: [5, 'common']
   };
+  const KIND = {
+    leftovers: ['basic', 10], oranberry: ['basic', 10], rockyhelmet: ['basic', 10], amuletcoin: ['basic', 10],
+    luckyegg: ['basic', 10], quickclaw: ['basic', 10], muscleband: ['basic', 5], razorclaw: ['basic', 10],
+    scopelens: ['basic', 10], widelens: ['basic', 10], brightpowder: ['basic', 10], quickpowder: ['basic', 10],
+    nugget: ['basic', 10], starpiece: ['basic', 10], bigroot: ['basic', 10], safetygoggles: ['basic', 10],
+    lightclay: ['basic', 10], stickybarb: ['basic', 5], bignugget: ['basic', 5],
+    maxelixir: ['advanced', 3], assaultvest: ['advanced', 3], expshare: ['advanced', 3], shinystone: ['advanced', 3],
+    duskstone: ['advanced', 3], moonstone: ['advanced', 2], maxpp: ['advanced', 3], powerbracer: ['advanced', 1],
+    lifeorb: ['advanced', 3], choiceband: ['advanced', 3], choicescarf: ['advanced', 3], masterball: ['advanced', 1],
+    rarecandy: ['advanced', 3], cometshard: ['advanced', 1], reapercloth: ['advanced', 1],
+    honey: ['unique', 1], eviolite: ['unique', 1], focussash: ['unique', 1], metronome: ['unique', 1],
+    firestone: ['unique', 1], icestone: ['unique', 1], smokeball: ['unique', 1], kingsrock: ['unique', 1],
+    protectivepads: ['unique', 1], flameorb: ['unique', 1], toxicorb: ['unique', 1], snowball: ['unique', 1],
+    expertbelt: ['unique', 1], shellbell: ['unique', 1], sitrusberry: ['unique', 1], lumberry: ['unique', 1],
+    maxrevive: ['revive', 1], revive: ['revive', 1]
+  };
   for (const it of LIST) {
     const h = HOLD[it.id];
-    if (!h) continue;
-    it.max = h[0];
-    it.rarity = h[1];
-    it.shopBase = RARITY[h[1]].price;
+    if (h) {
+      it.max = h[0];
+      it.rarity = h[1];
+      it.shopBase = RARITY[h[1]].price;
+    }
+    const k = KIND[it.id];
+    if (k) { it.stackType = k[0]; it.max = k[1]; }
+    else if (!it.stackType) it.stackType = 'basic';
+    if (it.id === 'maxrevive') it.reviveRatio = 0.70;
+    if (it.id === 'revive') it.reviveRatio = 0.50;
   }
 
   const BY = {};
@@ -411,41 +480,76 @@ G.Items = (() => {
   }
   function held(pl, id) { return !!(pl && pl.hasItem && pl.hasItem(id)); }
 
-  const RAR_W = { common: 0, uncommon: 1, rare: 2, legendary: 3, mythic: 4 };
+  const RARITY_LUCK_CAP = { common: 1, uncommon: 1.3, rare: 1.6, legendary: 1.9, mythic: 2.2 };
+  const LUCK_FULL = 80;
   function sealed(pl, id) { return !!(pl && pl.sealed && pl.sealed.has(id)); }
-  /** Sin suerte, todos pesan igual. Cada punto hace más probable la rareza de encima. */
+  function copies(pl, id) { return (pl && pl.stacks && pl.stacks[id]) || 0; }
+  /** Una sola suerte: mejoras y objetos. itemLuck antiguo se absorbe una vez. */
+  function luckOf(pl) {
+    if (!pl) return 0;
+    if (!pl._luckMerged) {
+      pl.luck = Math.max(pl.luck || 0, pl.itemLuck || 0);
+      pl.itemLuck = 0;
+      pl._luckMerged = true;
+    }
+    return Math.max(0, pl.luck || 0);
+  }
+  function rarityWeight(rarity, luck) {
+    const cap = RARITY_LUCK_CAP[rarity] || 1;
+    const t = Math.max(0, Math.min(1, (luck || 0) / LUCK_FULL));
+    return 1 + (cap - 1) * t;
+  }
   function takeWeighted(bag, n, luck) {
     const pool = bag.slice(), out = [];
-    const lk = Math.max(0, luck || 0);
     while (out.length < n && pool.length) {
       let sum = 0;
-      const w = pool.map(it => { const v = 1 + (RAR_W[it.rarity] || 0) * lk / 10; sum += v; return v; });
+      const w = pool.map(it => { const v = rarityWeight(it.rarity, luck); sum += v; return v; });
       let x = Math.random() * sum, i = 0;
       for (; i < pool.length - 1; i++) { x -= w[i]; if (x <= 0) break; }
       out.push(pool.splice(i, 1)[0]);
     }
     return out;
   }
+  function canOffer(pl, it) {
+    if (!it || !pl) return false;
+    if (copies(pl, it.id) >= it.max) return false;
+    if (sealed(pl, it.id)) return false;
+    if (it.stackType === 'revive') {
+      const c = pl.reviveCharge;
+      if (c && c.used) return false;
+      if (it.id === 'revive' && held(pl, 'maxrevive')) return false;
+      if (c && (c.hpRatio || 0) >= (it.reviveRatio || 0)) return false;
+    }
+    return true;
+  }
   function rollChoices(tier, pl, n = 3) {
-    const have = id => (pl && pl.stacks && pl.stacks[id]) || 0;
-    const ok = i => have(i.id) < i.max && !sealed(pl, i.id);
+    const ok = i => canOffer(pl, i);
     const pool = t => LIST.filter(i => i.tier === t && ok(i));
     let bag = pool(tier);
     if (bag.length < n) bag = bag.concat(pool(Math.max(1, tier - 1)).filter(i => !bag.includes(i)));
     if (bag.length < n) bag = bag.concat(LIST.filter(i => ok(i) && !bag.includes(i)));
-    return takeWeighted(bag, Math.min(n, bag.length), pl && pl.itemLuck);
+    return takeWeighted(bag, Math.min(n, bag.length), luckOf(pl));
   }
   function choices(pl) { return held(pl, 'honey') ? 4 : 3; }
 
+  function refreshRevive(p) {
+    if (!p) return;
+    if (!p.reviveCharge) p.reviveCharge = { source: null, hpRatio: 0, used: false };
+    if (p.reviveCharge.used) return;
+    let best = p.revival ? { source: 'upgrade', hpRatio: 0.35 } : { source: null, hpRatio: 0 };
+    if (held(p, 'revive') && best.hpRatio < 0.50) best = { source: 'revive', hpRatio: 0.50 };
+    if (held(p, 'maxrevive') && best.hpRatio < 0.70) best = { source: 'maxrevive', hpRatio: 0.70 };
+    p.reviveCharge = { source: best.source, hpRatio: best.hpRatio, used: false };
+  }
   function gain(p, id) {
     const it = BY[id];
-    if (!it || !p) return false;
+    if (!it || !p || !canOffer(p, it)) return false;
     p.stacks = p.stacks || {};
     const n = p.stacks[id] || 0;
-    if (n >= it.max) return false;
     if (n && it.off) it.off(p);
-    p.stacks[id] = n + 1;
-    if (it.on) it.on(p, n + 1);
+    p.stacks[id] = Math.min(it.max, n + 1);
+    if (it.on) it.on(p, p.stacks[id]);
+    if (it.stackType === 'revive') refreshRevive(p);
     p.item = id;
     return true;
   }
@@ -456,22 +560,25 @@ G.Items = (() => {
 
   function shaped(pl, m) {
     if (!pl || !m) return m;
+    const base = (G.Moves && G.Moves.BY_ID && G.Moves.BY_ID[m.id]) || m;
     let extra = 0;
-    if (held(pl, 'moonstone') && SHOTS[m.kind]) extra += 2;
-    if (held(pl, 'maxpp') && PP[m.kind]) extra += 1;
+    if (SHOTS[m.kind]) extra += copies(pl, 'moonstone');
+    if (PP[m.kind]) extra += copies(pl, 'maxpp');
+    extra = Math.min(4, extra);
     let range = 1;
-    if (held(pl, 'moonstone')) range *= 1.25;
-    if (held(pl, 'shinystone')) range *= 1.15;
-    if (held(pl, 'widelens')) range *= 1.10;
-    const dur = held(pl, 'lightclay') ? 1.2 : 1;
-    if (!extra && range === 1 && dur === 1) return m;
+    range *= 1 + 0.10 * copies(pl, 'moonstone');
+    range *= 1 + 0.08 * copies(pl, 'shinystone');
+    range *= 1 + 0.10 * stackPower(copies(pl, 'widelens'));
+    range = Math.min(1.8, range);
+    const dur = 1 + 0.20 * stackPower(copies(pl, 'lightclay'));
     const o = Object.assign({}, m);
-    if (extra) o.count = (m.count | 0) + extra;
+    if (extra) o.count = Math.min((base.count | 0) + 4, (m.count | 0) + extra);
     if (range !== 1) {
-      if (m.radius) o.radius = m.radius * range;
-      if (m.size) o.size = m.size * range;
-      if (m.width) o.width = m.width * range;
-    }
+      if (m.radius) o.radius = Math.min(m.radius * range, (base.radius || m.radius) * 1.8);
+      if (m.size) o.size = Math.min(m.size * range, (base.size || m.size) * 1.8);
+      if (m.width) o.width = Math.min(m.width * range, (base.width || m.width) * 1.8);
+    } else if (base.radius && o.radius > base.radius * 1.8) o.radius = base.radius * 1.8;
+    if ((o.bounce | 0) > (base.bounce | 0) + 5) o.bounce = (base.bounce | 0) + 5;
     if (dur !== 1) {
       if (m.life) o.life = m.life * dur;
       if (m.dur) o.dur = m.dur * dur;
@@ -486,9 +593,15 @@ G.Items = (() => {
   }
   function critMul(pl) {
     let k = 1;
-    if (held(pl, 'scopelens')) k *= 1.30;
-    if (held(pl, 'duskstone')) k *= 1.40;
+    const scope = stackPower(copies(pl, 'scopelens'));
+    if (scope) k *= 1 + 0.30 * scope;
+    const dusk = copies(pl, 'duskstone');
+    if (dusk) k *= 1 + 0.20 * dusk;
     return k;
+  }
+  function thorns(pl) {
+    const n = copies(pl, 'rockyhelmet');
+    return n ? Math.round(25 * stackPower(n)) : 0;
   }
   function onHit(pl, e) {
     if (!pl || !e || e.dead) return;
@@ -512,25 +625,17 @@ G.Items = (() => {
     return true;
   }
   function revive(p) {
-    if (held(p, 'maxrevive') && !p._maxRev) {
-      p._maxRev = true;
-      p.hp = p.maxHp * 0.60;
-      p.dead = false;
-      p.invuln = 1.5;
-      p.reviveSafe = 1.5;
-      say(p, '60%', '#7dffb3');
-      return true;
-    }
-    if (held(p, 'revive') && !p._rev) {
-      p._rev = true;
-      p.hp = p.maxHp * 0.35;
-      p.dead = false;
-      p.invuln = 1.5;
-      p.reviveSafe = 1.5;
-      say(p, '35%', '#7dffb3');
-      return true;
-    }
-    return false;
+    if (!p || (G.Modes && G.Modes.is('siege'))) return false;
+    const c = p.reviveCharge;
+    if (!c || c.used || !(c.hpRatio > 0)) return false;
+    c.used = true;
+    p.hp = p.maxHp * c.hpRatio;
+    p.dead = false;
+    p.invuln = 1.5;
+    p.reviveSafe = 1.5;
+    if (G.MasteryFX) G.MasteryFX.onRevive(p);
+    say(p, Math.round(c.hpRatio * 100) + '%', '#7dffb3');
+    return true;
   }
   function onDamaged(p) {
     if (held(p, 'metronome')) { p._metroT = 0; metro(p, 0); }
@@ -548,11 +653,11 @@ G.Items = (() => {
     const now = performance.now();
     if (held(p, 'lumberry')) {
       if (!p._lumAt) p._lumAt = now;
-      else if (now - p._lumAt >= 30000) { p._lumAt = now; p.heal(p.maxHp * 0.20); }
+      else if (now - p._lumAt >= 40000) { p._lumAt = now; p.heal(p.maxHp * 0.15); }
     }
-    if (held(p, 'sitrusberry') && p.maxHp > 0 && p.hp / p.maxHp < 0.30 && now - (p._sitAt || 0) >= 45000) {
+    if (held(p, 'sitrusberry') && p.maxHp > 0 && p.hp / p.maxHp < 0.30 && now - (p._sitAt || 0) >= 60000) {
       p._sitAt = now;
-      p.heal(p.maxHp * 0.35);
+      p.heal(p.maxHp * 0.25);
     }
     if (held(p, 'stickybarb')) {
       p._barbT = (p._barbT || 0) + dt;
@@ -561,7 +666,7 @@ G.Items = (() => {
         for (const e of G.EnemyMgr.queryCircle(p.x, p.y, 80)) {
           if (e.dead) continue;
           if (G.Siege && G.Siege.ally && G.Siege.ally(e, p)) continue;
-          e.hurt(15, '#c9a06a', e.x - p.x, e.y - p.y, 0);
+          e.hurt(Math.max(1, Math.round(15 * stackPower(copies(p, 'stickybarb')))), '#c9a06a', e.x - p.x, e.y - p.y, 0);
         }
       }
     }
@@ -577,10 +682,100 @@ G.Items = (() => {
     }
     p.stacks = {};
     p.item = null;
+    p._candy = 0;
+    refreshRevive(p);
   }
 
+  function langOf() {
+    const lang = (G.I18n && G.I18n.lang) || '';
+    return String(lang).startsWith('zh') ? 'zh' : lang === 'en' ? 'en' : 'es';
+  }
+  function num(v) {
+    const n = Math.round(v * 1000) / 10;
+    const s = (Math.abs(n - Math.round(n)) < 0.05 ? String(Math.round(n)) : String(n));
+    return langOf() === 'es' ? s.replace('.', ',') : s;
+  }
+  function stackText(pl, it) {
+    if (!it) return '';
+    const lang = langOf();
+    const n = copies(pl, it.id);
+    if (it.stackType === 'unique') {
+      return lang === 'zh' ? '持有上限：x1\n特殊效果不可重複' : lang === 'en' ? 'Hold limit: x1\nThis effect does not stack' : 'Tope: x1\nEl efecto no se repite';
+    }
+    if (it.stackType === 'revive') {
+      const c = pl && pl.reviveCharge;
+      const ratio = c && c.hpRatio ? c.hpRatio : (it.reviveRatio || 0);
+      const who = c && c.source === 'maxrevive' ? (lang === 'zh' ? '活力塊' : lang === 'en' ? 'Max Revive' : 'Revivir Máximo')
+        : c && c.source === 'revive' ? (lang === 'zh' ? '復活草' : lang === 'en' ? 'Revive' : 'Revivir')
+        : c && c.source === 'upgrade' ? (lang === 'zh' ? '重新振作' : lang === 'en' ? 'Revival' : 'Reponerse')
+        : (lang === 'zh' ? it.zh : lang === 'en' ? it.en : it.name);
+      if (lang === 'zh') return '本局自動復活：' + who + '\n倒下時恢復 ' + Math.round(ratio * 100) + '% HP\n每局限一次';
+      if (lang === 'en') return 'Automatic revival: ' + who + '\nGet up at ' + Math.round(ratio * 100) + '% HP\nOnce per run';
+      return 'Levantarse: ' + who + '\nTe levantas con el ' + Math.round(ratio * 100) + ' %\nUna vez por partida';
+    }
+    const nowN = n || 0;
+    const pair = effectPair(it, nowN, lang);
+    const head = lang === 'zh' ? '目前持有：x' + nowN + '／x' + it.max : lang === 'en' ? 'Held: x' + nowN + '/' + it.max : 'Llevas: x' + nowN + '/' + it.max;
+    if (!pair) return head;
+    const cur = lang === 'zh' ? '目前效果：' + pair.now : lang === 'en' ? 'Now: ' + pair.now : 'Ahora: ' + pair.now;
+    if (nowN >= it.max) return head + '\n' + cur + '\n' + (lang === 'zh' ? '已達持有上限' : lang === 'en' ? 'Hold limit reached' : 'Tope alcanzado');
+    const nxt = lang === 'zh' ? '下一份效果：' + pair.next : lang === 'en' ? 'Next copy: ' + pair.next : 'La siguiente: ' + pair.next;
+    return head + '\n' + cur + '\n' + nxt;
+  }
+  function effectPair(it, n, lang) {
+    const a = effectValue(it.id, n), b = effectValue(it.id, Math.min(it.max, n + 1));
+    if (!a) return null;
+    const word = lang === 'zh' ? a.zh : lang === 'en' ? a.en : a.es;
+    const show = v => a.flat ? String(Math.round(v * 10) / 10) : num(v) + (lang === 'es' ? ' %' : '%');
+    return { now: word + ' +' + show(a.v), next: word + (lang === 'zh' ? '再 +' : lang === 'en' ? ' +' : ' +') + show(Math.max(0, b.v - a.v)) };
+  }
+  function effectValue(id, n) {
+    if (!n) {
+      const row = EFFECT[id] || (TYPES.some(t => t[0] === id) ? { zh: '屬性傷害', en: 'type damage', es: 'daño de tipo' } : null);
+      return row ? { zh: row.zh, en: row.en, es: row.es, v: 0, flat: !!row.flat } : null;
+    }
+    const row = EFFECT[id];
+    if (!row) {
+      if (TYPES.some(t => t[0] === id)) {
+        const b = typeItemBonus(n);
+        return { zh: '屬性傷害', en: 'type damage', es: 'daño de tipo', v: b.typeDamage, flat: false };
+      }
+      return null;
+    }
+    const v = row.curve === 'dim' ? row.per * stackPower(n) : row.curve === 'left' ? leftRegen(n) : row.per * n;
+    return { zh: row.zh, en: row.en, es: row.es, v, flat: !!row.flat };
+  }
+  const EFFECT = {
+    muscleband: { per: 0.15, curve: 'dim', zh: '傷害', en: 'damage', es: 'daño' },
+    leftovers: { per: 1.2, curve: 'left', flat: true, zh: '每秒恢復', en: 'HP/s', es: 'vida/s' },
+    oranberry: { per: 15, curve: 'dim', flat: true, zh: '最大 HP', en: 'max HP', es: 'vida máxima' },
+    amuletcoin: { per: 0.25, curve: 'dim', zh: '金幣', en: 'coins', es: 'monedas' },
+    luckyegg: { per: 0.15, curve: 'dim', zh: '經驗', en: 'experience', es: 'experiencia' },
+    quickclaw: { per: 0.10, curve: 'dim', zh: '攻擊速度', en: 'attack speed', es: 'velocidad de ataque' },
+    razorclaw: { per: 0.06, curve: 'dim', zh: '暴擊率', en: 'critical chance', es: 'crítico' },
+    choicescarf: { per: 0.10, curve: 'lin', zh: '移動速度', en: 'move speed', es: 'velocidad' },
+    choiceband: { per: 0.15, curve: 'lin', zh: '傷害', en: 'damage', es: 'daño' },
+    lifeorb: { per: 0.15, curve: 'lin', zh: '傷害', en: 'damage', es: 'daño' },
+    maxelixir: { per: 0.12, curve: 'lin', zh: '攻擊速度', en: 'attack speed', es: 'velocidad de ataque' },
+    shinystone: { per: 0.10, curve: 'lin', zh: '傷害', en: 'damage', es: 'daño' },
+    expshare: { per: 0.15, curve: 'lin', zh: '經驗', en: 'experience', es: 'experiencia' },
+    powerbracer: { per: 0.30, curve: 'lin', zh: '傷害', en: 'damage', es: 'daño' },
+    masterball: { per: 0.25, curve: 'lin', zh: '傷害', en: 'damage', es: 'daño' },
+    nugget: { per: 0.15, curve: 'dim', zh: '金幣', en: 'coins', es: 'monedas' },
+    quickpowder: { per: 0.07, curve: 'dim', zh: '移動速度', en: 'move speed', es: 'velocidad' },
+    bigroot: { per: 0.15, curve: 'dim', zh: '治療', en: 'healing', es: 'curación' },
+    safetygoggles: { per: 5, curve: 'dim', flat: true, zh: '護甲', en: 'armor', es: 'armadura' },
+    starpiece: { per: 20, curve: 'dim', flat: true, zh: '幸運', en: 'luck', es: 'suerte' },
+    assaultvest: { per: 0.08, curve: 'lin', zh: '最大 HP', en: 'max HP', es: 'vida máxima' },
+    moonstone: { per: 1, curve: 'lin', flat: true, zh: '彈體', en: 'projectiles', es: 'proyectiles' },
+    maxpp: { per: 1, curve: 'lin', flat: true, zh: '彈體', en: 'projectiles', es: 'proyectiles' },
+    widelens: { per: 0.10, curve: 'dim', zh: '範圍', en: 'area', es: 'alcance' },
+    scopelens: { per: 0.30, curve: 'dim', zh: '暴擊傷害', en: 'critical damage', es: 'daño crítico' },
+    duskstone: { per: 0.05, curve: 'lin', zh: '暴擊率', en: 'critical chance', es: 'crítico' }
+  };
+
   return {
-    LIST, BY, BALL, RARITY, roll, rollChoices, gain, text, ballName, choices, breakHeld,
-    shaped, outMul, critMul, onHit, onKill, sash, revive, onDamaged, tick, luckMul, canEvolve
+    LIST, BY, BALL, RARITY, roll, rollChoices, gain, text, ballName, choices, breakHeld, canOffer, stackText,
+    shaped, outMul, critMul, onHit, onKill, sash, revive, onDamaged, tick, luckMul, canEvolve, thorns, stackPower, refreshRevive
   };
 })();
