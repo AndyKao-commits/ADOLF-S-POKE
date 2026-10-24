@@ -31,7 +31,10 @@ G.Icons = (() => {
       '..kwwkkrk...', '.kwwwwkk....', '.kwwwwk.....', '.kwwwk......', '..kkk.......', '............'] },
     bag: { pal: { b: '#e0743d', d: '#9a4418', w: '#ffc59f', y: '#ffd23f' }, rows: [
       '....kkkk....', '...k....k...', '..kkkkkkkk..', '.kbbbbbbbbk.', '.kbwbbbbbbk.', '.kkkkkkkkkk.',
-      '.kbbbyybbbk.', '.kbbbyybbbk.', '.kbbbbbbbbk.', '.kbbbbbbbdk.', '.kddddddddk.', '..kkkkkkkk..'] },
+      '.kbbbyybbbk.', '.kbbbyybbbk.', '.kbbbbbbbbk.', '.kbbbbbbbdk.',       '.kddddddddk.', '..kkkkkkkk..'] },
+    iris: { pal: { y: '#ffd23f', w: '#ffffff', r: '#ff5f6d', o: '#ffa64d', g: '#5fe08a', b: '#4fb4ff', p: '#c47bff' }, rows: [
+      '....kkkk....', '...ky..yk...', '....kyyk....', '.....kk.....', '....kwrk....', '...kwrrok...',
+      '..kwrroyyk..', '.krooyyggbk.', '..koyggbbk..', '...kgbppk...', '....kbpk....', '.....kk.....'] },
     shop: { pal: { g: '#5fe08a', w: '#f4f8ff', b: '#b07a4a', y: '#ffd23f' }, rows: [
       '............', 'kkkkkkkkkkkk', 'kgwgwgwgwgwk', 'kgwgwgwgwgwk', 'kkkkkkkkkkkk', '.kbbbbbbbbk.',
       '.kbkkkbbbbk.', '.kbkwkbyybk.', '.kbkwkbyybk.', '.kbkwkbbbbk.', '.kbkwkbbbbk.', 'kkkkkkkkkkkk'] },
@@ -51,7 +54,7 @@ G.Icons = (() => {
     // Prohibido (Veto: movimiento bloqueado).
     ban: { pal: { r: '#ff5f6d' }, rows: [
       '...kkkkkk...', '..krrrrrrk..', '.krrkkkkrrk.', 'krrk..krrrrk', 'krk..krrkkrk', 'krk.krrk.krk',
-      'krkkrrk..krk', 'krrrrk..krrk', '.krrkkkkrrk.', '..krrrrrrk..', '...kkkkkk...', '............'] },
+      'krkkrrk..krk', 'krrrrk..krrk', '.krrkkkkrrk.', '..krrrrrrk..',       '...kkkkkk...', '............'] },
     heart: { pal: { r: '#ff5f6d', s: '#c23a4b', w: '#ffd3d8' }, rows: [
       '............', '.kkk....kkk.', 'kwwrk..krrrk', 'kwrrrkkrrrsk', 'krrrrrrrrrsk', 'krrrrrrrrrsk',
       '.krrrrrrrsk.', '..krrrrrsk..', '...krrrsk...', '....krsk....', '.....kk.....', '............'] },
@@ -251,6 +254,15 @@ G.Icons = (() => {
     shove:      ['#...#', '.#.#.', '.....', '.#.#.', '#...#'],
     stun:       ['#.#.#', '.....', '..#..', '.....', '#.#.#']
   };
+
+  const ORB = ['....kkkk....', '..kkllcckk..', '.kllwlcccdk.', '.klwwlcccdk.', 'kllwlccccddk', 'kllccccccddk',
+               'klccccccdddk', 'kcccccccdddk', '.kcccccdddk.', '.kcccdddddk.', '..kkddddkk..', '....kkkk....'];
+  const ORB_PAL = {
+    slumber: ['#d9ccff', '#9b7bff', '#5a3fb8'], slow: ['#c8f2ff', '#3fb6e8', '#1d6f9c'],
+    blowback: ['#e4fff0', '#6fe0a0', '#2a9a5e'], focus: ['#ffc4ca', '#ff4f63', '#a81f33'],
+    luminous: ['#fff8d0', '#ffd84d', '#c08a10'], quick: ['#ffe2b8', '#ff9a2e', '#b0560c']
+  };
+  for (const [id, cols] of Object.entries(ORB_PAL)) UI['orb:' + id] = { pal: { l: cols[0], c: cols[1], d: cols[2], w: '#ffffff' }, rows: ORB };
 
   // ---------------- render ----------------
 

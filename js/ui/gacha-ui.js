@@ -11,6 +11,8 @@ G.GachaUI = (() => {
     $('pull-1').onclick = () => pull(1);
     $('pull-10').onclick = () => pull(10, 't1');
     $('pull-10b').onclick = () => pull(10, 't10');
+    if ($('pull-100')) $('pull-100').onclick = () => pull(100, 't1');
+    if ($('pull-100b')) $('pull-100b').onclick = () => pull(100, 't10');
     $('pull-close').onclick = close;
     $('pull-skip').onclick = skipAnim;
 
@@ -46,7 +48,8 @@ G.GachaUI = (() => {
     $('banner-title').textContent = banner.name + ' Misterioso';
     $('banner-desc').textContent = `Los ${all.length} Pokémon de la generación ${gen}. ¡Los legendarios esperan!`;
     $('gacha-owned').innerHTML = `Tienes ${owned} de ${all.length}` +
-      (shinies ? ` · ${G.Icons.html('shiny', 12)} ${shinies} shiny` : '');
+      (shinies ? ` · ${G.Icons.html('shiny', 12)} ${shinies} shiny` : '') +
+      (G.Gacha.hasIris(s, gen) ? ` · ${G.Icons.html('iris', 12)} ${G.T('Amuleto Iris')}` : '');
 
     const feat = $('gacha-feat');
     feat.innerHTML = '';
@@ -60,7 +63,7 @@ G.GachaUI = (() => {
     $('gacha-rates').innerHTML = '<h3>Probabilidades</h3>' + G.Gacha.RATES.slice().reverse().map(([r, w]) => `
       <div><span style="color:${G.Gacha.RARITY_COLOR[r]}">${G.UI.stars(r, 10)} ${G.Gacha.RARITY_NAME[r]}</span>
       <span>${w}% · ${G.Gacha.pool(r, gen).length}</span></div>`).join('') +
-      `<div><span>${G.Icons.html('shiny', 12)} Shiny</span><span>1%</span></div>
+      `<div><span>${G.Icons.html('shiny', 12)} Shiny</span><span>${G.Gacha.hasIris(s, gen) ? G.Icons.html('iris', 12) + ' 2%' : '1%'}</span></div>
        <p class="note">· La tirada ×10 garantiza al menos una Épica.<br>
        · A las ${G.Gacha.PITY_5} tiradas sin Legendaria en un banner, la siguiente lo es.<br>
        · Los repetidos dan Pokémonedas. Los shiny no se repiten.<br>
@@ -75,6 +78,10 @@ G.GachaUI = (() => {
     $('pull-1').disabled = !G.Gacha.costOf(s, 1);
     $('pull-10').disabled = !G.Gacha.costOf(s, 10, 't1');
     $('pull-10b').disabled = !G.Gacha.costOf(s, 10, 't10');
+    if ($('cost-100')) $('cost-100').innerHTML = `${G.Icons.html('ticket', 18)} 100`;
+    if ($('cost-100b')) $('cost-100b').innerHTML = `${G.Icons.html('ticket10', 18)} 10`;
+    if ($('pull-100')) $('pull-100').disabled = !G.Gacha.costOf(s, 100, 't1');
+    if ($('pull-100b')) $('pull-100b').disabled = !G.Gacha.costOf(s, 100, 't10');
     G.UI.refreshCoins();
   }
 
@@ -128,18 +135,28 @@ G.GachaUI = (() => {
     slot.style.display = '';
     fx.classList.remove('hidden');
 
-    // La tragaperras (ui/slots.js) y luego las cartas. Saltar corta las dos.
-    await G.Slots.play(slot, res);
+    const rank = r => (r.shiny ? 100 : 0) + r.rarity * 10 + (r.isNew ? 1 : 0);
+    const spins = n === 100
+      ? Array.from({ length: 10 }, (_, k) => res.slice(k * 10, k * 10 + 10).reduce((a, b) => (rank(b) > rank(a) ? b : a)))
+      : res;
+    await G.Slots.play(slot, spins, n);
     G.Audio.sfx('burst', { rarity: best });
     slot.style.display = 'none';
 
-    for (let i = 0; i < res.length; i++) {
-      out.appendChild(cardOf(res[i]));
-      if (skipPull) {
-        for (let j = i + 1; j < res.length; j++) out.appendChild(cardOf(res[j]));
+    let cards = res;
+    if (n === 100) {
+      cards = res.slice().sort((a, b) => rank(b) - rank(a));
+      const news = res.filter(r => r.isNew).length, sh = res.filter(r => r.shiny).length, coins = res.reduce((a, r) => a + r.refund, 0);
+      out.insertAdjacentHTML('beforeend', `<div class="pull-sum">${G.I18n.f('Nuevos: {x}', news)} · ${G.Icons.html('shiny', 14)} ${G.I18n.f('Shiny: {x}', sh)} · <span class="coin"></span> +${coins.toLocaleString(G.I18n.locale)}</div>`);
+      if (res.iris) G.UI.toast(G.I18n.f('¡Amuleto Iris de {x}!', G.Gacha.BANNERS[gen - 1].name));
+    }
+    for (let i = 0; i < cards.length; i++) {
+      out.appendChild(cardOf(cards[i]));
+      if (skipPull || n === 100) {
+        for (let j = i + 1; j < cards.length; j++) out.appendChild(cardOf(cards[j]));
         break;
       }
-      G.Audio.sfx('reveal', { rarity: res[i].rarity });
+      G.Audio.sfx('reveal', { rarity: cards[i].rarity });
       if (n === 10) await wait(150);
     }
     $('pull-skip').classList.add('hidden');

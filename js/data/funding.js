@@ -10,10 +10,9 @@
  */
 G.Funding = {
   kofi: '',
-  sponsors: 'JPTER78',
+  sponsors: '',
   costs: [
-    ['Servidores (partidas, cuentas, ranking y multijugador)', 'Según cuánta gente juegue'],
-    ['Dominio pokesurvivor.com', '≈12 € al año']
+    ['Servidores (partidas, cuentas, ranking y multijugador)', 'Según cuánta gente juegue']
   ],
   get url() { return this.kofi ? 'https://ko-fi.com/' + this.kofi : ''; }
 };

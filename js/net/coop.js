@@ -278,7 +278,7 @@ G.Coop = (() => {
       if (e.dead || G.U.dist2(e.x, e.y, near.x, near.y) > r2n) continue;
       const a = ANIMS.indexOf(e.anim.cur);
       out.push([e.id, r1(e.x), r1(e.y), Math.ceil(e.hp), a < 0 ? 0 : a, e.anim.dir,
-                (e.burn > 0 ? 1 : 0) | (e.poison > 0 ? 2 : 0) | (e.shield > 0 ? 4 : 0) | (e.slow > 0 ? 8 : 0)]);
+                (e.burn > 0 ? 1 : 0) | (e.poison > 0 ? 2 : 0) | (e.shield > 0 ? 4 : 0) | (e.slow > 0 ? 8 : 0) | (e.sleepT > 0 ? 16 : 0)]);
     }
     return out;
   }
@@ -396,6 +396,11 @@ G.Coop = (() => {
         case 'lp': picked(from); break;
         case 'hs': holdOn(from); break;
         case 'he': holdOff(from); break;
+        case 'ou': {
+          const x = +ev[2] || 0, y = +ev[3] || 0, z = +ev[4] || 1;
+          if (typeof ev[1] === 'string' && G.Orbs && G.Orbs.onMateUse(m.pl, ev[1], x, y, z)) emit(['ob', ev[1], x, y, z], from);
+          break;
+        }
         case 're': G.Rift.enterRequest(); break;
         case 'bye': mateGone(from); break;
         case 'ft':
@@ -500,6 +505,8 @@ G.Coop = (() => {
       case 'item': api.item(ev[1]); break;
       case 'ball': if (api.ball) api.ball(ev[1]); break;
       case 'egg': if (api.egg) api.egg(ev[1]); break;
+      case 'orb': if (typeof ev[1] === 'string' && api.orb) api.orb(ev[1]); break;
+      case 'ob': if (typeof ev[1] === 'string' && G.Orbs) G.Orbs.nearBuff(ev[1], +ev[2] || 0, +ev[3] || 0); break;
       case 'coin': if (api.coin) api.coin(ev[1]); break;
       case 'pk': G.Pickups.addRemote(ev[1], ev[2], ev[3], ev[4], ev[5]); break;
       case 'pc': G.Pickups.removeId(ev[1]); break;
@@ -541,7 +548,7 @@ G.Coop = (() => {
         if (G.Siege && G.Siege.knockOut) G.Siege.knockOut(ev[1]);
         break;
       case 'rift': case 'riftx': case 'arena': case 'aw': case 'al': G.Rift.onEvent(ev); break;
-      case 'jd': case 'jk': G.Judgment.onEvent(ev); break;
+      case 'jd': case 'jk': case 'jb': G.Judgment.onEvent(ev); break;
       case 'wx': G.Weather.onEvent(ev); break;
       case 'ev': G.Events.onNet(ev); break;
       case 'hz': G.Hazards.add(ev[1], true); break;
@@ -592,10 +599,17 @@ G.Coop = (() => {
       else if (m && p.kind === 'ball') m.q.push(['ball', p.value]);
       else if (m && p.kind === 'egg') m.q.push(['egg', p.value]);
       else if (m && p.kind === 'coin') m.q.push(['coin', p.value]);
+      else if (m && p.kind === 'sphere') m.q.push(['orb', p.value]);
     }
   }
 
   function shinyCaught(e) { emit(['sh', e.dex]); }
+
+  function orbUsed(id, x, y, z) {
+    if (!active || !G.Orbs) return;
+    if (host) emit(['ob', id, r1(x), r1(y), Math.round(z * 100) / 100]);
+    else outEv.push(['ou', id, r1(x), r1(y), Math.round(z * 100) / 100]);
+  }
 
   // ---------------- subida de nivel compartida ----------------
 
@@ -667,7 +681,7 @@ G.Coop = (() => {
     ANIMS, COLORS, ABS_MAX, begin, end, leave, tick, players, puppets, xpFactor, scaleRate, scaleHp,
     clampCap, normalizeRules, rulesFromSettings, publicRules, lockRun, unlockRun, activeRules, preview, fmtMul, autoRate, autoHp, autoXp,
     cast, hit, status, hurtShown, enemyAdded, enemyGone, enemyShot, pickupAdded, pickupGone, say,
-    propBroken, collected, shinyCaught, levelStart, localPicked, over, holdStart, holdEnd,
+    propBroken, collected, shinyCaught, orbUsed, levelStart, localPicked, over, holdStart, holdEnd,
     /** Anfitrión: evento para todos. Invitado: evento para el anfitrión. */
     broadcast(ev) { emit(ev); },
     toHost(ev) { if (active && !host) { outEv.push(ev); flushClient(true); } },

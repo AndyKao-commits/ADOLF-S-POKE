@@ -6,9 +6,27 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-24', title: ['Sentencia, esferas y gacha', 'Judgment, orbs and gacha'], new: [
+    ['Esferas de Mundo Misterioso durante la partida: Soporesfera, Ralentosfera, Rafagaesfera, Focosfera, Luminosfera y Rapidosfera. Las sueltan los jefes y, a veces, un Pokémon. Llevas hasta 4 tipos y 3 de cada. Se usan con 5-8, tocando su casilla, o con Y en el mando.',
+     'Mystery Dungeon orbs during the run: Slumber, Slow, Blowback, Focus, Luminous and Quick. Bosses drop them, and sometimes a regular Pokémon does too. You hold up to 4 kinds, 3 of each. Use them with 5-8, by tapping the slot, or with Y on a controller.'],
+    ['Amuleto Iris: al completar la Pokédex de una generación, legendarios incluidos, los shiny de ese banner salen al 2 % en vez del 1 %.',
+     'Shiny Charm: finish a generation Pokédex, legendaries included, and that banner\'s shinies come out at 2% instead of 1%.'],
+    ['Tirada ×100 en el gacha, con 100 tickets o con 10 tickets ×10. La ×1 y la ×10 siguen. Se puede saltar la animación.',
+     'A ×100 pull in the gacha, for 100 tickets or 10 ×10 tickets. ×1 and ×10 stay. The animation can be skipped.']
+  ], chg: [
+    ['Sentencia de Arceus: ahora se le puede hacer daño, cada vez menos. Lleva una tabla al azar. Cada legendario tiene un 25 % más de vida y un 15 % más de daño que el anterior, no el doble. En el minuto 35 se rompen los objetos de la partida, Banda Focus incluida. El veneno y las quemaduras quitan poco y siempre lo mismo a esos legendarios.',
+     'Arceus\'s Judgment: you can damage it now, less and less over time. It holds a random Plate. Each legendary has 25% more HP and 15% more damage than the one before, not double. At minute 35 the run\'s items break, Focus Sash included. Poison and burns deal a small, fixed amount to those legendaries.'],
+    ['Puño Meteoro pega menos: 24 de daño y una zona un poco más pequeña, para quedar a la par de Avalancha al máximo.',
+     'Meteor Mash hits softer: 24 damage and a slightly smaller area, so at max it matches Rock Slide.'],
+    ['Un movimiento evolucionado se llama igual y añade un +.',
+     'An evolved move keeps its name and adds a +.']
+  ] },
   { d: '2026-10-24', title: ['Mejoras', 'Upgrades'], chg: [
     ['Suerte, Saltar, Cuarta carta, Reponerse y Sellar ya hacen lo que dice su carta. Suerte sube la rareza de los objetos de las Poké Balls. Saltar deja pasar una carta de nivel. Cuarta carta ofrece 4. Reponerse te levanta una vez con el 50 % de vida. Sellar quita de las Poké Balls y del puesto los objetos que elijas.',
      'Luck, Skip, Fourth card, Revival and Seal now do what their cards say. Luck raises the rarity of Poké Ball items. Skip passes a level-up card. Fourth card offers 4. Revival gets you up once at 50% HP. Seal removes the items you choose from Poké Balls and the stall.']
+  ], fix: [
+    ['Al volver a levantarte tras caer, 1,5 s no recibes daño: ni golpes, ni trampas, ni lava, ni explosiones.',
+     'After you get back up from a fall, you take no damage for 1.5 s: not hits, traps, lava or explosions.']
   ] },
   { d: '2026-10-23', title: ['Barras y mapa', 'Bars and the map'], new: [
     ['En el mapa salen Poké Balls de pago. Te acercas y pulsas E: la primera cuesta 30 monedas de la partida y luego 33, 39, 45, 51… Si no llegas, no se abre. Al pagarla eliges 1 de 3 objetos, como con la bola roja.',

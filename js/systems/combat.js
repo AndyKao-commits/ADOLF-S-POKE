@@ -794,7 +794,7 @@ G.Combat = (() => {
 
   function hit(pl, e, dmg, col, dx, dy, knock, m) {
     if (isAlly(e, pl)) return;
-    const k = typeK(m.type, e) * G.Stats.taken(e.mon, m.cat) * abilOut(pl, m, e) * G.Items.outMul(pl, m.type, e);
+    const k = typeK(m.type, e) * G.Stats.taken(e.mon, m.cat) * abilOut(pl, m, e) * G.Items.outMul(pl, m.type, e) * (e.arceus && G.Judgment.dmgK ? G.Judgment.dmgK() : 1);
     const crit = isCrit(pl), sk = statusK(pl);
     dmg *= k * (crit ? critMul(pl) * G.Items.critMul(pl) : 1);
     e.hurt(dmg, col, dx, dy, sk ? knock : 0, crit ? 'crit' : G.Types.label(G.Types.mult(m.type, e.types)));
@@ -910,7 +910,7 @@ G.Combat = (() => {
         }
 
         const crit = isCrit(pl), sk = statusK(pl);
-        const k = (p.mtype ? typeK(p.mtype, e) : 1) * G.Stats.taken(e.mon, p.mcat) * (crit ? critMul(pl) * G.Items.critMul(pl) : 1) * abilOut(pl, p.src, e) * G.Items.outMul(pl, p.mtype, e);
+        const k = (p.mtype ? typeK(p.mtype, e) : 1) * G.Stats.taken(e.mon, p.mcat) * (crit ? critMul(pl) * G.Items.critMul(pl) : 1) * abilOut(pl, p.src, e) * G.Items.outMul(pl, p.mtype, e) * (e.arceus && G.Judgment.dmgK ? G.Judgment.dmgK() : 1);
         e.hurt(p.dmg * k, p.color, p.vx || (e.x - pl.x), p.vy || (e.y - pl.y), sk ? p.knock : 0,
                crit ? 'crit' : p.mtype ? G.Types.label(G.Types.mult(p.mtype, e.types)) : null);
         if (Math.random() < 0.5) G.FX.sp('impact', p.vis ? p.vis.pal : 'normal', e.x, e.y - e.bodyH * 0.5, { life: 0.12, scale: 1 });
@@ -941,7 +941,7 @@ G.Combat = (() => {
     for (const e of G.EnemyMgr.queryCircle(pl.x, pl.y, pl.r + 40)) {
       if (e.owner && e.owner === (pl.uid || 'me')) continue;
       if (G.U.dist2(e.x, e.y, pl.x, pl.y) > (e.r + pl.r) * (e.r + pl.r)) continue;
-      if (e.touchCd > 0 || e.behavior === 'thief' || e.stunT > 0) continue;
+      if (e.arceus || e.touchCd > 0 || e.behavior === 'thief' || e.stunT > 0 || e.sleepT > 0 || (e.net && e.net.st & 16)) continue;
       e.touchCd = 0.55;
       e.strike(pl);
       pl.hurt(e.dmg * (pl.hasItem('protectivepads') ? 0.7 : 1), e.atkType, false, e.cat);

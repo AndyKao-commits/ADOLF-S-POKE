@@ -25,7 +25,8 @@ G.Pickups = (() => {
     ball:     { color: '#ff5f6d', glow: '#ffffff', r: 8 },      // value = nivel 1..3
     egg:      { color: '#ffe08a', glow: '#f4f8ff', r: 7 },
     vend:     { color: '#e23d3d', glow: '#ffd0d0', r: 8 },      // bola de pago: se usa con E
-    curse:    { color: '#6b2a8a', glow: '#c47bff', r: 8 }       // bola maldita: se usa con E
+    curse:    { color: '#6b2a8a', glow: '#c47bff', r: 8 },      // bola maldita: se usa con E
+    sphere:   { color: '#c9b8ff', glow: '#7e5be0', r: 8 }       // value = id de la esfera (orbs.js)
   };
   const WALK = { ball: 1, egg: 1 };
   // Estas no se cogen al pasar ni las atrae el imán: hay que pulsar E.
@@ -34,6 +35,7 @@ G.Pickups = (() => {
   const BOSS_T10 = 1 / 3;               // ticket ×10 de un jefe normal
   const LEGEND_T10 = 1 / 2;             // ticket ×10 del legendario de la grieta
   const TICKET_RATE = 1 / 400;          // (antes 1/260; más raros desde 2026-10-10)
+  const SPHERE_RATE = 1 / 300;          // esfera de un Pokémon normal (los jefes, siempre)
 
   function clear() { list = []; }
   function all() { return list; }
@@ -90,11 +92,14 @@ G.Pickups = (() => {
       // Ticket ×10: siempre el legendario de la grieta; un jefe normal, 1 de cada 3 veces.
       // (Hasta el 12-10-2026 el legendario de la grieta daba siempre 2: salían demasiados.)
       if (Math.random() < (legend ? LEGEND_T10 : BOSS_T10)) push(orb('ticket10', x, y - 20, 1));
+      if (G.Orbs) push(orb('sphere', x - 20, y - 16, G.Orbs.roll()));
+      if (legend && G.Orbs) push(orb('sphere', x + 20, y - 16, G.Orbs.roll()));
       hatchRoll(x, y, rarity);
       return;
     }
     push(orb(value >= 20 ? 'xpBig' : 'xp', x, y, value));
     if (Math.random() < TICKET_RATE) push(orb('ticket', x + G.U.rand(-6, 6), y, 1));
+    if (G.Orbs && Math.random() < SPHERE_RATE) push(orb('sphere', x + G.U.rand(-6, 6), y, G.Orbs.roll()));
     if (Math.random() < 0.08) push(orb('coin', x + G.U.rand(-8, 8), y, 2));
     const lk = G.Items && G.Items.luckMul ? G.Items.luckMul(G.Game && G.Game.player) : 1;
     // 0,2 % al derrotar un Pokémon normal (antes 1 %). El nivel 1 y el 2 siguen en la misma proporción.
@@ -147,6 +152,7 @@ G.Pickups = (() => {
       let pl = null, d2 = Infinity;
       for (const o of players) {
         if (o.dead && players.length > 1) continue;
+        if (p.kind === 'sphere' && G.Orbs && !G.Orbs.canTake(o, p.value)) continue;
         const dd = G.U.dist2(o.x, o.y, p.x, p.y);
         if (dd < d2) { d2 = dd; pl = o; }
       }
@@ -254,7 +260,15 @@ G.Pickups = (() => {
       } else {
         // Baya, imán y bomba: su icono pixel art.
         const ICON = { heal: 'berry', magnet: 'magnet', bomb: 'bomb', ticket: 'ticket', ticket10: 'ticket10' };
-        const sz = p.kind === 'ticket10' || p.kind === 'item' ? 24 : 18;
+        const sz = p.kind === 'ticket10' || p.kind === 'item' || p.kind === 'sphere' ? 24 : 18;
+        if (p.kind === 'sphere' && G.Orbs) {
+          ctx.globalAlpha = 0.3 + Math.sin(p.t * 1.5) * 0.12;
+          ctx.fillStyle = (G.Orbs.BY[p.value] || {}).col || k.color;
+          ctx.beginPath(); ctx.arc(p.x, y, 16, 0, 6.2832); ctx.fill();
+          ctx.globalAlpha = 1;
+          G.Icons.draw(ctx, 'orb:' + p.value, p.x - sz / 2, y - sz / 2 - 1, sz);
+          continue;
+        }
         if (p.kind === 'item') {
           // Objeto: brillo dorado latiendo, para que se vea desde lejos.
           ctx.globalAlpha = 0.35 + Math.sin(p.t * 1.5) * 0.15;

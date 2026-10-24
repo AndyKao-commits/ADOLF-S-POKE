@@ -6,7 +6,8 @@
  * Garantías:
  *   - la tirada ×10 trae al menos un 4★ o superior
  *   - a las 70 tiradas sin 5★ en ese banner, el siguiente es 5★ seguro
- * Shiny: 1 de cada 100 tiradas sale en su versión shiny.
+ * Shiny: 1 de cada 100 tiradas sale en su versión shiny (2 de cada 100 con el
+ *   Amuleto Iris de esa generación, al completar su Pokédex).
  * Repetidos: se convierten en Pokémonedas (los shiny repetidos, el triple).
  *
  * Se tira con TICKETS (se consiguen jugando):
@@ -19,11 +20,13 @@ G.Gacha = (() => {
   function costOf(save, n, use = 't1') {
     const t = save.tickets || { t1: 0, t10: 0 };
     if (n === 10 && use === 't10') return t.t10 >= 1 ? { t1: 0, t10: 1 } : null;
+    if (n === 100 && use === 't10') return t.t10 >= 10 ? { t1: 0, t10: 10 } : null;
     return t.t1 >= n ? { t1: n, t10: 0 } : null;
   }
   const RATES = [[1, 45], [2, 30], [3, 17], [4, 6.5], [5, 1.5]];
   const PITY_5 = 70;
   const SHINY_RATE = 1 / 100;
+  const SHINY_RATE_IRIS = 2 / 100;
   const REFUND = { 1: 15, 2: 30, 3: 60, 4: 120, 5: 300 };
   let forceShiny = 0;           // para pruebas y vídeos: las N próximas salen shiny
 
@@ -67,6 +70,13 @@ G.Gacha = (() => {
   }
 
   /** Los 3 más fuertes de la generación, para el cartel del banner. */
+  function dexOf(save, gen) {
+    const list = G.DEX.filter(p => p.gen === gen);
+    return { have: list.filter(p => save.owned[p.dex]).length, total: list.length };
+  }
+  function hasIris(save, gen) { const d = dexOf(save, gen); return d.total > 0 && d.have >= d.total; }
+  function shinyRate(save, gen) { return hasIris(save, gen) ? SHINY_RATE_IRIS : SHINY_RATE; }
+
   function featured(gen) {
     return G.DEX.filter(p => inBanner(p, gen) && p.rarity === 5)
       .sort((a, b) => b.bst - a.bst).slice(0, 3).map(p => p.dex);
@@ -78,6 +88,14 @@ G.Gacha = (() => {
    *   { dex, rarity, shiny, isNew, refund }
    */
   function pull(save, n, gen = 1, use = 't1') {
+    if (n === 100) {
+      if (!costOf(save, 100, use)) return null;
+      const hadIris = hasIris(save, gen);
+      const out = [];
+      for (let k = 0; k < 10; k++) out.push(...pull(save, 10, gen, use));
+      out.iris = !hadIris && hasIris(save, gen) ? gen : 0;
+      return out;
+    }
     const cost = costOf(save, n, use);
     if (!cost) return null;
     save.tickets.t1 -= cost.t1;
@@ -86,6 +104,7 @@ G.Gacha = (() => {
     save.shiny = save.shiny || {};
     save.pity[gen] = save.pity[gen] || 0;
 
+    const hadIris = hasIris(save, gen), rate = shinyRate(save, gen);
     const out = [];
     for (let i = 0; i < n; i++) {
       save.pity[gen]++;
@@ -97,7 +116,7 @@ G.Gacha = (() => {
       const { rarity, list } = poolNear(want, gen);
       if (rarity === 5) save.pity[gen] = 0;
       let mon = G.U.pick(list);
-      let shiny = G.Sprites.hasShiny(mon.dex) && (forceShiny > 0 ? (forceShiny--, true) : Math.random() < SHINY_RATE);
+      let shiny = G.Sprites.hasShiny(mon.dex) && (forceShiny > 0 ? (forceShiny--, true) : Math.random() < rate);
       // Los shiny no se repiten: si ya tienes ese, sale otro de la misma rareza
       // cuyo shiny te falte; si los tienes todos, sale normal.
       if (shiny && save.shiny[mon.dex]) {
@@ -121,10 +140,11 @@ G.Gacha = (() => {
       out.push({ dex: mon.dex, rarity, shiny, isNew, refund });
     }
     save.stats.pulls = (save.stats.pulls || 0) + n;
+    out.iris = !hadIris && hasIris(save, gen) ? gen : 0;
     return out;
   }
 
   return { debugForceShiny(n = 1) { forceShiny = n; },
-           costOf, RATES, PITY_5, SHINY_RATE, REFUND, RARITY_NAME, RARITY_COLOR, BANNERS,
-           pool, featured, pull };
+           costOf, RATES, PITY_5, SHINY_RATE, SHINY_RATE_IRIS, REFUND, RARITY_NAME, RARITY_COLOR, BANNERS,
+           pool, featured, pull, dexOf, hasIris, shinyRate };
 })();

@@ -256,6 +256,7 @@ G.Pad = (() => {
       if (hit(BT.X)) G.Input.virtual('keyx');
       if (hit(BT.START) || hit(BT.BACK)) G.Input.virtual('escape');
       if (hit(BT.A)) G.Input.virtual('space');
+      if (hit(BT.Y)) G.Input.virtual('pady');
     }
   }
   function step(dir) { if (!slide(dir)) move(...{ r: [1, 0], l: [-1, 0], d: [0, 1], u: [0, -1] }[dir]); }

@@ -824,7 +824,7 @@ G.I18n.add({
   "Lo que cuesta mantenerlo": "维持营运的费用",
   "Servidores (partidas, cuentas, ranking y multijugador)": "服务器（存档、账号、排行榜与多人游戏）",
   "Según cuánta gente juegue": "依玩家人数而定",
-  "Dominio pokesurvivor.com": "pokesurvivor.com 域名",
+  "Dominio aulf-friends-game.firebaseapp.com": "aulf-friends-game.firebaseapp.com 域名",
   "≈12 € al año": "每年约 12 欧元",
   "Cuanta más gente juega, más cuestan los servidores. Lo que sobre se guarda para los gastos de los meses siguientes.": "玩家越多，服务器费用越高。剩余款项会留作之后月份的支出。",
   "Juego de fans {x}: sin anuncios ni compras. Pokémon y sus personajes son propiedad de Nintendo, Creatures y GAME FREAK; este proyecto no está afiliado a ellos.": "{x}的同人游戏：无广告、无内购。宝可梦及其角色属于 Nintendo、Creatures 与 GAME FREAK，本专案与上述公司无关。",

@@ -168,18 +168,18 @@ G.I18n.add({
   '¡{x} te esperaba en la grieta!': '{x} was waiting in the rift!', '¡{x} shiny te esperaba en la grieta!': 'A shiny {x} was waiting in the rift!',
   '¡Has vencido a {x}! Recoge el premio…': 'You defeated {x}! Grab your reward…',
   'Criptomonedas': 'Cryptocurrencies', 'Web oficial': 'Official website',
-  'Esta no es la web oficial: la partida sólo se guarda en este navegador. El juego oficial y gratis está en pokesurvivor.com.': 'This is not the official website: your game is only saved in this browser. The official, free game is at pokesurvivor.com.',
+  'Esta no es la web oficial: la partida sólo se guarda en este navegador. El juego oficial y gratis está en aulf-friends-game.firebaseapp.com.': 'This is not the official website: your game is only saved in this browser. The official, free game is at aulf-friends-game.firebaseapp.com.',
   'Colocar los botones': 'Place the buttons', 'Colocar': 'Place',
   'Pon los ataques, la pausa y el joystick (fijo, si quieres) donde quieras de la pantalla.': 'Put the attacks, the pause button and the joystick (fixed, if you like) anywhere on the screen.',
   'Arrastra los botones a donde quieras': 'Drag the buttons wherever you want', 'Gira el móvil: se juega en horizontal.': 'Turn your phone: the game is played in landscape.',
   'Joystick': 'Joystick', 'Flotante': 'Floating', 'Fijo': 'Fixed', 'Ataques': 'Attacks',
   'Flotante: aparece donde pones el dedo. Fijo: siempre en el mismo sitio.': 'Floating: it appears where you put your finger. Fixed: always in the same place.',
   'Restablecer': 'Reset', 'Guardar': 'Save', 'Botones colocados': 'Buttons placed',
-  'La única web oficial de PokéSurvivor es pokesurvivor.com. El juego es y será gratis: si alguien te pide pagar, no somos nosotros.':
-    "The only official PokéSurvivor website is pokesurvivor.com. The game is and always will be free: if anyone asks you to pay, it isn't us.",
+  'La única web oficial de PokéSurvivor es aulf-friends-game.firebaseapp.com. El juego es y será gratis: si alguien te pide pagar, no somos nosotros.':
+    "The only official PokéSurvivor website is aulf-friends-game.firebaseapp.com. The game is and always will be free: if anyone asks you to pay, it isn't us.",
   'Licencia del código: PolyForm Noncommercial 1.0.0 (se puede usar, estudiar y modificar, pero no para ganar dinero). Las versiones hasta el 14-10-2026 siguen bajo MIT.':
     'Code license: PolyForm Noncommercial 1.0.0 (you may use, study and modify it, but not to make money). Versions up to 14-10-2026 remain under MIT.',
-  'Web oficial: pokesurvivor.com · si alguien te pide pagar, no somos nosotros': 'Official website: pokesurvivor.com · if anyone asks you to pay, it isn\'t us',
+  'Web oficial: aulf-friends-game.firebaseapp.com · si alguien te pide pagar, no somos nosotros': 'Official website: aulf-friends-game.firebaseapp.com · if anyone asks you to pay, it isn\'t us',
   'PokéSurvivor no tiene ninguna criptomoneda, token ni NFT oficial, y su autor no ha creado ninguno. Cualquier token que use el nombre del juego lo han creado terceros: no nos hacemos cargo de ninguna compra, venta o inversión que hagas con ellos, y nada de lo que hay aquí es una recomendación de inversión.':
     "PokéSurvivor has no official cryptocurrency, token or NFT, and its author has not created any. Any token using the game's name was created by third parties: we take no responsibility for any purchase, sale or investment you make with them, and nothing here is investment advice.",
   '¡Vínculo!': 'Bond!', 'Vínculo': 'Bond', 'Atrás': 'Back',
@@ -737,7 +737,7 @@ G.I18n.add({
   'donación voluntaria': 'voluntary donation', ': todo el dinero se usa para los': ': all the money goes to the', 'servidores y el dominio': 'servers and the domain', ', nada más.': ', nothing else.',
   'Donar no da ninguna ventaja en el juego.': 'Donating gives no advantage in the game.', 'Lo que cuesta mantenerlo': 'What it costs to keep it running',
   'Servidores (partidas, cuentas, ranking y multijugador)': 'Servers (saves, accounts, leaderboards and multiplayer)',
-  'Según cuánta gente juegue': 'Depends on how many people play', 'Dominio pokesurvivor.com': 'Domain pokesurvivor.com', '≈12 € al año': '≈€12 per year',
+  'Según cuánta gente juegue': 'Depends on how many people play', 'Dominio aulf-friends-game.firebaseapp.com': 'Domain aulf-friends-game.firebaseapp.com', '≈12 € al año': '≈€12 per year',
   'Cuanta más gente juega, más cuestan los servidores. Lo que sobre se guarda para los gastos de los meses siguientes.': 'The more people play, the more the servers cost. Anything left over is saved for the following months\' costs.',
   'Juego de fans {x}: sin anuncios ni compras. Pokémon y sus personajes son propiedad de Nintendo, Creatures y GAME FREAK; este proyecto no está afiliado a ellos.': 'Fan game {x}: no ads or purchases. Pokémon and its characters are owned by Nintendo, Creatures and GAME FREAK; this project is not affiliated with them.',
   ': sin anuncios ni compras. Pokémon y sus personajes son propiedad de Nintendo, Creatures y GAME FREAK; este proyecto no está afiliado a ellos.': ': no ads or purchases. Pokémon and its characters are owned by Nintendo, Creatures and GAME FREAK; this project is not affiliated with them.',

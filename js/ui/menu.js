@@ -344,7 +344,11 @@ G.MenuUI = (() => {
     if (!el) return;
     const s = G.DB.save, sum = o => Object.values(o || {}).reduce((a, b) => a + (+b || 0), 0);
     const items = sum(s.bag), tms = sum(s.tms);
-    el.textContent = items || tms ? G.I18n.f('Objetos: {x} · MT: {x}', items, tms) : G.T('Vacía');
+    const iris = G.Gacha && G.Gacha.hasIris ? G.Gacha.BANNERS.filter(b => G.Gacha.hasIris(s, b.gen)).length : 0;
+    const parts = [];
+    if (items || tms) parts.push(G.I18n.f('Objetos: {x} · MT: {x}', items, tms));
+    if (iris) parts.push(G.I18n.f('Amuletos Iris: {x}', iris));
+    el.textContent = parts.join(' · ') || G.T('Vacía');
   }
 
   /** Texto bajo "Amigos" y "Jugar": quién está en línea, solicitudes, sala. */

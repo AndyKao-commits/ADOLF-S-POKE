@@ -42,6 +42,8 @@
    */
   const PCT_REF = 60000;
   const pctHp = e => (e.maxHp <= PCT_REF ? e.maxHp : PCT_REF * Math.sqrt(e.maxHp / PCT_REF));
+  // Sentencia: veneno y quemadura quitan poco y siempre lo mismo. A Arceus no le afectan.
+  const JUDGE_DOT = 1.5;
 
   class Enemy {
     constructor(def, x, y, sc, boss = false) {
@@ -76,6 +78,7 @@
       this.slow = 0; this.slowT = 0;
       this.burn = 0; this.burnT = 0; this.burnTick = 0;
       this.poison = 0; this.poisonT = 0; this.poisonTick = 0;
+      this.sleepT = 0;
       this.lavaTick = 0;
       this.kx = 0; this.ky = 0;
       this.touchCd = 0;
@@ -128,6 +131,15 @@
       if (striker) this.lastUid = striker;
       const d = Math.max(1, Math.round(amount));
       if (!this.remote && this.siegeBoss && striker && G.Siege) G.Siege.noteBoss(striker, d);
+      if (this.arceus) {
+        if (this.remote) G.Coop.hit(this, d, color, 0, 0, 0);
+        else {
+          if (G.Judgment.hitArceus) G.Judgment.hitArceus(d);
+          if (G.Coop.isHost) G.Coop.hurtShown(this, d, color);
+        }
+        this.showHurt(d, color, dirX, dirY, eff);
+        return;
+      }
       // Copia de un enemigo del anfitrión: el golpe se le manda a él, que es
       // quien decide si cae. Aquí sólo se ve (número, destello y animación).
       if (this.remote) {
@@ -169,23 +181,32 @@
 
     /** Aturdido: se queda quieto y no ataca `dur` s (Onda Trueno, Tumba Rocas...). */
     applyStun(dur) {
+      if (this.arceus) return;
       if (this.siegeCreep && this.owner && striker === this.owner) return;
       if (this.remote) { G.Coop.status(this, 't', dur); return; }
       this.stunT = Math.max(this.stunT || 0, dur);
     }
 
+    applySleep(dur) {
+      if (this.remote || this.arceus) return;
+      this.sleepT = Math.max(this.sleepT || 0, dur);
+    }
+
     applySlow(factor, dur = 1.2) {
+      if (this.arceus) return;
       if (this.siegeCreep && this.owner && striker === this.owner) return;
       if (this.remote) { G.Coop.status(this, 's', factor); return; }
       this.slow = Math.max(this.slow, factor);
       this.slowT = Math.max(this.slowT, dur);
     }
     applyBurn(stacks = 1) {
+      if (this.arceus) return;
       if (this.siegeCreep && this.owner && striker === this.owner) return;
       if (this.remote) { G.Coop.status(this, 'b', stacks); return; }
       this.burn = Math.min(8, this.burn + stacks); this.burnT = 3;
     }
     applyPoison(stacks = 1) {
+      if (this.arceus) return;
       if (this.siegeCreep && this.owner && striker === this.owner) return;
       if (this.remote) { G.Coop.status(this, 'p', stacks); return; }
       this.poison = Math.min(8, this.poison + stacks); this.poisonT = 4;
@@ -313,12 +334,12 @@
       if (this.slowT > 0) { this.slowT -= dt; if (this.slowT <= 0) this.slow = 0; }
       if (this.burn > 0) {
         this.burnT -= dt; this.burnTick -= dt;
-        if (this.burnTick <= 0) { this.burnTick = 0.5; this.hurt(1.6 * this.burn * (1 + pl.level * 0.06), '#ff9a4d'); }
+        if (this.burnTick <= 0) { this.burnTick = 0.5; this.hurt(this.judge ? JUDGE_DOT * this.burn : 1.6 * this.burn * (1 + pl.level * 0.06), '#ff9a4d'); }
         if (this.burnT <= 0) this.burn = 0;
       }
       if (this.poison > 0) {
         this.poisonT -= dt; this.poisonTick -= dt;
-        if (this.poisonTick <= 0) { this.poisonTick = 0.6; this.hurt(pctHp(this) * 0.012 * this.poison + 1, '#d47cf0'); }
+        if (this.poisonTick <= 0) { this.poisonTick = 0.6; this.hurt(this.judge ? JUDGE_DOT * this.poison : pctHp(this) * 0.012 * this.poison + 1, '#d47cf0'); }
         if (this.poisonT <= 0) this.poison = 0;
       }
       if (this.dead) return;
@@ -335,6 +356,12 @@
         } else if (le.slow) terrainMul = le.slow < 0.5 ? 0.45 : 0.55;
       }
 
+      if (this.sleepT > 0) {
+        this.sleepT -= dt; this.anim.loop('Idle');
+        this.x += this.kx * dt; this.y += this.ky * dt;
+        this.kx *= Math.pow(0.0015, dt); this.ky *= Math.pow(0.0015, dt);
+        return;
+      }
       if (this.stunT > 0) { this.stunT -= dt; this.anim.loop('Idle'); return; }
 
       const spd = this.spd * (1 - this.slow) * terrainMul * G.Weather.speedFor(this.types);
@@ -777,6 +804,20 @@
       ctx.restore();
 
       if (this.dead) return;
+      if (this.sleepT > 0 || (this.net && this.net.st & 16)) {
+        const now = performance.now() / 1000;
+        ctx.save();
+        ctx.textAlign = 'center';
+        for (let i = 0; i < 2; i++) {
+          const k = (now * 0.7 + i * 0.5) % 1;
+          ctx.globalAlpha = 1 - k;
+          ctx.font = '700 ' + (7 + k * 5).toFixed(1) + 'px Pixelify,"Segoe UI",sans-serif';
+          ctx.fillStyle = '#c9b8ff'; ctx.strokeStyle = '#1b1528'; ctx.lineWidth = 2;
+          const zx = this.x + 6 + k * 8, zy = this.y - lift - this.bodyH - 4 - k * 14;
+          ctx.strokeText('Z', zx, zy); ctx.fillText('Z', zx, zy);
+        }
+        ctx.restore();
+      }
       // Aturdido: estrellitas girando sobre la cabeza.
       if (this.stunT > 0) {
         const now = performance.now() / 1000;
@@ -851,6 +892,7 @@
       e.remote = true;
       if (o.shiny) e.makeShiny();
       e.maxHp = o.hp; e.hp = o.hp;
+      if (o.beh === 'arceus' && G.Judgment.dress) G.Judgment.dress(e);
       if (o.owner) { e.owner = o.owner; e.siegeCreep = !o.siegeBoss; }
       if (o.ring) e.ring = o.ring;
       if (o.siegeBoss) e.siegeBoss = true;
@@ -1028,7 +1070,7 @@
           e.lagT = G.U.dist2(e.x, e.y, near.x, near.y) > BOSS_FAR * BOSS_FAR ? e.lagT + dt : 0;
           if (e.lagT > 4) { e.lagT = 0; G.Spawner.ahead(e, near); }
         }
-        if (e.boss || e.shiny || G.Rift.inArena) continue;
+        if (e.boss || e.shiny || e.arceus || G.Rift.inArena) continue;
         // Rezagados: los que se quedan atrás mientras corres y llevan un rato
         // FUERA DE LA VISTA (de todos) vuelven a salir por delante de ti. Así
         // no se puede huir sin más, y nunca desaparece uno que estés viendo.
@@ -1055,7 +1097,7 @@
     function drawables(cam) {
       const out = [];
       for (const e of corpses) if (cam.sees(e.x, e.y, 80)) out.push(e);
-      for (const e of list) if (cam.sees(e.x, e.y, 80)) out.push(e);
+      for (const e of list) if (!e.arceus && cam.sees(e.x, e.y, 80)) out.push(e);
       return out;
     }
 

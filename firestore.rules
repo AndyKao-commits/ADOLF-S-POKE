@@ -172,7 +172,7 @@ service cloud.firestore {
       let secs = shownSecs(board, d.t);
       return d.keys().hasOnly(['t', 'uids', 'names', 'dex', 'shiny', 'lv', 'kills', 'at'])
         && d.t is int && d.t > 0
-        && (castleBoard(board) ? (d.t >= 10000 && d.t <= 520000) : d.t <= 2700)
+        && (castleBoard(board) ? (d.t >= 10000 && d.t <= 520000) : d.t <= 10800)
         && secs <= (request.time - run.startedAt).seconds() + 30
         && d.lv is int && d.lv >= 1 && d.lv <= 9999
         && d.kills is int && d.kills >= 0 && d.kills <= 9999999

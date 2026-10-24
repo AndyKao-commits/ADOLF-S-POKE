@@ -1185,7 +1185,7 @@ G.I18n.add({
   "Lo que cuesta mantenerlo": "Ce que coûte son maintien",
   "Servidores (partidas, cuentas, ranking y multijugador)": "Serveurs (sauvegardes, comptes, classement et multijoueur)",
   "Según cuánta gente juegue": "Selon le nombre de joueurs",
-  "Dominio pokesurvivor.com": "Domaine pokesurvivor.com",
+  "Dominio aulf-friends-game.firebaseapp.com": "Domaine aulf-friends-game.firebaseapp.com",
   "≈12 € al año": "≈12 € par an",
   "{x} / mes": "{x} / mois",
   "Cuanta más gente juega, más cuestan los servidores. Lo que sobre se guarda para los gastos de los meses siguientes.": "Plus il y a de joueurs, plus les serveurs coûtent cher. Ce qui reste est mis de côté pour les frais des mois suivants.",
@@ -1202,9 +1202,9 @@ G.I18n.add({
   "Guardar": "Enregistrer",
   "Botones colocados": "Boutons placés",
   "Web oficial": "Site officiel",
-  "Esta no es la web oficial: la partida sólo se guarda en este navegador. El juego oficial y gratis está en pokesurvivor.com.": "Ce n'est pas le site officiel\u00a0: ta partie n'est sauvegardée que dans ce navigateur. Le jeu officiel et gratuit est sur pokesurvivor.com.",
-  "La única web oficial de PokéSurvivor es pokesurvivor.com. El juego es y será gratis: si alguien te pide pagar, no somos nosotros.": "Le seul site officiel de PokéSurvivor est pokesurvivor.com. Le jeu est et restera gratuit\u00a0: si quelqu'un te demande de payer, ce n'est pas nous.",
-  "Web oficial: pokesurvivor.com · si alguien te pide pagar, no somos nosotros": "Site officiel\u00a0: pokesurvivor.com · si quelqu'un te demande de payer, ce n'est pas nous",
+  "Esta no es la web oficial: la partida sólo se guarda en este navegador. El juego oficial y gratis está en aulf-friends-game.firebaseapp.com.": "Ce n'est pas le site officiel\u00a0: ta partie n'est sauvegardée que dans ce navigateur. Le jeu officiel et gratuit est sur aulf-friends-game.firebaseapp.com.",
+  "La única web oficial de PokéSurvivor es aulf-friends-game.firebaseapp.com. El juego es y será gratis: si alguien te pide pagar, no somos nosotros.": "Le seul site officiel de PokéSurvivor est aulf-friends-game.firebaseapp.com. Le jeu est et restera gratuit\u00a0: si quelqu'un te demande de payer, ce n'est pas nous.",
+  "Web oficial: aulf-friends-game.firebaseapp.com · si alguien te pide pagar, no somos nosotros": "Site officiel\u00a0: aulf-friends-game.firebaseapp.com · si quelqu'un te demande de payer, ce n'est pas nous",
   "Licencia del código: PolyForm Noncommercial 1.0.0 (se puede usar, estudiar y modificar, pero no para ganar dinero). Las versiones hasta el 14-10-2026 siguen bajo MIT.": "Licence du code\u00a0: PolyForm Noncommercial 1.0.0 (on peut l'utiliser, l'étudier et le modifier, mais pas pour gagner de l'argent). Les versions jusqu'au 14-10-2026 restent sous MIT.",
 
   // ---------------- Pokémon ----------------

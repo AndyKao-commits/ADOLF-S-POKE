@@ -150,6 +150,7 @@ G.Game = (() => {
     G.Spawner.reset();
     G.Rift.reset();
     G.Judgment.reset();
+    if (G.Orbs) G.Orbs.reset();
     G.Events.reset();
     G.Weather.reset();
     G.Path.clear();
@@ -254,6 +255,7 @@ G.Game = (() => {
   const coopApi = {
     team: teamState,
     summary,
+    orb(id) { if (pl && state !== 'over' && G.Orbs) G.Orbs.got(pl, id); },
     // Invitado: el anfitrión manda el reloj y lo del equipo.
     syncTeam(t) {
       if (Math.abs(t.time - time) > 0.4) time = t.time;
@@ -408,6 +410,7 @@ G.Game = (() => {
     const judge = G.Judgment.summary();
     if (judge) G.Progress.event('judgeEnd', judge);
     G.Judgment.reset();
+    if (G.Orbs) G.Orbs.reset();
     G.Progress.event('runEnd', { time, level: pl.level, coins: pl.coins, types: pl.mon.types, group: coop });
     G.Progress.checkAch();
     // A la nube al acabar la partida (como mucho cada hora); si la marca entra
@@ -555,7 +558,7 @@ G.Game = (() => {
 
   // ---------------- recogida ----------------
 
-  const PICK_SFX = { xp: 'xp', xpBig: 'xp', coin: 'coin', heal: 'heal', bomb: 'break', magnet: 'confirm', ticket: 'shiny', ticket10: 'legend', item: 'legend', ball: 'confirm', egg: 'shiny' };
+  const PICK_SFX = { xp: 'xp', xpBig: 'xp', coin: 'coin', heal: 'heal', bomb: 'break', magnet: 'confirm', ticket: 'shiny', ticket10: 'legend', item: 'legend', ball: 'confirm', egg: 'shiny', sphere: 'confirm' };
 
   /*
    * Cooperativo: la elección de objeto y las cartas de nivel no pueden taparse.
@@ -660,6 +663,10 @@ G.Game = (() => {
     }
     if (p.kind === 'item') {
       if (mine) offerItem(p.value);
+      return;
+    }
+    if (p.kind === 'sphere') {
+      if (mine && G.Orbs) G.Orbs.got(pl, p.value);
       return;
     }
     if (p.kind === 'ticket' || p.kind === 'ticket10') {
@@ -890,6 +897,12 @@ G.Game = (() => {
       if (G.Input.tap('digit' + (i + 1)) || G.Input.tap('numpad' + (i + 1))) pl.toggleSlot(i);
     }
     if (G.Input.tap('keyx')) pl.toggleSlot(pl.focus || 0);
+    if (G.Orbs) {
+      for (let i = 0; i < 4; i++) {
+        if (G.Input.tap('digit' + (i + 5)) || G.Input.tap('numpad' + (i + 5))) G.Orbs.use(pl, i);
+      }
+      if (G.Input.tap('pady')) G.Orbs.useSelected(pl);
+    }
     // Caído en grupo: Q / E cambian a quién miras.
     if (pl.dead) { if (G.Input.tap('keyq')) cycleWatch(-1); if (G.Input.tap('keye') || G.Input.tap('tab')) cycleWatch(1); return; }
     if (G.Input.tap('keye') && useNear()) return;
@@ -1037,6 +1050,7 @@ G.Game = (() => {
     if (G.Siege && G.Siege.up) G.Siege.tick(dt, pl, time);
     if (state === 'over') return;
     G.Pickups.update(dt, all, onCollect);
+    if (G.Orbs) G.Orbs.update(dt, pl);
     tickFields(dt);
     G.Hazards.update(dt);
     G.Interact.update(dt, pl);

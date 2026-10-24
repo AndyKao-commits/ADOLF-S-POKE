@@ -1095,7 +1095,7 @@ G.I18n.add({
   "Lo que cuesta mantenerlo": "Quanto custa mantê-lo",
   "Servidores (partidas, cuentas, ranking y multijugador)": "Servidores (partidas, contas, ranking e multijogador)",
   "Según cuánta gente juegue": "Depende de quantas pessoas jogam",
-  "Dominio pokesurvivor.com": "Domínio pokesurvivor.com",
+  "Dominio aulf-friends-game.firebaseapp.com": "Domínio aulf-friends-game.firebaseapp.com",
   "≈12 € al año": "≈12 € por ano",
   "Cuanta más gente juega, más cuestan los servidores. Lo que sobre se guarda para los gastos de los meses siguientes.": "Quanto mais gente joga, mais caros ficam os servidores. O que sobra fica guardado para os gastos dos meses seguintes.",
   "{x} / mes": "{x} / mês",

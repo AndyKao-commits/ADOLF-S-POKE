@@ -37,14 +37,14 @@ G.Slots = (() => {
   function skipNow() { skip = true; fast = true; }
 
   /** Anima las tiradas. → Promise que se resuelve al terminar. */
-  async function play(canvas, results) {
+  async function play(canvas, results, total = results.length) {
     cv = canvas; ctx = cv.getContext('2d');
     fast = false;
     skip = false;
     cv.onclick = () => { fast = true; };
     st = {
       t: 0, lever: 0, reels: REEL_X.map(() => ({ off: Math.random() * 400, spin: false, sym: 'ball', bounce: 0, speed: 0 })),
-      ten: results.length === 10, tray: [], led: results.length === 10 ? 'TIRADA ×10' : '¡SUERTE!', ledCol: C.bulbOn, win: null, frenzy: 0, sparks: []
+      ten: results.length === 10, tray: [], led: total === 100 ? 'TIRADA ×100' : results.length === 10 ? 'TIRADA ×10' : '¡SUERTE!', ledCol: C.bulbOn, win: null, frenzy: 0, sparks: []
     };
     last = performance.now();
     cancelAnimationFrame(raf);
@@ -54,7 +54,7 @@ G.Slots = (() => {
     try {
       for (let i = 0; i < results.length && !skip; i++) {
         const r = results[i];
-        if (ten) st.led = 'TIRADA ' + (i + 1) + '/10';
+        if (ten) st.led = (total === 100 ? '×100 · ' : 'TIRADA ') + (i + 1) + '/10';
         // Palanca.
         G.Audio.sfx('ball');
         await tween(v => { if (st) st.lever = v; }, 0, 1, ten ? 0.12 : 0.22);

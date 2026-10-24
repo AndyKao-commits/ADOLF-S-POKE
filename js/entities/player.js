@@ -76,6 +76,7 @@ G.Player = class Player {
     this.dmgDealt = 0;
 
     this.invuln = 0;
+    this.reviveSafe = 0;       // segundos tras revivir en los que nada te mata
     this.flash = 0;
     this.aim = Math.PI / 2;
     this.moveAngle = Math.PI / 2;
@@ -137,7 +138,7 @@ G.Player = class Player {
   get spd() {
     // (Habilidades: "steady" no se frena; speed() multiplica, ver data/ability-fx.js.)
     const ab = this.abil || {}, stuck = this.slowT > 0 && !ab.steady;
-    const s = this.baseSpd * this.spdMul * (1 + this.buffs.spd.n * this.buffs.spd.amount) * (stuck ? 0.5 : 1) * (ab.speed ? ab.speed(this) : 1);
+    const s = this.baseSpd * this.spdMul * (this._orbQuick ? 1.4 : 1) * (1 + this.buffs.spd.n * this.buffs.spd.amount) * (stuck ? 0.5 : 1) * (ab.speed ? ab.speed(this) : 1);
     const w = G.Weather.speedFor(this.mon.types);
     const slow = this.inLiquid && !ab.steady ? G.World.liquidEffect(this.mon.types).slow || 1 : 1;
     return G.Judgment && G.Judgment.active ? G.Judgment.capSpd(s * slow * w) : s * slow * w;
@@ -299,7 +300,12 @@ G.Player = class Player {
    */
   /** @param cat  'physical' | 'special': con qué defensa tuya se para (la del enemigo que pega). */
   hurt(amount, type = null, pure = false, cat = null) {
-    if (this.invuln > 0 || this.dead) return;
+    if (this.dead) return;
+    if (this.reviveSafe > 0) {
+      this.invuln = Math.max(this.invuln || 0, this.reviveSafe);
+      return;
+    }
+    if (this.invuln > 0) return;
     // Habilidad (data/ability-fx.js): absorber un tipo, esquivar o recibir menos.
     const ab = this.abil, cls = cat === 'physical' ? 'p' : cat === 'special' ? 's' : '';
     if (ab && !pure) {
@@ -353,7 +359,8 @@ G.Player = class Player {
       this._upgRev = true;
       this.hp = this.maxHp * 0.5;
       this.dead = false;
-      this.invuln = Math.max(this.invuln || 0, 1.2);
+      this.invuln = 1.5;
+      this.reviveSafe = 1.5;
       G.FX.dmgText(this.x, this.y - this.bodyH - 16, '50%', '#7dffb3', true);
       G.FX.ring(this.x, this.y, 6, 70, '#7dffb3', 0.5, 4);
     }
@@ -437,6 +444,7 @@ G.Player = class Player {
     this.anim.update(dt);
     if (this.dead) return;
     if (this.invuln > 0) this.invuln -= dt;
+    if (this.reviveSafe > 0) this.reviveSafe -= dt;
     if (this.flash > 0) this.flash -= dt;
     if (this.attackFace > 0) this.attackFace -= dt;
 
@@ -580,6 +588,7 @@ G.Player = class Player {
     this.dead = false;
     this.hp = Math.max(1, this.maxHp * frac);
     this.invuln = 2;
+    this.reviveSafe = 2;
     this.reviveT = 0;
     this.anim._start('Idle', false);
     G.FX.ring(this.x, this.y, 6, 70, '#5fe08a', 0.5, 4);

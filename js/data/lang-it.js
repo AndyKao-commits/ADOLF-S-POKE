@@ -497,7 +497,7 @@ G.I18n.add({
   'Donar no da ninguna ventaja en el juego.': 'Donare non conferisce alcun vantaggio nel gioco.',
   'Lo que cuesta mantenerlo': 'I costi di mantenimento',
   'Servidores (partidas, cuentas, ranking y multijugador)': 'Server (partite, account, classifiche e multigiocatore)',
-  'Según cuánta gente juegue': 'In base al numero di giocatori', 'Dominio pokesurvivor.com': 'Dominio pokesurvivor.com',
+  'Según cuánta gente juegue': 'In base al numero di giocatori', 'Dominio aulf-friends-game.firebaseapp.com': 'Dominio aulf-friends-game.firebaseapp.com',
   '≈12 € al año': '≈12 € all\'anno',
   'Cuanta más gente juega, más cuestan los servidores. Lo que sobre se guarda para los gastos de los meses siguientes.': 'Più persone giocano, più aumentano i costi dei server. I fondi rimanenti vengono conservati per le spese dei mesi successivi.',
   'Juego de fans {x}: sin anuncios ni compras. Pokémon y sus personajes son propiedad de Nintendo, Creatures y GAME FREAK; este proyecto no está afiliado a ellos.': 'Fan game {x}: senza annunci né acquisti in-app. Pokémon e i suoi personaggi sono di proprietà di Nintendo, Creatures e GAME FREAK; questo progetto non è affiliato ad essi.',

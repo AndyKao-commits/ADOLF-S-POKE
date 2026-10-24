@@ -516,7 +516,8 @@ G.Items = (() => {
       p._maxRev = true;
       p.hp = p.maxHp * 0.60;
       p.dead = false;
-      p.invuln = Math.max(p.invuln || 0, 1.2);
+      p.invuln = 1.5;
+      p.reviveSafe = 1.5;
       say(p, '60%', '#7dffb3');
       return true;
     }
@@ -524,7 +525,8 @@ G.Items = (() => {
       p._rev = true;
       p.hp = p.maxHp * 0.35;
       p.dead = false;
-      p.invuln = Math.max(p.invuln || 0, 1.2);
+      p.invuln = 1.5;
+      p.reviveSafe = 1.5;
       say(p, '35%', '#7dffb3');
       return true;
     }
@@ -566,8 +568,19 @@ G.Items = (() => {
   }
   function luckMul(pl) { return 1 + Math.max(0, (pl && pl.luck) || 0) / 100; }
 
+  /** Sentencia, minuto 35: se caen todos los objetos de la partida (Banda Focus incluida). */
+  function breakHeld(p) {
+    if (!p) return;
+    for (const id of Object.keys(p.stacks || {})) {
+      const it = BY[id];
+      if (it && it.off && p.stacks[id]) it.off(p);
+    }
+    p.stacks = {};
+    p.item = null;
+  }
+
   return {
-    LIST, BY, BALL, RARITY, roll, rollChoices, gain, text, ballName, choices,
+    LIST, BY, BALL, RARITY, roll, rollChoices, gain, text, ballName, choices, breakHeld,
     shaped, outMul, critMul, onHit, onKill, sash, revive, onDamaged, tick, luckMul, canEvolve
   };
 })();
