@@ -6,18 +6,42 @@
  */
 G.Castle = (() => {
   const aim = { x: 0, y: 80, r: 34, _vx: 0, _vy: 0, level: 1, dead: false };
-  const WAVES = 50, CAP = 12;
+  const WAVES = 50, BASE_CAP = 12;
   let on = false, hp = 1, maxHp = 1, img = null;
   let wave = 1, queued = 0, acc = 0, won = false, bondWave = 0;
 
+  function playerCount() {
+    if (!G.Coop || !G.Coop.active || !G.Coop.players) return 1;
+    return Math.max(1, Math.min(10, G.Coop.players().filter(Boolean).length || 1));
+  }
+
+  /**
+   * Escalado propio del modo. Dos jugadores aportan mucho más que el doble de
+   * daño por cobertura y sinergia, por eso el jefe crece más que la tropa.
+   */
+  function partyScale(n) {
+    n = Math.max(1, Math.min(10, Math.round(+n || 1)));
+    const extra = n - 1;
+    return {
+      players: n,
+      count: 1 + extra * 0.22,
+      mobHp: 1 + extra * 0.30,
+      bossHp: 1 + 1.10 * Math.pow(extra, 0.82),
+      damage: 1 + extra * 0.08,
+      cap: Math.min(30, BASE_CAP + extra * 2)
+    };
+  }
+
   function spec(w) {
     const m = G.Difficulty ? G.Difficulty.combat() : { hp: 1, dmg: 1, rate: 1 };
+    const party = partyScale(playerCount());
     return {
-      n: Math.max(1, Math.round((6 + Math.round(w * 0.62)) * m.rate)),
+      n: Math.max(1, Math.round((6 + Math.round(w * 0.62)) * m.rate * party.count)),
       hp: Math.round(22 + w * 13 + Math.pow(w, 1.32) * 0.9),
       dmg: Math.round((3.6 + w * 0.72) * 10) / 10,
       spd: Math.min(104, Math.round(48 + w * 1.05)),
-      gap: Math.max(0.26, 0.8 - w * 0.01)
+      gap: Math.max(0.26, 0.8 - w * 0.01),
+      party
     };
   }
 
@@ -96,8 +120,8 @@ G.Castle = (() => {
     const pt = spot();
     const e = new G.Enemy(def, pt[0], pt[1], { hp: 1, dmg: 1, spd: 1 });
     const m = G.Difficulty ? G.Difficulty.combat() : { hp: 1, dmg: 1, rate: 1 };
-    e.maxHp = e.hp = Math.round(s.hp * m.hp);
-    e.dmg = s.dmg * m.dmg;
+    e.maxHp = e.hp = Math.round(s.hp * m.hp * s.party.mobHp);
+    e.dmg = s.dmg * m.dmg * s.party.damage;
     e.spd = s.spd;
     e.xp = 4 + wave;
     e.castleWave = wave;
@@ -111,8 +135,8 @@ G.Castle = (() => {
     const pt = spot();
     const e = new G.Enemy(def, pt[0], pt[1], { hp: 1, dmg: 1, spd: 1 }, true);
     const m = G.Difficulty ? G.Difficulty.combat() : { hp: 1, dmg: 1, rate: 1 };
-    e.maxHp = e.hp = Math.round(s.hp * (8 + tier) * m.hp);
-    e.dmg = s.dmg * 1.35 * m.dmg;
+    e.maxHp = e.hp = Math.round(s.hp * (8 + tier) * m.hp * s.party.bossHp);
+    e.dmg = s.dmg * 1.35 * m.dmg * s.party.damage;
     e.spd = Math.min(92, Math.round(s.spd * 0.82));
     e.xp = 16 + w;
     e.castleWave = w;
@@ -130,7 +154,7 @@ G.Castle = (() => {
     if (queued > 0) {
       acc += dt;
       let made = 0;
-      while (queued > 0 && living() < CAP && acc >= s.gap && made < 2) {
+      while (queued > 0 && living() < s.party.cap && acc >= s.gap && made < 2) {
         acc -= s.gap;
         spawnOne(s);
         queued--;
@@ -208,7 +232,7 @@ G.Castle = (() => {
   }
 
   return {
-    begin, end, net, snapshot, touch, tick, draw, aim, onBossDown, giveBond,
+    begin, end, net, snapshot, touch, tick, draw, aim, onBossDown, giveBond, partyScale,
     get up() { return on; },
     get hp() { return hp; },
     get maxHp() { return maxHp; },
