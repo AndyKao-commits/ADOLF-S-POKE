@@ -11,6 +11,8 @@ G.CHANGELOG = [
      'In siege you pick a move with 1–4 and cast it with the mouse. It does not fire by itself, and bumping does not hurt.'],
     ['En el móvil el asedio se apunta arrastrando el ataque. En el ordenador se apunta con el ratón, sin cursor virtual.',
      'On a phone, siege aiming is a drag from the move. On a computer it uses the mouse, with no virtual cursor.'],
+    ['En el móvil, un toque al ataque lo lanza al enemigo más cercano. Arrastrarlo sigue apuntando a mano.',
+     'On a phone, tapping a move casts it at the nearest enemy. Dragging it still aims by hand.'],
     ['En el ordenador el asedio se lanza con el ratón aunque la pantalla también sea táctil.',
      'On a computer, siege still casts with the mouse even if the screen is also a touch screen.']
   ] },

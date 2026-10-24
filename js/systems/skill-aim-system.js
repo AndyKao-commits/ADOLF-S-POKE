@@ -1,7 +1,7 @@
 /* ============ skill-aim-system.js — apuntar ataques en el asedio ============
- * En el asedio no hay ataque automático. El móvil (pantalla táctil) arrastra
- * el icono del ataque para apuntar y suelta para lanzar. El ordenador elige
- * con 1–4 y apunta con el ratón. Fuera del asedio los ataques siguen solos.
+ * En el asedio no hay ataque automático. En el móvil, un toque lanza el ataque
+ * al enemigo más cercano; arrastrar el icono apunta y soltar dispara. El
+ * ordenador elige con 1–4 y apunta con el ratón. Fuera, los ataques siguen solos.
  */
 G.SkillAim = (() => {
   const AimState = { IDLE: 'idle', PRESSING: 'pressing', AIMING: 'aiming', CANCELLED: 'cancelled', CASTING: 'casting' };
@@ -111,7 +111,41 @@ G.SkillAim = (() => {
   addEventListener('pointerdown', notePointer, true);
   addEventListener('pointermove', e => { if (e.pointerType === 'mouse' || e.pointerType === 'pen') notePointer(e); }, true);
 
+  /** El rival, su castillo o un monstruo: el que esté más cerca. Nunca uno propio. */
+  function nearestFoe(pl) {
+    const who = pl.uid || 'me';
+    let best = null, bd = Infinity;
+    const consider = (x, y) => {
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+      const d = (x - pl.x) * (x - pl.x) + (y - pl.y) * (y - pl.y);
+      if (d < bd) { bd = d; best = { x, y }; }
+    };
+    if (G.Siege && G.Siege.marks) {
+      for (const m of G.Siege.marks(pl)) if (m && !m.dead) consider(m.x, m.y);
+    }
+    if (G.Siege && G.Siege.target) {
+      const c = G.Siege.target(pl.x, pl.y, 4000, pl);
+      if (c) consider(c.x, c.y);
+    }
+    if (G.EnemyMgr) {
+      for (const e of G.EnemyMgr.all()) {
+        if (!e || e.dead) continue;
+        if (e.siegeCreep && e.owner === who) continue;
+        consider(e.x, e.y);
+      }
+    }
+    return best;
+  }
+
   function aimOf(g, pl) {
+    if (g.finger && g.quick) {
+      const prof = profile(g.move);
+      if (prof.aimType === 'self') return aimPoint(pl, g.move, defaultDirection(pl), 0);
+      const foe = nearestFoe(pl);
+      const dir = foe ? (unit(foe.x - pl.x, foe.y - pl.y) || defaultDirection(pl)) : defaultDirection(pl);
+      const want = foe ? Math.hypot(foe.x - pl.x, foe.y - pl.y) : prof.castRange;
+      return aimPoint(pl, g.move, dir, want);
+    }
     if (g.finger) {
       const dx = g.x - g.cx, dy = g.y - g.cy, d = Math.hypot(dx, dy);
       const dir = d > 0.001 ? { x: dx / d, y: dy / d } : defaultDirection(pl);
@@ -254,7 +288,9 @@ G.SkillAim = (() => {
     let cast = g.state === AimState.PRESSING || g.state === AimState.AIMING;
     if (g.finger) {
       const from = Math.hypot(g.x - g.cx, g.y - g.cy);
-      cast = g.state === AimState.AIMING && from >= CANCEL_R;
+      const dragged = g.travel >= DRAG_PX;
+      if (!dragged) { g.quick = true; cast = true; }
+      else cast = g.state === AimState.AIMING && from >= CANCEL_R;
     }
     if (cast) commit(g);
     gestures.delete(p.pointerId);
