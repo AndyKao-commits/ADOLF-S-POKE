@@ -453,14 +453,15 @@ G.Judgment = (() => {
       if (G.Game.everyone().every(p => G.U.dist2(p.x, p.y, x, y) > 280 * 280)) break;
     }
     const k = Math.pow(HP_GROW, bossN), kd = Math.pow(DMG_GROW, bossN);
+    const m = G.Settings.runDiff(G.Game && G.Game.diff);
     const fast = Math.max(0, ...G.Game.everyone().map(p => (p.dead ? 0 : p.spd || 0)));
     const def = {
       dex, name: mon.name,
-      hp: Math.round(base * k),
+      hp: Math.round(base * k * m.hp),
       spd: Math.round(Math.max(G.U.clamp(48 + (mon.spd - 78) * 0.6, 48, 105), fast * 0.8)),
-      dmg: Math.round((36 + t / 20) * kd), xp: Math.round(500 + t * 1.2),
+      dmg: Math.round((36 + t / 20) * kd * m.dmg), xp: Math.round(500 + t * 1.2),
       behavior: mon.types.some(x => ['psychic', 'electric', 'ghost', 'fairy', 'fire', 'water', 'ice', 'dragon'].includes(x)) ? 'ranged' : 'charger',
-      shotDmg: Math.round((18 + t / 40) * kd), shotCd: 0.9, range: 300
+      shotDmg: Math.round((18 + t / 40) * kd * m.dmg), shotCd: 0.9, range: 300
     };
     const e = new G.Enemy(def, x, y, { hp: 1, spd: 1, dmg: 1 }, true);
     e.judge = true;

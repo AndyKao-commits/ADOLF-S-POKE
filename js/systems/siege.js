@@ -324,8 +324,9 @@ G.Siege = (() => {
     const y = G.U.clamp(c.y - c.y / d * dist, -HALF + 24, HALF - 24);
     const e = new G.Enemy(def, x, y, { hp: 1, dmg: 1, spd: 1 });
     const grow = Math.floor((time || 0) / 45);
-    e.maxHp = e.hp = 18 + grow * 6;
-    e.dmg = 4 + grow;
+    const m = G.Settings.runDiff(G.Game && G.Game.diff);
+    e.maxHp = e.hp = Math.round((18 + grow * 6) * m.hp);
+    e.dmg = (4 + grow) * m.dmg;
     e.spd = 64;
     e.xp = 6;
     e.flying = true;
@@ -340,8 +341,9 @@ G.Siege = (() => {
     bossSpawned = true;
     const def = G.Enemies.bossMob(0);
     const e = new G.Enemy(def, 0, 0, { hp: 1, dmg: 1, spd: 1 }, true);
-    e.maxHp = e.hp = 1200;
-    e.dmg = 12;
+    const m = G.Settings.runDiff(G.Game && G.Game.diff);
+    e.maxHp = e.hp = Math.round(1200 * m.hp);
+    e.dmg = 12 * m.dmg;
     e.spd = 68;
     e.xp = 0;
     e.siegeBoss = true;
@@ -396,7 +398,7 @@ G.Siege = (() => {
       c.spawnT -= dt;
       if (c.spawnT > 0) continue;
       if (owned(c.uid) >= CREEP_CAP) { c.spawnT = 0.45; continue; }
-      c.spawnT = 1.65;
+      c.spawnT = 1.65 / G.Settings.runDiff(G.Game && G.Game.diff).rate;
       summon(c, time);
     }
     if (on) creepTouch(dt);

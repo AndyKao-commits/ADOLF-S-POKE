@@ -21,13 +21,22 @@
  *   diffXp      número                            entre cuántos se reparte la experiencia, si es 'custom'
  *   bossN       0..10                             cuántos jefes salen (5 es lo de siempre, uno cada 3 minutos)
  *   runMode     normal | shiny | boss | castle | siege    modo de la próxima partida
- *   soloDiff    normal | hard | challenge | nightmare     dificultad de la salida (cada una, su ranking)
+ *   soloDiff    normal | hard | challenge | nightmare     dificultad de la salida (vida, daño y ritmo; cada una, su ranking)
  *   region      kanto … paldea                    mapa de la próxima partida en solitario
  *
  *   G.Settings.get('quality')  ·  G.Settings.set('fps', true)  ·  G.Settings.on(fn)
  *   G.Settings.fx   nivel efectivo 0 (bajo) .. 2 (alto), ya resuelto el 'auto'
  */
 G.Settings = (() => {
+  // Corriente no cambia. Las otras tres suben vida, daño y cuántos salen.
+  const RUN_DIFF = {
+    normal:    { hp: 1, dmg: 1, rate: 1 },
+    hard:      { hp: 1.5, dmg: 1.25, rate: 1.2 },
+    challenge: { hp: 2, dmg: 1.55, rate: 1.4 },
+    nightmare: { hp: 2.8, dmg: 1.9, rate: 1.65 }
+  };
+  function runDiff(id) { return RUN_DIFF[id] || RUN_DIFF.normal; }
+
   const KEY = 'ps.settings';
   const DEF = { quality: 'auto', dmgNumbers: true, calm: false, fps: false, stick: 1, stickMode: 'float', pad: null, gamepad: true, padRumble: true, aimManual: false, partyCap: 10, diffMode: 'auto', diffN: 4, diffRate: 3.25, diffHp: 1.9, diffXp: 2.8, bossN: 5, runMode: 'normal', soloDiff: 'normal', region: 'kanto' };
   let s = Object.assign({}, DEF);
@@ -57,7 +66,7 @@ G.Settings = (() => {
   }
 
   return {
-    get, set, sample, DEF,
+    get, set, sample, DEF, runDiff,
     on(fn) { fns.add(fn); },
     get all() { return Object.assign({}, s); },
     get fx() { return s.quality === 'auto' ? autoLevel : s.quality === 'high' ? 2 : s.quality === 'mid' ? 1 : 0; },

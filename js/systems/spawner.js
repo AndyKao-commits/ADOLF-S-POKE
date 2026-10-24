@@ -38,6 +38,9 @@ G.Spawner = (() => {
     return (1.6 + t * 0.028 + Math.pow(t / 60, 1.6) * 0.5) * DENSITY;
   }
 
+  /** Difícil / Reto / Pesadilla, fijada al empezar la partida. */
+  function diffMul() { return G.Settings.runDiff(G.Game && G.Game.diff); }
+
   function ringPoint(pl, angle) {
     const d = G.Camera.outerRadius() + G.U.rand(10, 70);
     return [pl.x + Math.cos(angle) * d, pl.y + Math.sin(angle) * d * 0.9];
@@ -127,8 +130,9 @@ G.Spawner = (() => {
     if (!pt) return null;
     const forced = shinyLook(def);
     const shiny = forced || rollShiny(def.dex);
-    const e = new G.Enemy(def, pt[0], pt[1], scaled(G.Enemies.scale(t), G.Coop.scaleHp(players.length) * hpK(t)));
-    e.dmg *= DMG_K; e.xp = Math.round(e.xp * XP_K);
+    const m = diffMul();
+    const e = new G.Enemy(def, pt[0], pt[1], scaled(G.Enemies.scale(t), G.Coop.scaleHp(players.length) * hpK(t) * m.hp));
+    e.dmg *= DMG_K * m.dmg; e.xp = Math.round(e.xp * XP_K);
     if (G.EnemyMgr.count >= CAP * ELITE_FROM) { e.maxHp = e.hp = Math.round(e.maxHp * 1.6); e.dmg *= 1.25; e.xp = Math.round(e.xp * 1.6); }
     if (shiny) e.makeShiny(forced);
     if (G.Events.golden) e.makeGolden();
@@ -149,7 +153,9 @@ G.Spawner = (() => {
 
   function spawnBoss(pl, t, b) {
     const [x, y] = ringPoint(pl, Math.random() * 6.2832);
-    const e = new G.Enemy(b, x, y, scaled(G.Enemies.bossScale(t), G.Coop.scaleHp(players.length) * (players.length > 1 ? 1.4 : 1)), true);
+    const m = diffMul();
+    const e = new G.Enemy(b, x, y, scaled(G.Enemies.bossScale(t), G.Coop.scaleHp(players.length) * (players.length > 1 ? 1.4 : 1) * m.hp), true);
+    e.dmg *= m.dmg;
     const forced = shinyLook(b);
     if (forced || rollShiny(b.dex)) e.makeShiny(forced);
     G.EnemyMgr.add(e);
@@ -183,7 +189,9 @@ G.Spawner = (() => {
       while (G.EnemyMgr.count < 3) {
         const mob = G.Enemies.bossMob(clock);
         const [x, y] = ringPoint(anchor(), Math.random() * 6.2832);
-        const e = new G.Enemy(mob, x, y, scaled(G.Enemies.bossScale(clock), G.Coop.scaleHp(players.length)), true);
+        const m = diffMul();
+        const e = new G.Enemy(mob, x, y, scaled(G.Enemies.bossScale(clock), G.Coop.scaleHp(players.length) * m.hp), true);
+        e.dmg *= m.dmg;
         const forced = shinyLook(mob);
         if (forced || rollShiny(mob.dex)) e.makeShiny(forced);
         G.EnemyMgr.add(e);
@@ -201,7 +209,7 @@ G.Spawner = (() => {
 
     // --- goteo normal ---
     if (G.EnemyMgr.count < CAP) {
-      acc += rate(t) * G.Coop.scaleRate(players.length) * (bossFight ? 0.25 : 1) * dt;
+      acc += rate(t) * G.Coop.scaleRate(players.length) * diffMul().rate * (bossFight ? 0.25 : 1) * dt;
       let n = Math.floor(acc);
       acc -= n;
       while (n-- > 0 && G.EnemyMgr.count < CAP) spawnOne(anchor(), t);
@@ -213,7 +221,7 @@ G.Spawner = (() => {
       surgeT = G.U.rand(38, 56);
       const base = Math.random() * 6.2832;
       const target = anchor();
-      const n = Math.min(CAP - G.EnemyMgr.count, Math.round((14 + Math.floor(t / 22)) * G.Coop.scaleRate(players.length) * 0.4));
+      const n = Math.min(CAP - G.EnemyMgr.count, Math.round((14 + Math.floor(t / 22)) * G.Coop.scaleRate(players.length) * diffMul().rate * 0.4));
       for (let i = 0; i < n; i++) spawnOne(target, t, base + G.U.rand(-0.55, 0.55));
       say('¡Marea de Pokémon!', 2.2);
       G.Audio.sfx('surge');

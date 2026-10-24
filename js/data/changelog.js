@@ -6,6 +6,10 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-24', title: ['Dificultad', 'Difficulty'], chg: [
+    ['Difícil, Reto y Pesadilla ya cambian la partida: los enemigos tienen más vida, pegan más fuerte y salen más a menudo. Difícil es ×1,5, ×1,25 y ×1,2. Reto es ×2, ×1,55 y ×1,4. Pesadilla es ×2,8, ×1,9 y ×1,65. Corriente se queda igual. Cada una sigue con su ranking.',
+     'Hard, Challenge and Nightmare now change the run: enemies have more HP, hit harder and show up more often. Hard is ×1.5, ×1.25 and ×1.2. Challenge is ×2, ×1.55 and ×1.4. Nightmare is ×2.8, ×1.9 and ×1.65. Normal stays the same. Each one still has its own ranking.']
+  ] },
   { d: '2026-10-24', title: ['Sentencia, esferas y gacha', 'Judgment, orbs and gacha'], new: [
     ['Esferas de Mundo Misterioso durante la partida: Soporesfera, Ralentosfera, Rafagaesfera, Focosfera, Luminosfera y Rapidosfera. Las sueltan los jefes y, a veces, un Pokémon. Llevas hasta 4 tipos y 3 de cada. Se usan con 5-8, tocando su casilla, o con Y en el mando.',
      'Mystery Dungeon orbs during the run: Slumber, Slow, Blowback, Focus, Luminous and Quick. Bosses drop them, and sometimes a regular Pokémon does too. You hold up to 4 kinds, 3 of each. Use them with 5-8, by tapping the slot, or with Y on a controller.'],

@@ -1113,5 +1113,7 @@ G.I18n.add({
   "Reto": "Challenge",
   "Pesadilla": "Nightmare",
   "Tienda": "Shop",
-  "Esta dificultad todavía no cambia la partida.": "This difficulty does not change the run yet."
+  "Esta dificultad todavía no cambia la partida.": "This difficulty does not change the run yet.",
+  "Difícil: vida ×1,5, daño ×1,25 y salen ×1,2. Reto: ×2, ×1,55 y ×1,4. Pesadilla: ×2,8, ×1,9 y ×1,65. Corriente no cambia.": "Hard: HP ×1.5, damage ×1.25, spawns ×1.2. Challenge: ×2, ×1.55, ×1.4. Nightmare: ×2.8, ×1.9, ×1.65. Normal stays the same.",
+  "Difícil, Reto y Pesadilla ya cambian la partida: los enemigos tienen más vida, pegan más fuerte y salen más a menudo. Difícil es ×1,5, ×1,25 y ×1,2. Reto es ×2, ×1,55 y ×1,4. Pesadilla es ×2,8, ×1,9 y ×1,65. Corriente se queda igual. Cada una sigue con su ranking.": "Hard, Challenge and Nightmare now change the run: enemies have more HP, hit harder and show up more often. Hard is ×1.5, ×1.25 and ×1.2. Challenge is ×2, ×1.55 and ×1.4. Nightmare is ×2.8, ×1.9 and ×1.65. Normal stays the same. Each one still has its own ranking.",
 });

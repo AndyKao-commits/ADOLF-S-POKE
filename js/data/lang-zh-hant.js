@@ -1275,6 +1275,8 @@ G.I18n.add({
   "Toca los objetos que no quieres que te salgan en las Poké Balls ni en el puesto.": "點你不想再出現在精靈球和攤販裡的道具。",
   "Tienda": "商店",
   "Esta dificultad todavía no cambia la partida.": "這個難度這一版還沒有改變對局。",
+  "Difícil: vida ×1,5, daño ×1,25 y salen ×1,2. Reto: ×2, ×1,55 y ×1,4. Pesadilla: ×2,8, ×1,9 y ×1,65. Corriente no cambia.": "困難：生命 ×1.5、傷害 ×1.25、出現 ×1.2。挑戰：×2、×1.55、×1.4。惡夢：×2.8、×1.9、×1.65。普通不變。",
+  "Difícil, Reto y Pesadilla ya cambian la partida: los enemigos tienen más vida, pegan más fuerte y salen más a menudo. Difícil es ×1,5, ×1,25 y ×1,2. Reto es ×2, ×1,55 y ×1,4. Pesadilla es ×2,8, ×1,9 y ×1,65. Corriente se queda igual. Cada una sigue con su ranking.": "困難、挑戰和惡夢現在會改變對局：敵人生命更高、打得更痛、出現得更勤。困難是 ×1.5、×1.25、×1.2。挑戰是 ×2、×1.55、×1.4。惡夢是 ×2.8、×1.9、×1.65。普通維持原樣。每一檔仍有自己的排行榜。",
   "Amuletos Iris: uno por región (Kanto, Johto, Hoenn, Sinnoh, Teselia, Kalos, Alola, Galar y Paldea). Al completar la Pokédex de una región (legendarios incluidos) te dan su Amuleto Iris y en su banner del gacha los shiny salen el doble: del 1 % al 2 %. Los tienes en la Mochila, con lo que te falta para cada uno. Si ya habías completado alguna región, el suyo ya es tuyo.": "閃耀護符：每個地區一個（關都、城都、豐緣、神奧、合眾、卡洛斯、阿羅拉、伽勒爾和帕底亞）。集齊一個地區的寶可夢圖鑑（包括傳說寶可夢）即可獲得該地區的閃耀護符，其扭蛋卡池的異色出現率翻倍：從 1% 提升到 2%。可在背包中查看，並顯示每個還差多少。如果你已經集齊過某個地區，它的護符已經是你的了。",
   "Amuletos Iris": "閃耀護符",
   "Amuleto Iris": "閃耀護符",

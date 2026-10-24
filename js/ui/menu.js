@@ -257,7 +257,7 @@ G.MenuUI = (() => {
       }
       const note = document.createElement('p');
       note.className = 'setup-note';
-      note.textContent = 'Esta dificultad todavía no cambia la partida.';
+      note.textContent = 'Difícil: vida ×1,5, daño ×1,25 y salen ×1,2. Reto: ×2, ×1,55 y ×1,4. Pesadilla: ×2,8, ×1,9 y ×1,65. Corriente no cambia.';
       body.appendChild(note);
     }
   }
