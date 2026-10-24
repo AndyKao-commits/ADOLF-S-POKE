@@ -778,7 +778,7 @@ G.HUD = (() => {
         if (G.Game.state !== 'playing') return;
         if (siegeHud) pl.selectSlot(i);
         else if (m) pl.toggleSlot(i);
-      }, GAP / 2 + 3);
+      }, GAP / 2 + 3, siegeHud ? 'skill:' + i : '');
       const col = m ? G.U.TYPE_COLOR[m.type] : '#4a5468';
 
       // fondo

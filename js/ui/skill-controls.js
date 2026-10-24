@@ -6,11 +6,9 @@ G.SkillControls = (() => {
 
   function local(e) {
     const r = cv.getBoundingClientRect();
-    const sx = r.width ? cv.width / r.width : 1;
-    const sy = r.height ? cv.height / r.height : 1;
     return {
       pointerId: e.pointerId, button: e.button,
-      x: (e.clientX - r.left) * sx, y: (e.clientY - r.top) * sy
+      x: e.clientX - r.left, y: e.clientY - r.top
     };
   }
 

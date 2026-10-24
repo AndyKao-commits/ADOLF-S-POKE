@@ -56,10 +56,8 @@ G.Input = (() => {
       let x = mx, y = my;
       if (cv) {
         const r = cv.getBoundingClientRect();
-        const sx = r.width ? cv.width / r.width : 1;
-        const sy = r.height ? cv.height / r.height : 1;
-        x = (mx - r.left) * sx;
-        y = (my - r.top) * sy;
+        x = mx - r.left;
+        y = my - r.top;
       }
       const k = (G.Camera && G.Camera.scale) || 1;
       return { x: G.Camera.left() + x / k, y: G.Camera.top() + y / k };

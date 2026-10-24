@@ -8,7 +8,9 @@
 G.CHANGELOG = [
   { d: '2026-10-24', title: ['Asedio', 'Siege'], chg: [
     ['En el asedio eliges el ataque con 1–4 y lo lanzas con el ratón. No se dispara solo, y el cuerpo no hiere.',
-     'In siege you pick a move with 1–4 and cast it with the mouse. It does not fire by itself, and bumping does not hurt.']
+     'In siege you pick a move with 1–4 and cast it with the mouse. It does not fire by itself, and bumping does not hurt.'],
+    ['En el móvil el asedio se apunta arrastrando el ataque. En el ordenador se apunta con el ratón, sin cursor virtual.',
+     'On a phone, siege aiming is a drag from the move. On a computer it uses the mouse, with no virtual cursor.']
   ] },
   { d: '2026-10-24', title: ['Asedio', 'Siege'], chg: [
     ['En el asedio no hay mapa en la esquina. Los ataques rodean el sprint en abanico y su tamaño sigue la pantalla.',

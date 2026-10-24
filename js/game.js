@@ -1210,7 +1210,8 @@ G.Game = (() => {
    * delante de tu Pokémon si apuntas con el stick derecho.
    */
   function drawAimMark() {
-    const on = state === 'playing' && pl && pl.manualAim && !G.Judgment.cinematic;
+    const on = state === 'playing' && pl && pl.manualAim && !G.Judgment.cinematic
+      && !(G.SkillAim && G.SkillAim.finger && G.SkillAim.finger());
     const cur = on && !G.Pad.aim() ? 'crosshair' : '';
     if (cv.style.cursor !== cur) cv.style.cursor = cur;
     if (!on) return;

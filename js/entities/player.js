@@ -546,12 +546,20 @@ G.Player = class Player {
     // los ataques a distancia no le darían nunca al jefe.
     // Sin enemigos, apunta a la roca o cofre más cercano.
     if (G.Siege && G.Siege.up && !this.remote) {
-      this.manualAim = true;
       this.target = null;
-      const w = G.Input.mouseWorld();
-      const dx = w.x - this.x, dy = w.y - this.y;
-      if (dx * dx + dy * dy > 16) this.aim = Math.atan2(dy, dx);
-      else if (this.walking) this.aim = this.moveAngle;
+      const phone = G.SkillAim && G.SkillAim.finger && G.SkillAim.finger();
+      if (phone) {
+        this.manualAim = false;
+        const drag = G.SkillAim.liveDir && G.SkillAim.liveDir();
+        if (drag) this.aim = Math.atan2(drag.y, drag.x);
+        else if (this.walking) this.aim = this.moveAngle;
+      } else {
+        this.manualAim = true;
+        const w = G.Input.mouseWorld();
+        const dx = w.x - this.x, dy = w.y - this.y;
+        if (dx * dx + dy * dy > 16) this.aim = Math.atan2(dy, dx);
+        else if (this.walking) this.aim = this.moveAngle;
+      }
       const face = this.attackFace > 0 || !this.walking ? this.aim : this.moveAngle;
       this.anim.dir = G.Sprites.dirFromAngle(face);
       this.anim.loop(this.walking ? 'Walk' : 'Idle', this.walking ? this.spd / 110 : 1);
