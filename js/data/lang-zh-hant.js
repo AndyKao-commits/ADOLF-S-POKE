@@ -1438,4 +1438,7 @@ G.I18n.add({
   "Si alguien abre la tienda, la partida se para para todos: jugadores y monstruos.": "有人打開商店時，所有人和怪物都會停住。",
   "Pausa: {name} está en la tienda.": "暫停：{name} 正在商店。",
   "Pausa: {name} están en la tienda.": "暫停：{name} 正在商店。",
+  "El cachorro aguanta 4500. Los jefes de las oleadas 10, 20, 30 y 40 le curan un 5 %. Al entrar en la 50, si está más bajo, sube al 40 %.": "小奶狗有 4500 生命。第 10、20、30、40 波的首領會幫它補 5% 生命。進入第 50 波時，如果更低，會補到至少 40%。",
+  "La oleada 50 es un solo jefe enorme: más vida, más grande, y avisa en rojo antes de golpear. Al caer, la partida termina sin pedir una fusión.": "第 50 波只有一隻巨大首領：血更多、體型更大，打小奶狗前會先亮紅燈。打倒後直接結束，不會再問要不要融合。",
+  "Oleadas del 1 al 50. Cada 10 sale un jefe y, salvo en la 50, puedes fusionar ataques. La 50 es un jefe final y acaba la partida. Si el cachorro cae, pierdes.": "第 1 到第 50 波。每 10 波出一隻首領，除了第 50 波，打完可以融合招式。第 50 波是最終首領，打倒就結束。小奶狗倒下就輸了。",
 }, 'zh-Hant');

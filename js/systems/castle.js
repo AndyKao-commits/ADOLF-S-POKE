@@ -1,6 +1,6 @@
 /* ============ castle.js — Protege al cachorro ============
  * El castillo se queda quieto. Las oleadas 1 a 50 van a por él.
- * Cada 10 (10, 20, 30, 40 y 50) sale un jefe: al caer, un vínculo para fusionar.
+ * Cada 10 sale un jefe. Los de 10, 20, 30 y 40 dan un vínculo. El de la 50 acaba la partida.
  * Limpiar la oleada abre la siguiente. La 50 ganada acaba la partida.
  * Si su vida llega a cero, se pierde.
  */
@@ -13,7 +13,7 @@ G.Castle = (() => {
   const FINAL_VISUAL_MUL = 4.2;
   const FINAL_MIN_PUPPY_HP = 0.40;
   let on = false, hp = 1, maxHp = 1, img = null;
-  let wave = 1, queued = 0, acc = 0, won = false, bondWave = 0;
+  let wave = 1, queued = 0, acc = 0, won = false, bondWave = 0, warn = 0;
 
   function playerCount() {
     if (!G.Coop || !G.Coop.active || !G.Coop.players) return 1;
@@ -188,10 +188,25 @@ G.Castle = (() => {
     e.ring = phase === 3 ? '#ff4a4a' : phase === 2 ? '#ff9b4a' : '#ffcb3d';
   }
 
+  /** El aviso rojo lo ve toda la sala: el anfitrión lo mide, los demás lo copian. */
+  function warnLeft() {
+    const mine = !(G.Coop && G.Coop.active && !G.Coop.isHost);
+    if (mine && G.EnemyMgr) {
+      for (const e of G.EnemyMgr.all()) {
+        if (e.finalCastleBoss && !e.dead && e.finalCastleWindup > 0) return e.finalCastleWindup;
+      }
+      return 0;
+    }
+    return warn;
+  }
+
   /** Sólo el anfitrión (o el solo) saca la oleada y decide cuándo se ha limpiado. */
   function tick(dt) {
     if (!on || won || hp <= 0) return;
-    if (G.Coop.active && !G.Coop.isHost) return;
+    if (G.Coop.active && !G.Coop.isHost) {
+      for (const e of G.EnemyMgr.all()) if (e.finalCastleBoss && !e.dead) updateFinalPhase(e);
+      return;
+    }
     const s = spec(wave);
     const finalBoss = G.EnemyMgr.all().find(e => !e.dead && e.finalCastleBoss);
     if (finalBoss) updateFinalPhase(finalBoss);
@@ -221,15 +236,26 @@ G.Castle = (() => {
     hp = Math.max(0, +pair[0] || 0);
     maxHp = Math.max(1, +pair[1] || maxHp);
     if (pair[2]) wave = Math.max(1, Math.min(WAVES, +pair[2] || wave));
+    warn = Math.max(0, +pair[3] || 0);
   }
 
-  function snapshot() { return [Math.ceil(hp), Math.ceil(maxHp), wave]; }
+  function snapshot() {
+    let wind = 0;
+    if (G.EnemyMgr) {
+      for (const e of G.EnemyMgr.all()) {
+        if (e.finalCastleBoss && !e.dead && e.finalCastleWindup > 0) wind = e.finalCastleWindup;
+      }
+    }
+    return [Math.ceil(hp), Math.ceil(maxHp), wave, Math.round(wind * 10) / 10];
+  }
 
   /** Los que ya están encima le quitan vida. true = ha caído. */
   function touch(dt) {
     if (!on || hp <= 0) return false;
     for (const e of G.EnemyMgr.all()) {
-      if (e.dead || e.remote || e.behavior === 'thief' || e.stunT > 0 || e.siegeBoss) continue;
+      if (e.dead || e.behavior === 'thief' || e.siegeBoss) continue;
+      if (e.finalCastleBoss && e.remote) { updateFinalPhase(e); continue; }
+      if (e.remote || e.stunT > 0) continue;
       if (e.finalCastleBoss) {
         updateFinalPhase(e);
         if (e.finalCastleCd > 0) { e.finalCastleCd -= dt; continue; }
@@ -299,6 +325,18 @@ G.Castle = (() => {
     ctx.fillStyle = '#ffe9a8';
     ctx.fillText('Protege al cachorro', 0, by - 2);
     ctx.restore();
+    const left = warnLeft();
+    if (left > 0) {
+      ctx.save();
+      ctx.translate(aim.x, aim.y);
+      ctx.globalAlpha = 0.45 + ((Math.floor(left * 8) % 2) ? 0.4 : 0);
+      ctx.strokeStyle = '#ff4a4a';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.ellipse(0, -4, aim.r * 2.3, aim.r * 0.95, 0, 0, 6.2832);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 
   return {

@@ -1217,4 +1217,7 @@ G.I18n.add({
   "2 jugadores": "2 players",
   "De 2 a {x} jugadores": "2 to {x} players",
   "El asedio en sala es un duelo de 2. Chocar no hiere: sólo los ataques confirmados. Al caer, reapareces a los 5 s y no miras a un compañero.": "A room siege is a 2-player duel. Bumping does not hurt: only confirmed attacks do. When you fall, you return in 5 s and do not watch a teammate.",
+  "El cachorro aguanta 4500. Los jefes de las oleadas 10, 20, 30 y 40 le curan un 5 %. Al entrar en la 50, si está más bajo, sube al 40 %.": "The puppy has 4500 HP. The bosses of waves 10, 20, 30 and 40 heal it 5%. Entering wave 50 raises it to at least 40% if it is lower.",
+  "La oleada 50 es un solo jefe enorme: más vida, más grande, y avisa en rojo antes de golpear. Al caer, la partida termina sin pedir una fusión.": "Wave 50 is one huge boss: more HP, larger, and it warns in red before it hits. When it falls, the run ends without asking for a fusion.",
+  "Oleadas del 1 al 50. Cada 10 sale un jefe y, salvo en la 50, puedes fusionar ataques. La 50 es un jefe final y acaba la partida. Si el cachorro cae, pierdes.": "Waves 1 to 50. Every 10th wave is a boss and, except wave 50, you can fuse moves. Wave 50 is a final boss and ends the run. If the puppy falls, you lose.",
 });

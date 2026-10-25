@@ -12,7 +12,7 @@ G.Modes = (() => {
     ['normal', 'Mazmorra normal', 'Como siempre: hordas, jefes y experiencia.'],
     ['shiny', 'Sólo shinies', 'Sólo aparecen Pokémon shiny. La cantidad y la experiencia no cambian.'],
     ['boss', 'Desafío de jefes', 'Sólo aparecen jefes, tres a la vez. Empiezas en el nivel 20 para elegir ataques. La grieta sale antes, para poder fusionar. El objeto sale a veces, no en cada jefe, para no parar todo el rato. Los jefes se fortalecen el doble de rápido.'],
-    ['castle', 'Protege al cachorro', 'Oleadas del 1 al 50, cada vez más difíciles. Cada 10 oleadas sale un jefe: al vencerlo puedes fusionar ataques con un vínculo. Si el castillo cae, pierdes. Si limpias la 50, ganas.'],
+    ['castle', 'Protege al cachorro', 'Oleadas del 1 al 50. Cada 10 sale un jefe y, salvo en la 50, puedes fusionar ataques. La 50 es un jefe final y acaba la partida. Si el cachorro cae, pierdes.'],
     ['siege', 'Asedio', 'Duelo 1 contra 1. Los cuerpos nunca hacen daño: sólo los ataques confirmados. Cada castillo invoca sus tropas, el jefe aparece en el centro y no hay grietas. Gana quien destruya el castillo rival.'],
     ['endless', 'Mazmorra sin fin', 'No acaba en la Sentencia. Cada oleada cambia: especies juntas, élites, el ataque del jefe, el suelo, el lado por el que salen o la velocidad. La vida sólo sube un poco.']
   ];

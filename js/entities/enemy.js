@@ -425,7 +425,12 @@
         this.skillCd -= dt;
         if (this.skillCd <= 0) {
           if (this.behavior === 'shielder') { this.skillCd = 6; this.castShields(); }
-          else if (dist < 250) { this.skillCd = G.U.rand(5, 7); this.startJump(pl); return; }
+          else if (dist < 250) {
+            const rush = this.finalCastleBoss && this.finalPhase === 3;
+            this.skillCd = rush ? G.U.rand(3.2, 4.2) : G.U.rand(5, 7);
+            this.startJump(pl);
+            return;
+          }
           else this.skillCd = 0.5;
         }
       }
@@ -831,7 +836,7 @@
       if ((this.boss || this.shiny || gold) && !this.dead) {
         ctx.save();
         ctx.globalAlpha = (gold && !this.boss ? 0.32 : 0.22) + Math.sin(this.bob * 0.5) * 0.06;
-        ctx.fillStyle = this.ai && this.ai.fury ? '#ff4a4a' : this.shiny ? '#9ae6ff' : gold ? '#ffd23f' : '#ffd95e';
+        ctx.fillStyle = (this.finalCastleBoss && this.finalPhase === 3) || (this.ai && this.ai.fury) ? '#ff4a4a' : this.shiny ? '#9ae6ff' : gold ? '#ffd23f' : '#ffd95e';
         ctx.beginPath(); ctx.ellipse(this.x, this.y, this.r * 1.6, this.r * 0.6, 0, 0, 6.2832); ctx.fill();
         ctx.restore();
       }
