@@ -518,12 +518,14 @@ G.MenuUI = (() => {
       const can = v.frags >= 2 && v.stars < 4;
       detail = `<div class="res-detail">
         <button type="button" class="res-close" id="res-close">×</button>
-        <b>${sel.name}</b>
-        <div>${G.I18n.f('Investigación {x}% · Derrotas {x}', pct, v.k)}</div>
-        <p>${line}</p>
-        <p>${G.I18n.f('Fragmentos: {x}', v.frags)} · <span class="dex-stars">${starGlyph(v.stars)}</span> ${v.stars}/4</p>
-        <p>${starBuffLine(v.stars)}</p>
-        <button type="button" class="btn" id="res-star" ${can ? '' : 'disabled'}>Usar dos fragmentos</button>
+        <div class="res-detail-body"><div class="res-detail-copy">
+          <b>${sel.name}</b>
+          <div>${G.I18n.f('Investigación {x}% · Derrotas {x}', pct, v.k)}</div>
+          <p>${line}</p>
+          <p>${G.I18n.f('Fragmentos: {x}', v.frags)} · <span class="dex-stars">${starGlyph(v.stars)}</span> ${v.stars}/4</p>
+          <p>${starBuffLine(v.stars)}</p>
+          <button type="button" class="btn" id="res-star" ${can ? '' : 'disabled'}>Usar dos fragmentos</button>
+        </div><div class="res-detail-art" aria-label="${sel.name}"><canvas id="res-detail-sprite" width="150" height="120"></canvas></div></div>
       </div>`;
     }
     host.innerHTML = `
@@ -538,6 +540,8 @@ G.MenuUI = (() => {
       <p class="res-foot"><span translate="no">${GEN_LABEL[dexGen - 1]}</span>：${G.I18n.f('Investigado {x}/{x} · Conseguidos {x}/{x}', researched, region.length, caught, region.length)}</p>
       ${detail}`;
     host.querySelectorAll('canvas[data-dex]').forEach(cv => G.UI.sprite(cv, +cv.dataset.dex, { scale: 1, silhouette: cv.dataset.done !== '1', ink: cv.dataset.done !== '1' }));
+    const portrait = $('res-detail-sprite');
+    if (portrait && sel) G.UI.sprite(portrait, sel.dex, { scale: 3, lively: true, hero: true, shadow: true });
     const grid = $('res-grid');
     if (grid) grid.scrollTop = keep;
     host.querySelectorAll('[data-rg]').forEach(b => b.onclick = () => { dexGen = +b.dataset.rg; resSel = null; renderResearch(); });

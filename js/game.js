@@ -165,6 +165,7 @@ G.Game = (() => {
     if (G.SkillAim) G.SkillAim.reset();
     if (G.CombatAuthority) G.CombatAuthority.reset();
     if (G.MasteryFX) G.MasteryFX.reset();
+    if (G.MoveForgetter) G.MoveForgetter.reset();
     biome = 0;
     time = 0; pendingLevels = 0;
     runReal = performance.now(); tampered = false;
@@ -861,6 +862,7 @@ G.Game = (() => {
     if (offerBall(1) === false) refundCandy(pl, price);
   }
   function useNear() {
+    if (G.MoveForgetter && G.MoveForgetter.near(pl)) { openForgetter(); return true; }
     const shop = nearestShop();
     const field = nearestField();
     if (shop && field) {
@@ -873,6 +875,30 @@ G.Game = (() => {
     if (field) { useField(field); return true; }
     if (shop) { openStall(); return true; }
     return false;
+  }
+  function openForgetter() {
+    if (!pl || state !== 'playing' || !G.MoveForgetter || !G.MoveForgetter.near(pl)) return;
+    if (pl.moves.length <= 1) {
+      G.Spawner.say('No puedes olvidar tu único movimiento', 2.5, true);
+      return;
+    }
+    state = 'choice';
+    pl.frozen = true;
+    if (G.Coop.active) G.Coop.holdStart('forgetter');
+    const close = () => {
+      G.UI.hide('scr-forget');
+      if (G.Coop.active) G.Coop.holdEnd();
+      state = holdBy.length ? 'held' : 'playing';
+      if (pl) pl.frozen = state !== 'playing';
+    };
+    G.RunUI.showForgetMoves(pl.moves.slice(), id => {
+      const m = pl.moves.find(x => x.id === id);
+      if (!m || !pl.forgetMove(id)) return;
+      G.Audio.sfx('confirm');
+      G.Spawner.say(G.I18n.f('Has olvidado {x}', G.T(m.name, 'move')), 3, true);
+      G.MoveForgetter.leave();
+      close();
+    }, close);
   }
   function nearestShop() {
     if (!pl || pl.dead || state !== 'playing') return null;
@@ -1172,6 +1198,7 @@ G.Game = (() => {
     tickFields(dt);
     G.Hazards.update(dt);
     G.Interact.update(dt, pl);
+    if (G.MoveForgetter) G.MoveForgetter.update(dt, pl, time);
     G.Rift.update(dt, pl, time);
     G.Judgment.update(dt, pl, time);
     G.Events.update(dt, all, time);
@@ -1268,6 +1295,8 @@ G.Game = (() => {
     const arceus = pl && state !== 'ui' ? G.Judgment.drawable() : null;
     if (arceus) items.push({ y: arceus.y, ent: arceus });
     if (pl && state !== 'ui') for (const d of G.Events.drawables()) items.push({ y: d.y, ent: d });
+    const forgetter = pl && state !== 'ui' && G.MoveForgetter ? G.MoveForgetter.drawable() : null;
+    if (forgetter) items.push({ y: forgetter.y, ent: { draw: G.MoveForgetter.draw } });
     if (G.Castle.up) items.push({ y: G.Castle.y, ent: G.Castle });
     if (G.Siege && G.Siege.up) for (const d of G.Siege.drawables()) items.push(d);
     items.sort((a, b) => a.y - b.y);
