@@ -1250,4 +1250,5 @@ G.I18n.add({
   "Al caer puedes elegir levantarte con el 70 % de vida. Una vez por partida.": "When you fall you can choose to get up at 70% HP. Once per run.",
   "Al caer puedes elegir levantarte con el 50 % de vida. Una vez por partida.": "When you fall you can choose to get up at 50% HP. Once per run.",
   "Una vez por partida, al caer puedes elegir revivir con el 35 % de vida.": "Once per run, when you fall you can choose to revive at 35% HP.",
+  "Los textos en chino se ven otra vez.": "Chinese text shows again.",
 });

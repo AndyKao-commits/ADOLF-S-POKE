@@ -22,7 +22,9 @@ G.CHANGELOG = [
     ['En el grupo, Revivir y Revivir Máximo te levantan una vez al caer. En el asedio no.',
      'In a group, Revive and Max Revive get you up once when you fall. In siege they do not.'],
     ['Si alguien abre la tienda, la partida se para para todos: jugadores y monstruos.',
-     'If anyone opens the shop, the run pauses for everyone: players and monsters.']
+     'If anyone opens the shop, the run pauses for everyone: players and monsters.'],
+    ['Los textos en chino se ven otra vez.',
+     'Chinese text shows again.']
   ], chg: [
     ['Al caer eliges si usas Revivir, Revivir Máximo o Reponerse. No se gastan solos.',
      'When you fall you choose Revive, Max Revive or Rally. They are not spent on their own.']

@@ -1471,4 +1471,5 @@ G.I18n.add({
   "Al caer puedes elegir levantarte con el 70 % de vida. Una vez por partida.": "倒下後可選擇以 70% 生命站起來。每局限一次。",
   "Al caer puedes elegir levantarte con el 50 % de vida. Una vez por partida.": "倒下後可選擇以 50% 生命站起來。每局限一次。",
   "Una vez por partida, al caer puedes elegir revivir con el 35 % de vida.": "每局限一次。倒下後可選擇以 35% 生命復活。",
+  "Los textos en chino se ven otra vez.": "繁體中文恢復正常顯示。",
 }, 'zh-Hant');
