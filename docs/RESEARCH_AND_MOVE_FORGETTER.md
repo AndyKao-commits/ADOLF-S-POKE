@@ -17,11 +17,13 @@
 - 每局只能成功遺忘一次，而且至少必須保留一個招式。
 - 確定後立即移除所選招式，爺爺播放離場效果並消失。
 - 攻防戰、守護奶狗、裂縫與阿爾宙斯特殊戰鬥期間不生成或暫停活動。
-- 目前人物使用程式繪製的暫代像素外觀；正式素材完成後只需替換 `js/systems/move-forgetter.js` 的 `draw()`。
+- 正式人物素材位於 `assets/future-use/npc/move-forgetter/move-forgetter.png`，透明背景並以腳底對齊地面。
+- 素材載入失敗時仍會顯示程式繪製的暫代人物，避免 NPC 無法辨識或互動。
 
 ## 主要檔案
 
 - `js/systems/move-forgetter.js`：機率、生成、移動、距離與暫代繪製。
+- `assets/future-use/npc/move-forgetter/`：遊戲用 PNG、高解析原稿與素材說明。
 - `js/entities/player.js`：安全移除招式與槽位整理。
 - `js/game.js`：每局重設、互動、選擇結果及離場。
 - `js/ui/run-ui.js`、`dev.html`、`css/style.css`：遺忘招式選單。

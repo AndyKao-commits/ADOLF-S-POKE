@@ -23,6 +23,8 @@ G.MoveForgetter = (() => {
   if (texts) G.I18n.add(texts);
   const CHANCE = 0.45;
   const USE_R = 62;
+  const sprite = new Image();
+  sprite.src = 'assets/future-use/npc/move-forgetter/move-forgetter.png';
   let npc = null, due = Infinity, used = false, announced = false;
 
   function reset() {
@@ -84,14 +86,19 @@ G.MoveForgetter = (() => {
     ctx.save();
     ctx.imageSmoothingEnabled = false;
     ctx.fillStyle = 'rgba(0,0,0,.32)'; ctx.beginPath(); ctx.ellipse(x, y + 2, 16, 6, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = '#573f78'; ctx.fillRect(x - 10, y - 29, 20, 27);
-    ctx.fillStyle = '#d8c7ff'; ctx.fillRect(x - 8, y - 45, 16, 17);
-    ctx.fillStyle = '#f2efff'; ctx.fillRect(x - 11, y - 30, 22, 8);
-    ctx.fillStyle = '#fff'; ctx.fillRect(x - 6, y - 40, 4, 4); ctx.fillRect(x + 2, y - 40, 4, 4);
-    ctx.fillStyle = '#33264c'; ctx.fillRect(x - 5, y - 39, 2, 2); ctx.fillRect(x + 3, y - 39, 2, 2);
+    if (sprite.complete && sprite.naturalWidth) {
+      ctx.drawImage(sprite, x - 29, y - 63, 58, 63);
+    } else {
+      // 素材還沒載入或路徑失效時仍保留可互動的暫代人物。
+      ctx.fillStyle = '#573f78'; ctx.fillRect(x - 10, y - 29, 20, 27);
+      ctx.fillStyle = '#d8c7ff'; ctx.fillRect(x - 8, y - 45, 16, 17);
+      ctx.fillStyle = '#f2efff'; ctx.fillRect(x - 11, y - 30, 22, 8);
+      ctx.fillStyle = '#fff'; ctx.fillRect(x - 6, y - 40, 4, 4); ctx.fillRect(x + 2, y - 40, 4, 4);
+      ctx.fillStyle = '#33264c'; ctx.fillRect(x - 5, y - 39, 2, 2); ctx.fillRect(x + 3, y - 39, 2, 2);
+    }
     ctx.font = '700 10px Pixelify, sans-serif'; ctx.textAlign = 'center';
     ctx.fillStyle = '#fff3b0'; ctx.strokeStyle = '#10162c'; ctx.lineWidth = 3;
-    ctx.strokeText(G.T('Abuelo Olvido'), x, y - 52); ctx.fillText(G.T('Abuelo Olvido'), x, y - 52);
+    ctx.strokeText(G.T('Abuelo Olvido'), x, y - 70); ctx.fillText(G.T('Abuelo Olvido'), x, y - 70);
     ctx.restore();
   }
 
