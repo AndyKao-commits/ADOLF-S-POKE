@@ -688,7 +688,7 @@ G.Siege = (() => {
         if (d < bd) { bd = d; best = c; }
       }
       if (!best) return null;
-      return { x: best.x, y: best.y, r: best.r, dead: false, level: 1, _vx: 0, _vy: 0, hurt() {} };
+      return { x: best.x, y: best.y, r: best.r, dead: false, level: 1, _vx: 0, _vy: 0, hurt() {}, cy() { return this.y; } };
     }
     if (!e.siegeCreep) return null;
     let best = null, bd = CREEP_AGGRO * CREEP_AGGRO, castle = false;
@@ -716,7 +716,7 @@ G.Siege = (() => {
     }
     if (!best) return null;
     if (!castle) return best;
-    return { x: best.x, y: best.y, r: best.r, dead: false, level: 1, _vx: 0, _vy: 0, hurt() {} };
+    return { x: best.x, y: best.y, r: best.r, dead: false, level: 1, _vx: 0, _vy: 0, hurt() {}, cy() { return this.y; } };
   }
 
   function net(list) {
@@ -746,7 +746,7 @@ G.Siege = (() => {
       const d = G.U.dist2(x, y, c.x, c.y);
       if (d < bd) { bd = d; best = c; }
     }
-    return best ? { x: best.x, y: best.y, r: best.r, dead: false } : null;
+    return best ? { x: best.x, y: best.y, r: best.r, dead: false, cy() { return this.y; } } : null;
   }
 
   function drawOne(ctx, c) {

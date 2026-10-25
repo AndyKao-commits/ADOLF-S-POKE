@@ -47,6 +47,10 @@ G.Projectiles = (() => {
   /** Borra los orbes de un jugador (o todos) al cambiar de movimiento activo. */
   function clearOrbs(owner) { list = list.filter(p => !p.orb || (owner && p.owner !== owner)); }
 
+  /** El centro del blanco. Un castillo del asedio no tiene cy(); sin esto el
+   *  disparo teledirigido rompía todos los fotogramas y la partida se cerraba. */
+  function bodyY(e) { return e && typeof e.cy === 'function' ? e.cy() : e.y; }
+
   function update(dt, player, enemies) {
     for (let i = list.length - 1; i >= 0; i--) {
       const p = list[i];
@@ -86,7 +90,7 @@ G.Projectiles = (() => {
           tg = nearest(pool, p.x, p.y, 340);
         }
         if (tg) {
-          const [dx, dy] = G.U.norm(tg.x - p.x, tg.cy() - p.y);
+          const [dx, dy] = G.U.norm(tg.x - p.x, bodyY(tg) - p.y);
           const sp = Math.hypot(p.vx, p.vy);
           p.vx = G.U.damp(p.vx, dx * sp, p.homing, dt);
           p.vy = G.U.damp(p.vy, dy * sp, p.homing, dt);
@@ -116,7 +120,7 @@ G.Projectiles = (() => {
     let best = null, bd = maxDist * maxDist;
     for (const e of enemies) {
       if (e.dead) continue;
-      const d = G.U.dist2(x, y, e.x, e.cy());
+      const d = G.U.dist2(x, y, e.x, bodyY(e));
       if (d < bd) { bd = d; best = e; }
     }
     return best;

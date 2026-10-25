@@ -1478,5 +1478,6 @@ G.I18n.add({
   "Los textos en chino se ven otra vez.": "繁體中文恢復正常顯示。",
   "Los huevos de incubar dan investigación según el nivel: normal 5–10 %, raro 8–13 %, legendario 11–16 % y épico 15–20 %. El resultado se guarda antes de la animación.": "孵化蛋依等級增加研究進度：普通 5%～10%、稀有 8%～13%、傳說 11%～16%、史詩 15%～20%。結果會在動畫前存檔。",
   "En cada partida puedes conseguir como mucho 25 tickets y 2 tickets ×10. Al llegar al límite se avisa una vez, y los tickets que ya tenías siguen en la cuenta.": "每局最多再取得一般券 25 張、十連券 2 張。達到上限只提醒一次，帳號裡原本的券不會被清掉。",
+  "En el asedio, un disparo que persigue al castillo ya no corta la partida.": "攻防戰裡，會追著城堡飛的攻擊不會再把對局弄斷。",
   "En la colección, debajo del dibujo, vuelven las seis estadísticas: vida, ataque, ataque especial, defensa, defensa especial y velocidad.": "圖鑑立繪下面會再顯示六項能力：生命、攻擊、特攻、防禦、特防和速度。",
 }, 'zh-Hant');

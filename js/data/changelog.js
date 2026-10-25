@@ -18,6 +18,10 @@ G.CHANGELOG = [
     ['En la colección, debajo del dibujo, vuelven las seis estadísticas: vida, ataque, ataque especial, defensa, defensa especial y velocidad.',
      'In the collection, under the picture, all six stats are back: HP, Attack, Sp. Atk, Defense, Sp. Def and Speed.']
   ] },
+  { d: '2026-10-25', title: ['Asedio', 'Siege'], fix: [
+    ['En el asedio, un disparo que persigue al castillo ya no corta la partida.',
+     'In siege, a shot that chases a castle no longer ends the match.']
+  ] },
   { d: '2026-10-25', title: ['Cachorro', 'Puppy'], chg: [
     ['El cachorro aguanta 4500. Los jefes de las oleadas 10, 20, 30 y 40 le curan un 5 %. Al entrar en la 50, si está más bajo, sube al 40 %.',
      'The puppy has 4500 HP. The bosses of waves 10, 20, 30 and 40 heal it 5%. Entering wave 50 raises it to at least 40% if it is lower.'],
