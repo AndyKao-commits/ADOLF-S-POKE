@@ -174,8 +174,10 @@ G.HUD = (() => {
   const MARK_COL = {
     enemy: '#ff4d5a', boss: '#e1061c', egg: '#fff1c2',
     ball1: '#e23d3d', ball2: '#3a7ee0', ball3: '#f0d24a', ball4: '#7b4ec8', curse: '#c47bff',
-    shop: '#ffd23f', mate: '#5fd4ff'
+    shop: '#ffd23f', mate: '#5fd4ff', forgetter: '#d7caff'
   };
+  const forgetterMapPic = new Image();
+  forgetterMapPic.src = 'assets/future-use/npc/move-forgetter/move-forgetter.png';
 
   /** One shape per thing. s = 1 on the corner radar, larger on the pause map. */
   function drawMark(ctx, x, y, kind, s) {
@@ -223,6 +225,15 @@ G.HUD = (() => {
       ctx.beginPath();
       ctx.moveTo(x, y - r); ctx.lineTo(x + r * 0.8, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r * 0.8, y);
       ctx.closePath(); ctx.fill();
+    } else if (kind === 'forgetter') {
+      const sz = 8 * s;
+      if (forgetterMapPic.complete && forgetterMapPic.naturalWidth) {
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(forgetterMapPic, x - sz / 2, y - sz, sz, sz * 1.08);
+      } else {
+        ctx.fillStyle = MARK_COL.forgetter;
+        ctx.beginPath(); ctx.arc(x, y, 3.5 * s, 0, 6.2832); ctx.fill();
+      }
     }
     ctx.restore();
   }
@@ -251,6 +262,8 @@ G.HUD = (() => {
     if (G.Coop && G.Coop.active && G.Coop.puppets) {
       for (const m of G.Coop.puppets()) if (!m.dead) blot(m.x, m.y, 'mate');
     }
+    const grandpa = G.MoveForgetter && G.MoveForgetter.position;
+    if (grandpa) blot(grandpa.x, grandpa.y, 'forgetter');
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.arc(cx, cy, 3.2, 0, 6.2832); ctx.stroke();
     ctx.restore();
@@ -259,6 +272,46 @@ G.HUD = (() => {
     G.Touch.addButton(cx - R, cy - R, R * 2, R * 2, () => {
       if (G.Game.state === 'playing' && G.Game.toggleMap) G.Game.toggleMap();
     }, 4);
+  }
+
+  function toggleMapMark(pl, target) {
+    if (!pl || !target) return;
+    const marks = Array.isArray(pl.marks) ? pl.marks : (pl.marks = pl.mark ? [pl.mark] : []);
+    const found = marks.findIndex(m => Math.hypot(m.x - target.x, m.y - target.y) < 28);
+    if (found >= 0) marks.splice(found, 1);
+    else {
+      if (marks.length >= 3) marks.shift();
+      marks.push({ x: target.x, y: target.y, col: target.col || '#fff' });
+    }
+    pl.mark = marks.length ? marks[marks.length - 1] : null;
+  }
+
+  function mapTargets(pl) {
+    const out = [];
+    const lang = (G.I18n && G.I18n.lang) || '';
+    const zh = String(lang).startsWith('zh'), en = lang === 'en';
+    const text = (z, e, s) => zh ? z : en ? e : s;
+    const add = (x, y, kind, name, img = '') => out.push({ x, y, kind, name, img, col: MARK_COL[kind] || '#fff', d: Math.hypot(x - pl.x, y - pl.y) });
+    if (G.World.shops) for (const s of G.World.shops) add(s.x, s.y, 'shop', text('商店', 'Shop', 'Tienda'), 'assets/future-use/shop/shop-only.png');
+    for (const p of G.Pickups.all()) {
+      if (p.kind === 'egg') add(p.x, p.y, 'egg', text('孵化蛋', 'Hatching Egg', 'Huevo de incubar'));
+      else if (p.kind === 'vend') add(p.x, p.y, 'ball1', text('付費精靈球', 'Paid Poké Ball', 'Poké Ball de pago'), 'assets/future-use/balls/poke-ball.png');
+      else if (p.kind === 'curse') add(p.x, p.y, 'curse', text('詛咒球', 'Cursed Poké Ball', 'Poké Ball maldita'), 'assets/future-use/balls/cursed-ball.png');
+      else if (p.kind === 'ball') {
+        const tier = p.value >= 4 ? 4 : p.value >= 3 ? 3 : p.value === 2 ? 2 : 1;
+        const names = ['Poké Ball', 'Super Ball', 'Ultra Ball', 'Master Ball'];
+        const files = ['poke-ball.png', 'great-ball.png', 'ultra-ball.png', 'master-ball.png'];
+        add(p.x, p.y, 'ball' + tier, G.T(names[tier - 1]), 'assets/future-use/balls/' + files[tier - 1]);
+      }
+    }
+    for (const e of G.EnemyMgr.all()) if (!e.dead) {
+      const mon = G.DEX_BY && G.DEX_BY[e.dex];
+      add(e.x, e.y, e.boss ? 'boss' : 'enemy', mon ? mon.name : text(e.boss ? 'Boss' : '敵人', e.boss ? 'Boss' : 'Enemy', e.boss ? 'Jefe' : 'Enemigo'));
+    }
+    if (G.Coop && G.Coop.active && G.Coop.puppets) for (const m of G.Coop.puppets()) if (!m.dead) add(m.x, m.y, 'mate', m.name || text('隊友', 'Teammate', 'Compañero'));
+    const grandpa = G.MoveForgetter && G.MoveForgetter.position;
+    if (grandpa) add(grandpa.x, grandpa.y, 'forgetter', text('遺忘爺爺', 'Move Forgetter', 'Abuelo Olvido'), 'assets/future-use/npc/move-forgetter/move-forgetter.png');
+    return out.sort((a, b) => a.d - b.d).slice(0, 80);
   }
 
   /** Mapa grande (la pantalla de pausa): anillos y las mismas marcas que el radar. */
@@ -298,8 +351,11 @@ G.HUD = (() => {
     if (G.Coop && G.Coop.active && G.Coop.puppets) {
       for (const m of G.Coop.puppets()) if (!m.dead) mark(m.x, m.y, 'mate');
     }
-    if (pl.mark) {
-      const [sx, sy] = at(pl.mark.x, pl.mark.y);
+    const grandpa = G.MoveForgetter && G.MoveForgetter.position;
+    if (grandpa) mark(grandpa.x, grandpa.y, 'forgetter');
+    const marks = Array.isArray(pl.marks) ? pl.marks : (pl.mark ? [pl.mark] : []);
+    for (const mk of marks) {
+      const [sx, sy] = at(mk.x, mk.y);
       ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.arc(sx, sy, 9, 0, 6.2832); ctx.stroke();
     }
@@ -309,6 +365,22 @@ G.HUD = (() => {
     ctx.moveTo(cx, cy - 7); ctx.lineTo(cx, cy + 7);
     ctx.stroke();
     canvas._hits = hits;
+
+    const objects = document.getElementById('map-objects');
+    const head = document.getElementById('map-current');
+    if (objects && head) {
+      const targets = mapTargets(pl);
+      const chosen = t => marks.some(m => Math.hypot(m.x - t.x, m.y - t.y) < 28);
+      objects._targets = targets;
+      const side = document.getElementById('scr-map');
+      head.textContent = `${side.dataset.mapCurrent || '目前地圖物件'} · ${side.dataset.mapTracking || '追蹤'} ${marks.length}/3`;
+      const sig = targets.map(t => `${Math.round(t.x / 24)},${Math.round(t.y / 24)},${Math.round(t.d / 24)},${chosen(t) ? 1 : 0}`).join('|');
+      if (objects._sig !== sig) {
+        objects._sig = sig;
+        objects.innerHTML = targets.map((t, i) => `<button type="button" class="map-object${chosen(t) ? ' on' : ''}" data-map-target="${i}">
+          ${t.img ? `<img src="${t.img}" alt="">` : `<i style="--c:${t.col}"></i>`}<span>${t.name}</span><span class="dist">${Math.max(1, Math.round(t.d / 24))} m</span></button>`).join('') || '<p class="sub">—</p>';
+      }
+    }
   }
 
   /** Flecha hacia la marca puesta en el mapa. */
@@ -605,6 +677,45 @@ G.HUD = (() => {
         ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.85)';
         const l2 = 'GRIETA · ' + Math.ceil(rift.ttl) + ' s';
         ctx.strokeText(l2, 0, -18); ctx.fillStyle = '#e2d0ff'; ctx.fillText(l2, 0, -18);
+      }
+      ctx.restore();
+    }
+    // 遺忘爺爺：和裂縫一樣提供畫面邊緣方向指標；進入畫面後改標在人物上方。
+    const grandpa = G.MoveForgetter && G.MoveForgetter.position;
+    if (grandpa && !G.Rift.inArena) {
+      const sx = (grandpa.x - cam.left()) * cam.scale, sy = (grandpa.y - 70 - cam.top()) * cam.scale;
+      const now = performance.now() / 1000, beat = 0.5 + Math.sin(now * 6) * 0.5;
+      const metres = Math.max(1, Math.round(G.U.dist(pl.x, pl.y, grandpa.x, grandpa.y) / 24));
+      const name = G.T('Abuelo Olvido'), label = name + ' · ' + metres + ' m';
+      const off = sx < 28 || sx > w - 28 || sy < 64 || sy > h - 82;
+      ctx.save();
+      if (off) {
+        const M = 54, ex = G.U.clamp(sx, M, w - M), ey = G.U.clamp(sy, M + 70, h - M - 82);
+        const a = Math.atan2(sy - ey, sx - ex), ca = Math.cos(a), sa = Math.sin(a);
+        ctx.translate(ex, ey);
+        ctx.globalAlpha = 0.16 + beat * 0.2;
+        ctx.fillStyle = '#d7caff'; ctx.beginPath(); ctx.arc(0, 0, 24 + beat * 7, 0, 6.2832); ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.moveTo(ca * 36, sa * 36);
+        ctx.lineTo(Math.cos(a + 2.45) * 18, Math.sin(a + 2.45) * 18);
+        ctx.lineTo(Math.cos(a - 2.45) * 18, Math.sin(a - 2.45) * 18);
+        ctx.closePath();
+        ctx.lineWidth = 4; ctx.strokeStyle = '#211535'; ctx.stroke();
+        ctx.fillStyle = beat > 0.5 ? '#f2eaff' : '#b99be8'; ctx.fill();
+        ctx.font = F(800, 11); ctx.textAlign = ca > 0.3 ? 'right' : ca < -0.3 ? 'left' : 'center';
+        const lx = -ca * 31, ly = -sa * 27 + 4;
+        ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.strokeText(label, lx, ly);
+        ctx.fillStyle = '#f2eaff'; ctx.fillText(label, lx, ly);
+      } else {
+        const by = sy - 18 - Math.abs(Math.sin(now * 4)) * 8;
+        ctx.translate(sx, by);
+        ctx.beginPath(); ctx.moveTo(-12, -10); ctx.lineTo(12, -10); ctx.lineTo(0, 7); ctx.closePath();
+        ctx.lineWidth = 4; ctx.strokeStyle = '#211535'; ctx.stroke();
+        ctx.fillStyle = '#d7caff'; ctx.fill();
+        ctx.font = F(800, 11); ctx.textAlign = 'center';
+        ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.strokeText(name, 0, -15);
+        ctx.fillStyle = '#f2eaff'; ctx.fillText(name, 0, -15);
       }
       ctx.restore();
     }
@@ -1217,5 +1328,5 @@ G.HUD = (() => {
     ctx.textBaseline = 'alphabetic';
   }
 
-  return { draw, roundRect, bar };
+  return { draw, roundRect, bar, toggleMapMark };
 })();

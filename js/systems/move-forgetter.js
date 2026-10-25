@@ -73,6 +73,11 @@ G.MoveForgetter = (() => {
   function leave() {
     used = true;
     if (npc) {
+      const pl = G.Game.player;
+      if (pl && Array.isArray(pl.marks)) {
+        pl.marks = pl.marks.filter(m => G.U.dist2(m.x, m.y, npc.x, npc.y) >= 28 * 28);
+        pl.mark = pl.marks.length ? pl.marks[pl.marks.length - 1] : null;
+      }
       G.FX.ring(npc.x, npc.y - 18, 8, 64, '#bba7ff', 0.55, 4);
       G.FX.burst(npc.x, npc.y - 24, '#d7caff', 20, 150);
     }
@@ -102,5 +107,5 @@ G.MoveForgetter = (() => {
     ctx.restore();
   }
 
-  return { reset, update, near, leave, drawable, draw, get used() { return used; }, get announced() { return announced; } };
+  return { reset, update, near, leave, drawable, draw, get position() { return npc; }, get used() { return used; }, get announced() { return announced; } };
 })();

@@ -216,10 +216,11 @@ G.Game = (() => {
     downLeft = null;
 
     state = 'playing';
-    fieldT = 45;
+    fieldT = 45; fieldN = 0;
     if (!(G.Modes.is('siege') || G.Modes.is('castle')) && (!coop || G.Coop.isHost)) {
-      placeField();
-      placeField();
+      // Una cerca y otra lejos: desde el principio el mapa invita a explorar.
+      placeField({ min: 420, max: 780, paid: true });
+      placeField({ min: 1050, max: 1750, paid: true });
     }
   }
 
@@ -767,12 +768,13 @@ G.Game = (() => {
     const n = ((pl && pl.vendN) || 0) + 1;
     return n <= 1 ? 30 : 6 * n + 21;
   }
-  function placeField() {
+  function placeField(opt = {}) {
     if (!pl) return;
-    const curse = Math.random() < 1 / 12;
-    for (let i = 0; i < 12; i++) {
+    const curse = opt.paid ? false : Math.random() < 1 / 12;
+    const min = opt.min || 420, max = opt.max || 1750;
+    for (let i = 0; i < 28; i++) {
       const a = Math.random() * 6.2832;
-      const d = 240 + Math.random() * 280;
+      const d = min + Math.random() * (max - min);
       const x = pl.x + Math.cos(a) * d, y = pl.y + Math.sin(a) * d;
       if (!G.World.isFree(x, y, 16)) continue;
       G.Pickups.drop(curse ? 'curse' : 'vend', x, y, curse ? 0 : 1);
@@ -788,8 +790,11 @@ G.Game = (() => {
     if (fieldT > 0) return;
     fieldT = 45;
     const n = G.Pickups.all().filter(p => p.kind === 'vend' || p.kind === 'curse').length;
-    if (n >= 4) return;
-    placeField();
+    if (n >= 6) return;
+    // Cerca, media y lejos por turnos para cubrir el área, no sólo el inicio.
+    const rings = [[420, 780], [780, 1250], [1250, 1900]];
+    const [min, max] = rings[fieldN++ % rings.length];
+    placeField({ min, max });
   }
   function nearestField() {
     if (!pl || pl.dead || state !== 'playing') return null;
@@ -1042,7 +1047,7 @@ G.Game = (() => {
   // ---------------- bucle ----------------
 
   let deathT = 0, downLeft = null;
-  let fieldT = 45;
+  let fieldT = 45, fieldN = 0;
 
   // Caído en grupo: puedes mirar a un compañero vivo. Sólo cambia a quién
   // sigue la cámara (y el anfitrión te manda los enemigos de allí).
