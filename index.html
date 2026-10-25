@@ -31,7 +31,6 @@
 <meta name="twitter:description" content="這是改版過的 10 人聯機版本。">
 <meta name="twitter:image" content="https://aulf-friends-game.firebaseapp.com/assets/og-aulf.png">
 <meta name="ps-pages" content="1">
-
 <link rel="manifest" href="manifest.webmanifest">
 <!-- Google sólo enseña en los resultados iconos de 48 px o múltiplos -->
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -46,7 +45,6 @@
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
 <link rel="preload" href="assets/fonts/PixelifyPS-400.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="preload" href="assets/fonts/PixelifyPS-700.ttf" as="font" type="font/ttf" crossorigin>
-
 <!-- Datos estructurados para Google (tipo de página: videojuego gratuito) -->
 <script type="application/ld+json">
 {
@@ -80,8 +78,8 @@
   ]
 }
 </script>
-<link rel="stylesheet" href="css/style.css?v=map58">
-<script src="js/core/locales.js?v=b8a3ce7ae9"></script>
+<link rel="stylesheet" href="css/style.css?v=2d4e4a4881">
+<script src="js/core/locales.js?v=1a12a2b148"></script>
 </head>
 <body>
 
@@ -628,6 +626,15 @@
   </div>
 </section>
 
+<section id="scr-forget" class="scr dim hidden">
+  <div class="box center forget-box">
+    <h2>Abuelo Olvido</h2>
+    <p class="sub">Elige el movimiento que quieres olvidar. Debes conservar al menos uno.</p>
+    <div id="forget-cards" class="cards forget-cards"></div>
+    <button id="forget-cancel" type="button" class="btn ghost">Ahora no</button>
+  </div>
+</section>
+
 <section id="scr-bond" class="scr dim hidden">
   <div class="box center">
     <h2 class="bond-title">¡Vínculo!</h2>
@@ -700,111 +707,6 @@
 </section>
 
 <!-- datos generados -->
-<script defer src="js/core/util.js"></script>
-<script defer src="js/core/i18n.js"></script>
-<script defer src="js/data/lang-en.js"></script>
-<script defer src="js/core/settings.js"></script>
-<script defer src="js/data/music.js"></script>
-<script defer src="js/data/pokedex.js"></script>
-<script defer src="js/data/sprites-meta.js"></script>
-<!-- núcleo -->
-<script defer src="js/core/firebase-config.js"></script>
-<script defer src="js/core/db.js"></script>
-<script defer src="js/core/audio.js"></script>
-<script defer src="js/core/input.js"></script>
-<script defer src="js/core/touch.js"></script>
-<script defer src="js/core/gamepad.js"></script>
-<script defer src="js/core/sprites.js"></script>
-<script defer src="js/core/camera.js"></script>
-<!-- datos de juego -->
-<script defer src="js/data/moves.js"></script>
-<script defer src="js/data/natures.js"></script>
-<script defer src="js/data/abilities.js"></script>
-<script defer src="js/data/tms.js"></script>
-<script defer src="js/data/types.js"></script>
-<script defer src="js/data/starters.js"></script>
-<script defer src="js/data/enemies.js"></script>
-<script defer src="js/data/upgrades.js"></script>
-<script defer src="js/data/items.js"></script>
-<script defer src="js/data/shop.js"></script>
-<script defer src="js/data/missions.js"></script>
-<script defer src="js/data/achievements.js"></script>
-<script defer src="js/data/funding.js"></script>
-<script defer src="js/data/changelog.js"></script>
-<!-- mundo -->
-<script defer src="js/world/tiles.js"></script>
-<script defer src="js/world/regions.js"></script>
-<script defer src="js/world/world.js"></script>
-<!-- entidades -->
-<script defer src="js/entities/vfx.js"></script>
-<script defer src="js/entities/fx.js"></script>
-<script defer src="js/entities/projectile.js"></script>
-<script defer src="js/entities/enemy.js"></script>
-<script defer src="js/entities/pickup.js"></script>
-<script defer src="js/entities/player.js"></script>
-<!-- sistemas -->
-<script defer src="js/systems/stats.js"></script>
-<script defer src="js/systems/modes.js"></script>
-<script defer src="js/systems/castle.js"></script>
-<script defer src="js/systems/pvp-boss-system.js"></script>
-<script defer src="js/systems/siege.js"></script>
-<script defer src="js/systems/mons.js"></script>
-<script defer src="js/data/ability-fx.js"></script>
-<script defer src="js/systems/combat.js"></script>
-<script defer src="js/systems/combat-authority-system.js"></script>
-<script defer src="js/systems/skill-aim-system.js"></script>
-<script defer src="js/systems/difficulty-system.js"></script>
-<script defer src="js/systems/endless-system.js"></script>
-<script defer src="js/systems/result-system.js"></script>
-<script defer src="js/systems/spawner.js"></script>
-<script defer src="js/systems/levelup.js"></script>
-<script defer src="js/systems/gacha.js"></script>
-<script defer src="js/systems/interact.js"></script>
-<script defer src="js/systems/rift.js"></script>
-<script defer src="js/systems/orbs.js"></script>
-<script defer src="js/systems/judgment.js"></script>
-<script defer src="js/systems/events.js"></script>
-<script defer src="js/systems/weather.js"></script>
-<script defer src="js/systems/pathing.js"></script>
-<script defer src="js/systems/progress.js"></script>
-<script defer src="js/systems/hazards.js"></script>
-<!-- red: amigos, salas, cooperativo y ranking -->
-<script defer src="js/net/social.js"></script>
-<script defer src="js/net/codec.js"></script>
-<script defer src="js/net/net.js"></script>
-<script defer src="js/net/coop.js"></script>
-<script defer src="js/net/ranking.js"></script>
-<!-- interfaz -->
-<script defer src="js/ui/icons.js"></script>
-<script defer src="js/ui/ui.js"></script>
-<script defer src="js/ui/hud.js"></script>
-<script defer src="js/ui/aim-preview.js"></script>
-<script defer src="js/ui/skill-controls.js"></script>
-<script defer src="js/ui/login.js"></script>
-<script defer src="js/ui/test.js"></script>
-<script defer src="js/systems/mastery.js"></script>
-<script defer src="js/systems/mastery-fx.js"></script>
-<script defer src="assets/future-use/egg-hatching/egg-hatching.js"></script>
-<script defer src="js/systems/research.js"></script>
-<script defer src="js/systems/hatch.js"></script>
-<script defer src="js/ui/menu.js"></script>
-<script defer src="js/ui/region-ui.js"></script>
-<script defer src="js/ui/slots.js"></script>
-<script defer src="js/ui/gacha-ui.js"></script>
-<script defer src="js/ui/shop-ui.js"></script>
-<script defer src="js/ui/run-ui.js"></script>
-<script defer src="js/ui/social-ui.js"></script>
-<script defer src="js/ui/ranking-ui.js"></script>
-<script defer src="js/ui/mod-ui.js"></script>
-<script defer src="js/ui/goals-ui.js"></script>
-<script defer src="js/ui/settings-ui.js"></script>
-<script defer src="js/ui/layout-ui.js"></script>
-<script defer src="js/ui/support-ui.js"></script>
-<script defer src="js/ui/news-ui.js"></script>
-<script defer src="js/core/updater.js"></script>
-<!-- juego -->
-<script defer src="js/game.js"></script>
-<script defer src="js/core/watch.js"></script>
-<script defer src="js/main.js"></script>
+<script defer src="js/app.min.js?v=04db6b4342"></script>
 </body>
 </html>
