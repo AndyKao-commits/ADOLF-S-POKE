@@ -774,9 +774,13 @@ G.MenuUI = (() => {
       </div>`;
     const rest = $('dex-rest');
     if (rest) rest.innerHTML = own ? `
-        ${bar('HP', q.hp, max.hp, q.hp)}
+        ${bar('Vida', q.hp, max.hp, q.hp)}
         ${bar('Ataque', q.pa, max.atk, '×' + q.pa.toFixed(2), 'pa')}
+        ${bar('At. Esp.', q.sa, max.atk, '×' + q.sa.toFixed(2), 'sa')}
+        ${bar('Defensa', q.df, max.def, Math.round(q.df), 'df')}
+        ${bar('Def. Esp.', q.sd, max.def, Math.round(q.sd), 'sd')}
         ${bar('Velocidad', q.spd, max.spd, Math.round(q.spd), 'spd')}
+        <p class="sub center" style="margin:6px 0 0">Pega mejor con ataques <b class="gold">${G.Stats.sideOf(q) === 'special' ? 'especiales' : 'físicos'}</b></p>
         <p class="dex-move">Empieza con <b class="gold">${G.T(G.Moves.BY_ID[G.startMoveOf(dex)].name, 'move')}</b></p>
         <p class="move-icons" title="Movimientos que puede aprender">
           ${G.Moves.poolFor(p).map(id => `<span title="${G.T(G.Moves.BY_ID[id].name, 'move')}">${G.Icons.html('move:' + id, 16)}</span>`).join('')}</p>

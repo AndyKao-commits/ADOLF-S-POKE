@@ -1257,4 +1257,5 @@ G.I18n.add({
   "Los textos en chino se ven otra vez.": "Chinese text shows again.",
   "Los huevos de incubar dan investigación según el nivel: normal 5–10 %, raro 8–13 %, legendario 11–16 % y épico 15–20 %. El resultado se guarda antes de la animación.": "Hatching eggs grant research by tier: normal 5–10%, rare 8–13%, legendary 11–16% and epic 15–20%. The result is saved before the animation.",
   "En cada partida puedes conseguir como mucho 25 tickets y 2 tickets ×10. Al llegar al límite se avisa una vez, y los tickets que ya tenías siguen en la cuenta.": "Each run can grant at most 25 tickets and 2 ×10 tickets. You are told once at the limit, and tickets you already had stay on the account.",
+  "En la colección, debajo del dibujo, vuelven las seis estadísticas: vida, ataque, ataque especial, defensa, defensa especial y velocidad.": "In the collection, under the picture, all six stats are back: HP, Attack, Sp. Atk, Defense, Sp. Def and Speed.",
 });
