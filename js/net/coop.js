@@ -54,6 +54,7 @@ G.Coop = (() => {
   const STALL_MS = 2500;
   let members = [];
   let spendPending = 0, hostCandy = 0;
+  let wipeLeft = null;
 
   // ---------------- escalado de dificultad ----------------
   // mode 'auto': la fórmula usa a los que estáis. 'count': usa un número fijo
@@ -237,7 +238,8 @@ G.Coop = (() => {
             local.dead ? 1 : 0, m ? m.id : '', m ? m.lvl : 1, r1(local.magnet), r2(local.aim), r2(local.xpMul),
             r2(local.reviveT || 0), api.choosing && api.choosing() ? 1 : 0, doneSeq, api.watching ? api.watching() : '',
             r1(local.level || 1),
-            local.enabledMoves().filter(x => x.kind !== 'orbit' || (G.Siege && G.Siege.up)).map(x => x.id + ':' + (x.lvl || 1)).join(',').slice(0, 180)];
+            local.enabledMoves().filter(x => x.kind !== 'orbit' || (G.Siege && G.Siege.up)).map(x => x.id + ':' + (x.lvl || 1)).join(',').slice(0, 180),
+            G.Items && G.Items.reviveCode ? G.Items.reviveCode(local) : 0];
   }
 
   /** Número que llega por la red: si no es un número de verdad vale `def`, y si se pasa se queda en el tope. */
@@ -252,7 +254,7 @@ G.Coop = (() => {
              mag: num(a[9], 0, 0, 5000), aim: num(a[10], 0, -10, 10), xpMul: num(a[11], 1, 0.1, 20),
              rev: num(a[12], 0, 0, 60), ch: a[13] === undefined ? undefined : a[13] ? 1 : 0, ld: num(a[14], 0, 0, 1e9),
              wa: typeof a[15] === 'string' ? a[15].slice(0, 64) : '', lv: num(a[16], 1, 1, 9999),
-             skills: typeof a[17] === 'string' ? a[17].slice(0, 180) : '' };
+             skills: typeof a[17] === 'string' ? a[17].slice(0, 180) : '', rk: num(a[18], 0, 0, 26) };
   }
 
   /** Anfitrión: dónde mira un invitado (él mismo, o el compañero vivo que mira estando caído). */
@@ -307,6 +309,7 @@ G.Coop = (() => {
     const ja = G.Judgment.netState();       // Arceus en la Sentencia
     if (ja) f.ja = ja;
     if (G.Castle && G.Castle.up) f.ch = G.Castle.snapshot();
+    if (wipeLeft != null) f.wd = r2(wipeLeft);
     if (G.Siege && G.Siege.up) f.sg = G.Siege.snapshot();
     // Siempre: quién está eligiendo y, si hay cartas de nivel, cuáles (ver arriba).
     f.ho = holdNames();
@@ -457,6 +460,13 @@ G.Coop = (() => {
         case 'cu':
           if (m && m.pl) G.Spawner.eliteWave(m.pl);
           break;
+        case 'ru': resolveRevive(from, ev[1]); break;
+        case 'rg': markGiveUp(from); break;
+        case 'rno': {
+          const who = mates.get(from);
+          if (who && who.pl) who.pl._reviveLock = false;
+          break;
+        }
         case 'sg':
           if (G.Siege && G.Siege.up) G.Siege.applyHit(ev[1], ev[2], ev[3] || from);
           break;
@@ -506,6 +516,8 @@ G.Coop = (() => {
     for (const ev of msg.ev || []) applyHostEvent(ev);
     if (msg.ja) G.Judgment.netApply(msg.ja);
     if (msg.ch && G.Castle && G.Castle.up) G.Castle.net(msg.ch);
+    if (typeof msg.wd === 'number') { if (api.downLeft) api.downLeft(msg.wd); }
+    else if (api.downLeft) api.downLeft(null);
     if (msg.sg && G.Siege && G.Siege.up) G.Siege.net(msg.sg);
     // Quién elige y las cartas de nivel, aunque se haya perdido algún aviso.
     if (msg.ho && !(G.Siege && G.Siege.up)) {
@@ -595,6 +607,24 @@ G.Coop = (() => {
       case 'ha': hostAway = !!ev[1]; updateAway(); break;
       case 'sh': api.shiny(ev[1]); break;
       case 'ov': { const cb = api.over; const d = ev[1]; end(); cb(d); break; }
+      case 'rok':
+        if (ev[1] === me && local) {
+          const ok = local.dead && G.Items && G.Items.useRevive(local, ev[2]);
+          if (!ok) {
+            local.revivePick = '';
+            local.reviveAsk = '';
+            if (!host) { outEv.push(['rno']); flushClient(true); }
+          }
+        }
+        break;
+      case 'rno':
+        if (ev[1] === me && local && local.dead) { local.revivePick = ''; local.reviveAsk = ''; }
+        break;
+      case 'rg': {
+        const who = ev[1] === me ? local : ((mates.get(ev[1]) || {}).pl);
+        if (who) who.reviveGiveUp = true;
+        break;
+      }
       case 'ph':
         if (ev[3] && ev[3] === ev[1]) break;
         if (ev[1] === me && local && !local.dead) {
@@ -812,6 +842,41 @@ G.Coop = (() => {
     if (!ok) { G.CombatAuthority.undo(req); rejectSkill(req.castId, from); return; }
     confirmSkill(verdict.confirm);
   }
+  function setWipe(v) { wipeLeft = v == null ? null : Math.max(0, v); }
+  function askRevive(kind) {
+    if (!active || (G.Modes && G.Modes.is('siege'))) return;
+    if (host) resolveRevive(me, kind);
+    else { outEv.push(['ru', kind]); flushClient(true); }
+  }
+  function giveUpRevive() {
+    if (!active) return;
+    if (local) local.reviveGiveUp = true;
+    if (host) markGiveUp(me);
+    else { outEv.push(['rg']); flushClient(true); }
+  }
+  function markGiveUp(uid) {
+    const p = uid === me ? local : ((mates.get(uid) || {}).pl);
+    if (p) p.reviveGiveUp = true;
+    emit(['rg', uid], uid);
+  }
+  function resolveRevive(uid, kind) {
+    if (!host || !active || (G.Modes && G.Modes.is('siege'))) return;
+    if (kind !== 'revive' && kind !== 'maxrevive' && kind !== 'revival') return;
+    const p = uid === me ? local : ((mates.get(uid) || {}).pl);
+    if (!p || !p.dead || p._reviveLock) return;
+    const code = uid === me ? (G.Items && G.Items.reviveCode(local)) : ((p.net && p.net.rk) || 0);
+    if (!G.Items || !G.Items.kitHas(code, kind)) { emit(['rno', uid]); return; }
+    p._reviveLock = true;
+    if (uid === me) {
+      if (!G.Items.useRevive(local, kind)) {
+        p._reviveLock = false;
+        local.revivePick = '';
+        local.reviveAsk = '';
+        return;
+      }
+    }
+    emit(['rok', uid, kind]);
+  }
   function pickupValue(o) {
     if (active && host && o) emit(['pv', o.id, o.value | 0]);
   }
@@ -825,6 +890,7 @@ G.Coop = (() => {
     broadcast(ev) { emit(ev); },
     toHost(ev) { if (active && !host) { outEv.push(ev); flushClient(true); } },
     noteCandySpend, grantCandy, pickupValue, noteSkill, confirmSkill, rejectSkill, applySkill,
+    askRevive, giveUpRevive, setWipe,
     mate(u) { return mates.get(u); },
     get mates() { return [...mates.values()]; },
     get members() { return members; },

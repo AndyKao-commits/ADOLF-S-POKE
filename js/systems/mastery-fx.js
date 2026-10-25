@@ -9,23 +9,25 @@ G.MasteryFX = (() => {
   const pool = new Map();
   const spare = [];
 
-  const BRONZE = { ring: '#B87333', bright: '#D49A62', duration: 1.2, startRadius: 8, particles: 4, maxAlpha: 0.55 };
+  const BRONZE = { ring: '#FF9A3C', bright: '#FFE7C2', duration: 1.35, startRadius: 14, particles: 8, maxAlpha: 1 };
   const SILVER = {
-    colors: ['#D7DEE8', '#F4F7FF', '#FFFFFF'], maxParticles: 3,
-    spawnMin: 0.35, spawnMax: 0.55, lifeMin: 0.5, lifeMax: 0.8,
-    sizeMin: 1.5, sizeMax: 2.8, maxAlpha: 0.55
+    colors: ['#FFFFFF', '#EAF4FF', '#FFFFFF'], maxParticles: 14,
+    spawnMin: 0.06, spawnMax: 0.12, lifeMin: 0.8, lifeMax: 1.35,
+    sizeMin: 3, sizeMax: 5.2, maxAlpha: 1,
+    glowColor: '#FFFFFF', glowAlphaMin: 0.42, glowAlphaMax: 0.66, breatheSeconds: 1.6,
+    groundColor: '#F4F8FF'
   };
   const GOLD = {
-    glowColor: '#FFF1C7', glowAlphaMin: 0.12, glowAlphaMax: 0.18, breatheSeconds: 2.4,
-    particleColors: ['#FFF1C7', '#FFFFFF'], maxParticles: 5,
-    spawnMin: 0.25, spawnMax: 0.45, lifeMin: 1.2, lifeMax: 2.2, sizeMin: 1.5, sizeMax: 3,
-    riseMin: 10, riseMax: 22
+    glowColor: '#FFD24A', glowAlphaMin: 0.66, glowAlphaMax: 0.92, breatheSeconds: 1.5,
+    particleColors: ['#FFD24A', '#FFFFFF'], maxParticles: 18,
+    spawnMin: 0.05, spawnMax: 0.10, lifeMin: 0.9, lifeMax: 1.5, sizeMin: 3.2, sizeMax: 5.6,
+    riseMin: 22, riseMax: 40, groundColor: '#FFD24A'
   };
   const DIAMOND = {
-    glowColor: '#FFD35A', glowAlphaMin: 0.22, glowAlphaMax: 0.32, breatheSeconds: 1.8,
-    particleColors: ['#FFD35A', '#FFF0A0', '#FFFFFF'], maxParticles: 12,
-    spawnMin: 0.10, spawnMax: 0.22, lifeMin: 1.0, lifeMax: 2.0, sizeMin: 2, sizeMax: 4,
-    riseMin: 10, riseMax: 22, groundColor: '#FFD35A', groundAlphaMin: 0.16, groundAlphaMax: 0.24
+    glowColor: '#FFB400', glowAlphaMin: 0.82, glowAlphaMax: 1, breatheSeconds: 1.15,
+    particleColors: ['#FFD35A', '#FFF6C8', '#FFFFFF'], maxParticles: 26,
+    spawnMin: 0.03, spawnMax: 0.07, lifeMin: 0.8, lifeMax: 1.45, sizeMin: 3.4, sizeMax: 6.2,
+    riseMin: 24, riseMax: 46, groundColor: '#FFC83A', groundAlphaMin: 0.68, groundAlphaMax: 0.95
   };
 
   function valid(v) { return VALID.has(v) ? v : ''; }
@@ -156,10 +158,10 @@ G.MasteryFX = (() => {
     const s = slot(p);
     tick(s.parts, dt);
     const moving = !!(p.walking && p.spd > MIN_WALK);
-    if (!moving) { s.wait = 0; return; }
     if (!onScreen(p) || s.parts.length >= cap(SILVER.maxParticles)) return;
-    if (due(s, dt, SILVER.spawnMin, SILVER.spawnMax)) {
-      if (s.parts.length < cap(SILVER.maxParticles)) pushMote(s, p, SILVER, true);
+    const slow = moving ? 1 : 1.8;
+    if (due(s, dt, SILVER.spawnMin * slow, SILVER.spawnMax * slow)) {
+      if (s.parts.length < cap(SILVER.maxParticles)) pushMote(s, p, SILVER, moving);
     }
   }
   function updateMotes(p, dt, cfg) {
@@ -188,15 +190,18 @@ G.MasteryFX = (() => {
   function drawGlow(ctx, p, cfg, mul) {
     const beat = pulse(p, cfg);
     const alpha = (cfg.glowAlphaMin + (cfg.glowAlphaMax - cfg.glowAlphaMin) * beat) * mul;
-    const rx = Math.max(cfg === DIAMOND ? 38 : 30, p.r * (cfg === DIAMOND ? 2.6 : 2.2));
-    const ry = Math.max(cfg === DIAMOND ? 30 : 24, (p.bodyH || 28) * (cfg === DIAMOND ? 0.82 : 0.72));
-    const y = p.y - (p.bodyH || 28) * 0.45;
+    const reach = cfg === DIAMOND ? 4.4 : cfg === GOLD ? 3.7 : 3.1;
+    const rx = Math.max(cfg === DIAMOND ? 78 : cfg === GOLD ? 64 : 52, p.r * reach);
+    const ry = Math.max(cfg === DIAMOND ? 64 : cfg === GOLD ? 52 : 42, (p.bodyH || 28) * (cfg === DIAMOND ? 1.35 : cfg === GOLD ? 1.15 : 1));
+    const y = p.y - (p.bodyH || 28) * 0.48;
     ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
     ctx.translate(p.x, y);
     ctx.scale(1, ry / rx);
-    const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+    const gradient = ctx.createRadialGradient(0, 0, rx * 0.08, 0, 0, rx);
     gradient.addColorStop(0, withAlpha(cfg.glowColor, alpha));
-    gradient.addColorStop(0.45, withAlpha(cfg.glowColor, alpha * 0.55));
+    gradient.addColorStop(0.38, withAlpha(cfg.glowColor, alpha * 0.72));
+    gradient.addColorStop(0.72, withAlpha(cfg.glowColor, alpha * 0.28));
     gradient.addColorStop(1, withAlpha(cfg.glowColor, 0));
     ctx.fillStyle = gradient;
     ctx.beginPath();
@@ -207,46 +212,76 @@ G.MasteryFX = (() => {
   function drawParts(ctx, p, front, maxAlpha, mul) {
     const s = pool.get(p);
     if (!s) return;
-    for (const q of s.parts) {
-      if (!!q.front !== front) continue;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    s.parts.forEach((q, i) => {
+      if (!!q.front !== front) return;
       const a = maxAlpha * (1 - q.t / q.life) * mul;
-      if (a <= 0.01) continue;
+      if (a <= 0.01) return;
+      const sz = q.size;
+      ctx.fillStyle = withAlpha(q.color, a * 0.55);
+      ctx.fillRect(q.x - sz, q.y - sz, sz * 2, sz * 2);
       ctx.fillStyle = withAlpha(q.color, a);
-      ctx.fillRect(q.x - q.size * 0.5, q.y - q.size * 0.5, q.size, q.size);
-    }
+      ctx.fillRect(q.x - sz * 0.5, q.y - sz * 0.5, sz, sz);
+      if (p.masteryRank === 'diamond' && i % 2 === 0) {
+        ctx.fillRect(q.x - sz * 1.6, q.y - sz * 0.32, sz * 3.2, sz * 0.64);
+        ctx.fillRect(q.x - sz * 0.32, q.y - sz * 1.6, sz * 0.64, sz * 3.2);
+      }
+    });
+    ctx.restore();
   }
   function drawBronze(ctx, p, mul) {
-    const s = pool.get(p);
-    if (!s || !s.ring) return;
-    const k = Math.min(1, s.ring.t / BRONZE.duration);
-    const endR = Math.max(42, p.r * 2.6);
-    const rad = BRONZE.startRadius + (endR - BRONZE.startRadius) * k;
-    const a = BRONZE.maxAlpha * (1 - k) * mul;
+    const beat = breathe(gameTime() + masterySeed(p) * 0.01, 1.7);
+    const rad = Math.max(42, p.r * 2.6);
+    const a = (0.82 + beat * 0.18) * mul;
     ctx.save();
     ctx.translate(p.x, p.y);
+    ctx.fillStyle = withAlpha(BRONZE.ring, a * 0.28);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, rad, rad * 0.42, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = withAlpha(BRONZE.ring, a * 0.7);
+    ctx.lineWidth = 9;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, rad * 1.16, rad * 0.5, 0, 0, Math.PI * 2);
+    ctx.stroke();
     ctx.strokeStyle = withAlpha(BRONZE.bright, a);
-    ctx.lineWidth = 2.4;
+    ctx.lineWidth = 4.2;
     ctx.beginPath();
-    ctx.ellipse(0, 0, rad, rad * 0.4, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, rad, rad * 0.42, 0, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.strokeStyle = withAlpha(BRONZE.ring, a * 0.85);
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.ellipse(0, 0, rad * 0.86, rad * 0.34, 0, 0, Math.PI * 2);
-    ctx.stroke();
-    for (const b of s.ring.bits) {
-      const d = rad * (0.45 + 0.5 * k);
+    const spin = gameTime() * 1.8;
+    for (let i = 0; i < 6; i++) {
+      const ang = spin + i * Math.PI / 3;
       ctx.fillStyle = withAlpha(BRONZE.bright, a);
-      ctx.fillRect(Math.cos(b.a) * d - 1, Math.sin(b.a) * d * 0.4 - 1, b.size, b.size);
+      ctx.fillRect(Math.cos(ang) * rad - 2.2, Math.sin(ang) * rad * 0.42 - 2.2, 4.4, 4.4);
+    }
+    const s = pool.get(p);
+    if (s && s.ring) {
+      const k = Math.min(1, s.ring.t / BRONZE.duration);
+      const endR = Math.max(52, p.r * 3.1);
+      const burst = BRONZE.startRadius + (endR - BRONZE.startRadius) * k;
+      const ba = BRONZE.maxAlpha * (1 - k) * mul;
+      ctx.strokeStyle = withAlpha(BRONZE.bright, ba);
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, burst, burst * 0.42, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      for (const b of s.ring.bits) {
+        const d = burst * (0.45 + 0.5 * k);
+        ctx.fillStyle = withAlpha(BRONZE.bright, ba);
+        ctx.fillRect(Math.cos(b.a) * d - 1.5, Math.sin(b.a) * d * 0.42 - 1.5, b.size + 1.2, b.size + 1.2);
+      }
     }
     ctx.restore();
   }
   function drawDiamondGround(ctx, p, mul) {
     const beat = pulse(p, DIAMOND);
     const alpha = (DIAMOND.groundAlphaMin + (DIAMOND.groundAlphaMax - DIAMOND.groundAlphaMin) * beat) * mul;
-    const w = Math.max(42, p.r * 2.8);
-    const h = w * 0.28;
+    const w = Math.max(74, p.r * 4.2);
+    const h = w * 0.36;
     ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
     ctx.translate(p.x, p.y);
     ctx.scale(1, h / w);
     const g = ctx.createRadialGradient(0, 0, w * 0.15, 0, 0, w * 0.5);
@@ -256,6 +291,50 @@ G.MasteryFX = (() => {
     ctx.beginPath();
     ctx.arc(0, 0, w * 0.5, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.strokeStyle = withAlpha(DIAMOND.groundColor, Math.min(1, alpha + 0.28));
+    ctx.lineWidth = 4.5;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, w * 0.5, h * 0.9, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = withAlpha('#FFF6C8', Math.min(1, alpha + 0.15));
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, w * 0.32, h * 0.55, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  function drawGoldGround(ctx, p, mul) {
+    const beat = pulse(p, GOLD);
+    const alpha = (0.72 + beat * 0.28) * mul;
+    const w = Math.max(58, p.r * 3.3);
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.translate(p.x, p.y);
+    ctx.fillStyle = withAlpha(GOLD.groundColor, alpha * 0.35);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, w, w * 0.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = withAlpha(GOLD.groundColor, alpha);
+    ctx.lineWidth = 4.5;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, w, w * 0.4, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  function drawSilverGround(ctx, p, mul) {
+    const beat = pulse(p, SILVER);
+    const alpha = (0.55 + beat * 0.3) * mul;
+    const w = Math.max(50, p.r * 2.9);
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.strokeStyle = withAlpha(SILVER.groundColor, alpha);
+    ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, w, w * 0.4, 0, 0, Math.PI * 2);
+    ctx.stroke();
     ctx.restore();
   }
 
@@ -269,6 +348,8 @@ G.MasteryFX = (() => {
     if (mul <= 0) return;
     switch (p.masteryRank) {
       case 'bronze': drawBronze(ctx, p, mul); break;
+      case 'silver': drawSilverGround(ctx, p, mul); break;
+      case 'gold': drawGoldGround(ctx, p, mul); break;
       case 'diamond': drawDiamondGround(ctx, p, mul); break;
     }
   }
@@ -277,9 +358,9 @@ G.MasteryFX = (() => {
     const mul = masteryFxAlpha(p);
     if (mul <= 0) return;
     switch (p.masteryRank) {
-      case 'silver': drawParts(ctx, p, false, SILVER.maxAlpha, mul); break;
-      case 'gold': drawGlow(ctx, p, GOLD, mul); drawParts(ctx, p, false, 0.7, mul); break;
-      case 'diamond': drawGlow(ctx, p, DIAMOND, mul); drawParts(ctx, p, false, 0.85, mul); break;
+      case 'silver': drawGlow(ctx, p, SILVER, mul); drawParts(ctx, p, false, SILVER.maxAlpha, mul); break;
+      case 'gold': drawGlow(ctx, p, GOLD, mul); drawParts(ctx, p, false, 1, mul); break;
+      case 'diamond': drawGlow(ctx, p, DIAMOND, mul); drawParts(ctx, p, false, 1, mul); break;
     }
   }
   function drawFront(ctx, p) {
@@ -288,8 +369,8 @@ G.MasteryFX = (() => {
     if (mul <= 0) return;
     switch (p.masteryRank) {
       case 'silver': drawParts(ctx, p, true, SILVER.maxAlpha, mul); break;
-      case 'gold': drawParts(ctx, p, true, 0.7, mul); break;
-      case 'diamond': drawParts(ctx, p, true, 0.85, mul); break;
+      case 'gold': drawParts(ctx, p, true, 1, mul); break;
+      case 'diamond': drawParts(ctx, p, true, 1, mul); break;
     }
   }
 

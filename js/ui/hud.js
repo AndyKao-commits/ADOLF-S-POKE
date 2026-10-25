@@ -911,10 +911,105 @@ G.HUD = (() => {
           : 'WASD mover · 1-4 encender o apagar · M mapa · Espacio sprint · Esc pausa'), w / 2, h - 4);
     }
 
+    if (pl && pl.dead) drawDowned(ctx, w, h, pl);
     ctx.restore();
   }
 
   // ---------------- cooperativo ----------------
+
+  /** Caído: eliges el objeto, ves si te levantan y puedes mirar a un compañero. */
+  function drawDowned(ctx, w, h, pl) {
+    if (G.Siege && G.Siege.up) return;
+    const coop = !!(G.Coop && G.Coop.active);
+    const allDown = !coop || G.Coop.players().every(p => p.dead);
+    const kinds = [['revive', 'Usar Revivir', 'Usar Revivir · Ya se usó'], ['maxrevive', 'Usar Revivir Máximo', 'Usar Revivir Máximo · Ya se usó'], ['revival', 'Usar Reponerse', 'Usar Reponerse · Ya se usó']];
+    const names = { revive: 'Revivir', maxrevive: 'Revivir Máximo', revival: 'Reponerse' };
+    const shown = kinds.filter(k => G.Items && G.Items.showRevive(pl, k[0]));
+    const locked = !!pl.revivePick;
+    const asking = !!pl.reviveAsk && !locked;
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    let y = Math.max(78, h * 0.36);
+    ctx.font = F(800, 20);
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = 'rgba(0,0,0,.75)';
+    const msg = coop ? (allDown ? 'Habéis caído todos…' : 'Has caído: un compañero puede levantarte') : 'Has caído';
+    ctx.strokeText(msg, w / 2, y);
+    ctx.fillStyle = '#ffb0b8';
+    ctx.fillText(msg, w / 2, y);
+    y += 32;
+    const readyAny = shown.some(k => G.Items.kindReady(pl, k[0]));
+    if (!shown.length || !readyAny) {
+      ctx.font = F(800, 14);
+      ctx.strokeText('No tienes objeto de revivir.', w / 2, y);
+      ctx.fillStyle = '#ffd2a8';
+      ctx.fillText('No tienes objeto de revivir.', w / 2, y);
+      y += 26;
+    }
+    for (const k of shown) {
+      const used = pl.reviveSpent && pl.reviveSpent[k[0]];
+      const on = !used && !locked && !asking && G.Items.kindReady(pl, k[0]);
+      y = downBtn(ctx, w / 2, y, used ? k[2] : k[1], on, () => G.Game.askRevive(k[0]));
+    }
+    if (coop && !allDown && readyAny && !locked && !asking) y = downBtn(ctx, w / 2, y, 'Guardar el objeto y esperar al compañero', true, () => G.Game.keepRevive());
+    if (allDown && readyAny && !locked && !pl.reviveGiveUp) y = downBtn(ctx, w / 2, y, 'Abandonar la resurrección', true, () => G.Game.giveUpRevive());
+    if (allDown && G.Game.downLeft && G.Game.downLeft() != null && (readyAny || coop)) {
+      y += 16;
+      ctx.font = F(800, 14);
+      const left = G.I18n.f('Elige en {x} s', Math.max(0, Math.ceil(G.Game.downLeft())));
+      ctx.strokeText(left, w / 2, y);
+      ctx.fillStyle = '#ffe08a';
+      ctx.fillText(left, w / 2, y);
+      y += 24;
+    }
+    if (coop) {
+      const f = Math.max(0, Math.min(1, (pl.reviveT || 0) / G.Player.REVIVE_TIME));
+      bar(ctx, w / 2 - 110, y, 220, 10, f, '#5fe08a');
+      y += 24;
+      const w0 = G.Game.watching;
+      if (w0 || G.Coop.puppets().some(p => !p.dead)) {
+        const m = w0 && G.Coop.mates.find(x => x.pl === w0);
+        const label = (m ? G.I18n.f('Viendo a {x}', m.name) + ' · ' + G.I18n.t('cambiar') : G.I18n.t('Ver a un compañero')) + (G.Touch.active ? '' : '  (E)');
+        y = downBtn(ctx, w / 2, y, label, !asking, () => G.Game.cycleWatch(1), m ? m.color : 'rgba(244,248,255,.8)');
+      }
+    }
+    if (asking) {
+      ctx.fillStyle = 'rgba(6,10,18,.45)';
+      ctx.fillRect(0, 0, w, h);
+      const name = G.I18n.t(names[pl.reviveAsk] || 'Revivir');
+      const q = G.I18n.f('¿Usar {name} para levantarte?', name);
+      const py = h * 0.46;
+      roundRect(ctx, w / 2 - 230, py - 28, 460, 96, 12);
+      ctx.fillStyle = 'rgba(8,12,22,.96)';
+      ctx.fill();
+      ctx.font = F(800, 16);
+      ctx.strokeStyle = 'rgba(0,0,0,.8)';
+      ctx.lineWidth = 4;
+      ctx.strokeText(q, w / 2, py);
+      ctx.fillStyle = '#fff';
+      ctx.fillText(q, w / 2, py);
+      downBtn(ctx, w / 2 - 84, py + 18, 'Sí, usarlo', true, () => G.Game.confirmRevive(), '#9dffb8', 148);
+      downBtn(ctx, w / 2 + 84, py + 18, 'Ahora no', true, () => G.Game.cancelRevive(), '#ffd2a8', 148);
+    }
+    ctx.restore();
+  }
+
+  function downBtn(ctx, cx, y, label, on, click, stroke, bw) {
+    ctx.font = F(800, 13);
+    const width = bw || Math.max(168, ctx.measureText(label).width + 28);
+    const x = cx - width / 2;
+    roundRect(ctx, x, y, width, 28, 8);
+    ctx.fillStyle = on ? 'rgba(10,16,28,.78)' : 'rgba(10,16,28,.45)';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = stroke || (on ? 'rgba(244,248,255,.85)' : 'rgba(244,248,255,.28)');
+    ctx.stroke();
+    ctx.fillStyle = on ? '#f4f8ff' : 'rgba(244,248,255,.45)';
+    ctx.fillText(label, x + width / 2, y + 14);
+    if (on) G.Touch.addButton(x, y, width, 28, click, 8);
+    return y + 34;
+  }
 
   /**
    * - Vida de cada compañero debajo de la tuya.
@@ -984,36 +1079,16 @@ G.HUD = (() => {
       ctx.restore();
     }
 
-    // Tú, caído.
-    if (pl.dead) {
+    if (pl.dead && G.Siege && G.Siege.up) {
       ctx.save();
       ctx.textAlign = 'center';
       ctx.font = F(800, 20);
       ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.75)';
-      const siege = !!(G.Siege && G.Siege.up);
-      const left = siege && G.Siege.respawnLeft ? Math.max(1, Math.ceil(G.Siege.respawnLeft())) : 0;
-      const msg = siege ? G.I18n.f('Has caído · reapareces en {x}', left)
-        : G.Coop.players().every(p => p.dead) ? 'Habéis caído todos…' : 'Has caído: un compañero puede levantarte';
+      const left = G.Siege.respawnLeft ? Math.max(1, Math.ceil(G.Siege.respawnLeft())) : 0;
+      const msg = G.I18n.f('Has caído · reapareces en {x}', left);
       ctx.strokeText(msg, w / 2, h * 0.62);
       ctx.fillStyle = '#ffb0b8';
       ctx.fillText(msg, w / 2, h * 0.62);
-      const f = siege ? 0 : (pl.reviveT || 0) / G.Player.REVIVE_TIME;
-      if (!siege && f > 0) bar(ctx, w / 2 - 110, h * 0.62 + 12, 220, 10, f, '#5fe08a');
-      // Mirar a un compañero vivo mientras tanto (botón, Q / E o LB / RB).
-      const w0 = G.Game.watching;
-      if (!siege && (w0 || G.Coop.puppets().some(p => !p.dead))) {
-        const m = w0 && G.Coop.mates.find(x => x.pl === w0);
-        const label = (m ? G.I18n.f('Viendo a {x}', m.name) + ' · ' + G.I18n.t('cambiar') : G.I18n.t('Ver a un compañero'))
-          + (G.Touch.active ? '' : '  (E)');
-        ctx.font = F(800, 13);
-        const bw = ctx.measureText(label).width + 28, bh = 28, bx = w / 2 - bw / 2, by = h * 0.62 + 32;
-        roundRect(ctx, bx, by, bw, bh, 8);
-        ctx.fillStyle = 'rgba(10,16,28,.75)'; ctx.fill();
-        ctx.lineWidth = 2; ctx.strokeStyle = m ? m.color : 'rgba(244,248,255,.8)'; ctx.stroke();
-        ctx.fillStyle = '#f4f8ff';
-        G.I18n.rawCanvas(ctx, 'fillText', label, w / 2, by + 19);
-        G.Touch.addButton(bx, by, bw, bh, () => G.Game.cycleWatch(1), 8);
-      }
       ctx.restore();
     }
   }

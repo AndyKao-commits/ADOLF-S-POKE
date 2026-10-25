@@ -209,6 +209,7 @@ G.Game = (() => {
     // Para el ranking: el servidor apunta cuándo empieza la partida (anti-trampas).
     if (G.Modes.is('siege') || !coop || G.Coop.isHost) G.Ranking.runStarted(coop ? 'g' : 's', G.Modes.is('siege'));
     deathT = 0;
+    downLeft = null;
 
     state = 'playing';
     fieldT = 45;
@@ -297,6 +298,7 @@ G.Game = (() => {
     choosing() { return state === 'choice' || state === 'stall'; },
     /** A quién miras mientras estás caído (uid, o '' si a ti). */
     watching() { const w = watched(); return w ? w.uid : ''; },
+    downLeft(v) { downLeft = v == null ? null : v; },
     inLevelUp() { return state === 'levelup'; },
     shiny(dex) { G.onShinyCaught({ dex, name: (G.DEX_BY[dex] || {}).name || '' }); },
     over(d) {
@@ -1002,7 +1004,7 @@ G.Game = (() => {
 
   // ---------------- bucle ----------------
 
-  let deathT = 0;
+  let deathT = 0, downLeft = null;
   let fieldT = 45;
 
   // Caído en grupo: puedes mirar a un compañero vivo. Sólo cambia a quién
@@ -1089,14 +1091,24 @@ G.Game = (() => {
     // Tras caer, deja que se vea la animación de Faint antes del resumen.
     // (En la arena de la grieta no: allí caer sólo te echa de vuelta.)
     if (pl.dead && !coop && !G.Rift.inArena && !(G.Siege && G.Siege.up)) {
-      deathT += dt;
+      const can = G.Items && G.Items.reviveReady(pl) && !pl.reviveGiveUp && !pl.revivePick;
       pl.update(dt);
       G.EnemyMgr.update(dt * 0.3, pl);
       G.FX.update(dt);
       G.Camera.follow(pl.x, pl.y, dt);
+      if (pl.reviveGiveUp) { deathT = 0; downLeft = null; endRun(true); return; }
+      if (can) {
+        if (downLeft == null) downLeft = 10;
+        downLeft -= dt;
+        if (downLeft <= 0) { deathT = 0; downLeft = null; endRun(true); }
+        return;
+      }
+      downLeft = null;
+      deathT += dt;
       if (deathT > 1.3) { deathT = 0; endRun(true); }
       return;
     }
+    if (!coop) downLeft = null;
     time += dt;
 
     const b = Math.floor(time / 240);
@@ -1163,6 +1175,7 @@ G.Game = (() => {
 
   /** Caído en grupo: un compañero a tu lado te va levantando. */
   function reviveTick(dt) {
+    if (!pl.dead || pl.revivePick) return;
     const helper = G.Coop.puppets().some(p => !p.dead && G.U.dist2(p.x, p.y, pl.x, pl.y) < 56 * 56);
     pl.reviveT = helper ? (pl.reviveT || 0) + dt : Math.max(0, (pl.reviveT || 0) - dt * 0.5);
     if (pl.reviveT >= G.Player.REVIVE_TIME) pl.revive(0.5);
@@ -1170,13 +1183,54 @@ G.Game = (() => {
 
   /** Anfitrión: si caéis todos, se acaba (tras ver caer al último). */
   function checkAllDown(dt) {
-    if (G.Rift.inArena || !G.Coop.players().every(p => p.dead)) { deathT = 0; return; }
+    if (G.Rift.inArena || (G.Siege && G.Siege.up) || !G.Coop.players().every(p => p.dead)) {
+      deathT = 0; downLeft = null; G.Coop.setWipe(null); return;
+    }
+    const pending = G.Coop.players().some(p => p._reviveLock);
+    const waiting = pending || G.Coop.players().some(p => G.Items && G.Items.reviveReady(p) && !p.reviveGiveUp);
+    if (waiting) {
+      deathT = 0;
+      if (downLeft == null) downLeft = 10;
+      downLeft -= dt;
+      G.Coop.setWipe(Math.max(0, downLeft));
+      if (downLeft <= 0 && !pending) { downLeft = null; G.Coop.setWipe(null); G.Coop.over(summary()); endRun(true); }
+      return;
+    }
+    downLeft = null;
+    G.Coop.setWipe(null);
     deathT += dt;
     if (deathT > 1.6) {
       deathT = 0;
       G.Coop.over(summary());
       endRun(true);
     }
+  }
+  function askRevive(kind) {
+    if (!pl || !pl.dead || pl.revivePick || pl.reviveAsk) return;
+    if (!G.Items || !G.Items.kindReady(pl, kind)) return;
+    pl.reviveAsk = kind;
+  }
+  function confirmRevive() {
+    if (!pl || !pl.dead || pl.revivePick || !pl.reviveAsk) return;
+    const kind = pl.reviveAsk;
+    if (!G.Items || !G.Items.kindReady(pl, kind)) { pl.reviveAsk = ''; return; }
+    pl.revivePick = kind;
+    if (G.Coop.active) G.Coop.askRevive(kind);
+    else if (!G.Items.useRevive(pl, kind)) pl.revivePick = '';
+  }
+  function cancelRevive() {
+    if (!pl || pl.revivePick) return;
+    pl.reviveAsk = '';
+  }
+  function keepRevive() {
+    if (!pl || pl.revivePick) return;
+    pl.reviveAsk = '';
+  }
+  function giveUpRevive() {
+    if (!pl || !pl.dead || pl.revivePick || pl.reviveGiveUp) return;
+    pl.reviveGiveUp = true;
+    pl.reviveAsk = '';
+    if (G.Coop.active) G.Coop.giveUpRevive();
   }
 
   // ---------------- dibujo ----------------
@@ -1392,7 +1446,8 @@ G.Game = (() => {
     debugTime(t) { tampered = true; time = t; },
     /** Para grabar vídeos: cámara lenta (0,5 = mitad de velocidad). */
     debugSpeed(k) { if (k > 1) tampered = true; speedK = k; },
-    togglePause, toggleMap, cycleWatch,
+    togglePause, toggleMap, cycleWatch, askRevive, confirmRevive, cancelRevive, keepRevive, giveUpRevive,
+    downLeft() { return downLeft; },
     /** El compañero al que miras estando caído (o null). */
     get watching() { return watched(); },
     /** Abandona la partida en curso (p. ej. al cerrar sesión desde Ajustes). */

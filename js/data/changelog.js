@@ -10,13 +10,22 @@ G.CHANGELOG = [
     ['El cachorro aguanta 4500. Los jefes de las oleadas 10, 20, 30 y 40 le curan un 5 %. Al entrar en la 50, si está más bajo, sube al 40 %.',
      'The puppy has 4500 HP. The bosses of waves 10, 20, 30 and 40 heal it 5%. Entering wave 50 raises it to at least 40% if it is lower.'],
     ['La oleada 50 es un solo jefe enorme: más vida, más grande, y avisa en rojo antes de golpear. Al caer, la partida termina sin pedir una fusión.',
-     'Wave 50 is one huge boss: more HP, larger, and it warns in red before it hits. When it falls, the run ends without asking for a fusion.']
+     'Wave 50 is one huge boss: more HP, larger, and it warns in red before it hits. When it falls, the run ends without asking for a fusion.'],
+    ['Las oleadas normales traen más monstruos. Los jefes de las 10, 20, 30 y 40 avisan en rojo antes de golpear al cachorro.',
+     'Normal waves bring more monsters. The bosses of waves 10, 20, 30 and 40 warn in red before they hit the puppy.']
+  ] },
+  { d: '2026-10-25', title: ['Maestría', 'Mastery'], chg: [
+    ['La maestría se nota más: el anillo, el polvo, el brillo y el aura dorada se ven con más claridad.',
+     'Mastery stands out more: the ring, the dust, the glow and the gold aura are easier to see.']
   ] },
   { d: '2026-10-25', title: ['Grupo', 'Group'], fix: [
     ['En el grupo, Revivir y Revivir Máximo te levantan una vez al caer. En el asedio no.',
      'In a group, Revive and Max Revive get you up once when you fall. In siege they do not.'],
     ['Si alguien abre la tienda, la partida se para para todos: jugadores y monstruos.',
      'If anyone opens the shop, the run pauses for everyone: players and monsters.']
+  ], chg: [
+    ['Al caer eliges si usas Revivir, Revivir Máximo o Reponerse. No se gastan solos.',
+     'When you fall you choose Revive, Max Revive or Rally. They are not spent on their own.']
   ] },
   { d: '2026-10-24', title: ['Asedio', 'Siege'], chg: [
     ['En el asedio eliges el ataque con 1–4 y lo lanzas con el ratón. No se dispara solo, y el cuerpo no hiere.',

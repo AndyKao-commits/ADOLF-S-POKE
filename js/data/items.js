@@ -294,8 +294,8 @@ G.Items = (() => {
     both(mul('atkMul', 0.25, 'masterball'), flat('luck', 10, 'masterball')));
 
   card({ id: 'maxrevive', name: 'Revivir Máximo', zh: '活力塊', en: 'Max Revive', file: 'max-revive.png', tier: 3, max: 1,
-    desc: 'Prepara un levantamiento al 70 % de vida. Solo uno por partida, compartido.', zd: '倒下時恢復 70% HP。本局自動復活只限一次。',
-    ed: 'Prepares a revival at 70% HP. Only one automatic revival per run, shared.', stackType: 'revive', reviveRatio: 0.70 }, { on() {}, off() {} });
+    desc: 'Al caer puedes elegir levantarte con el 70 % de vida. Una vez por partida.', zd: '倒下後可選擇恢復 70% HP。每局限一次。',
+    ed: 'When you fall you can choose to get up at 70% HP. Once per run.', stackType: 'revive', reviveRatio: 0.70 }, { on() {}, off() {} });
   card({ id: 'rarecandy', name: 'Caramelo Raro', zh: '神奇糖果', en: 'Rare Candy', file: 'rare-candy.png', tier: 3, max: 1,
     desc: 'Subes 2 niveles al momento y +5 % de daño.', zd: '立即升級 +2，傷害 +5%。',
     ed: 'Level up by 2 right away, and damage +5%.' }, {
@@ -342,8 +342,8 @@ G.Items = (() => {
   card({ id: 'icestone', name: 'Piedra Hielo', zh: '冰之石', en: 'Ice Stone', file: 'ice-stone.png', tier: 2, max: 1,
     desc: 'Un enemigo frenado explota al caer.', zd: '減速敵人倒下時爆炸。', ed: 'A slowed enemy explodes when it falls.' }, { on() {}, off() {} });
   card({ id: 'revive', name: 'Revivir', zh: '復活草', en: 'Revive', file: 'revive.png', tier: 3, max: 1,
-    desc: 'Prepara un levantamiento al 50 % de vida. Solo uno por partida, compartido.', zd: '倒下時恢復 50% HP。本局自動復活只限一次。',
-    ed: 'Prepares a revival at 50% HP. Only one automatic revival per run, shared.', stackType: 'revive', reviveRatio: 0.50 }, { on() {}, off() {} });
+    desc: 'Al caer puedes elegir levantarte con el 50 % de vida. Una vez por partida.', zd: '倒下後可選擇恢復 50% HP。每局限一次。',
+    ed: 'When you fall you can choose to get up at 50% HP. Once per run.', stackType: 'revive', reviveRatio: 0.50 }, { on() {}, off() {} });
   card({ id: 'powerbracer', name: 'Brazal Firme', zh: '力量護腕', en: 'Power Bracer', file: 'power-bracer.png', tier: 3, max: 1,
     desc: '+30 % de daño y -15 % de velocidad de movimiento. Solo una copia.', zd: '傷害 +30%，移動速度 -15%。只能持有一份。',
     ed: 'Damage +30% and move speed -15%. Only one copy.' }, both(mul('atkMul', 0.30, 'powerbracer'), mul('spdMul', -0.15, 'powerbracer')));
@@ -515,10 +515,8 @@ G.Items = (() => {
     if (copies(pl, it.id) >= it.max) return false;
     if (sealed(pl, it.id)) return false;
     if (it.stackType === 'revive') {
-      const c = pl.reviveCharge;
-      if (c && c.used) return false;
-      if (it.id === 'revive' && held(pl, 'maxrevive')) return false;
-      if (c && (c.hpRatio || 0) >= (it.reviveRatio || 0)) return false;
+      if (pl.reviveSpent && pl.reviveSpent[it.id]) return false;
+      if (pl.reviveHad && pl.reviveHad[it.id]) return false;
     }
     return true;
   }
@@ -533,13 +531,51 @@ G.Items = (() => {
   function choices(pl) { return held(pl, 'honey') ? 4 : 3; }
 
   function refreshRevive(p) {
-    if (!p) return;
-    if (!p.reviveCharge) p.reviveCharge = { source: null, hpRatio: 0, used: false };
-    if (p.reviveCharge.used) return;
-    let best = p.revival ? { source: 'upgrade', hpRatio: 0.35 } : { source: null, hpRatio: 0 };
-    if (held(p, 'revive') && best.hpRatio < 0.50) best = { source: 'revive', hpRatio: 0.50 };
-    if (held(p, 'maxrevive') && best.hpRatio < 0.70) best = { source: 'maxrevive', hpRatio: 0.70 };
-    p.reviveCharge = { source: best.source, hpRatio: best.hpRatio, used: false };
+    if (!p || !p.reviveHad) return;
+    if (held(p, 'revive')) p.reviveHad.revive = true;
+    if (held(p, 'maxrevive')) p.reviveHad.maxrevive = true;
+    if (p.revival) p.reviveHad.revival = true;
+  }
+  const REVIVE_RATIO = { revive: 0.5, maxrevive: 0.7, revival: 0.35 };
+  function kindOwned(p, kind) {
+    if (!p) return false;
+    if (kind === 'revival') return !!p.revival;
+    return held(p, kind);
+  }
+  function kindReady(p, kind) {
+    return !!p && p.dead && kindOwned(p, kind) && !(p.reviveSpent && p.reviveSpent[kind]);
+  }
+  function showRevive(p, kind) {
+    if (!p || !p.reviveHad || !p.reviveHad[kind]) return false;
+    if (p.reviveSpent && p.reviveSpent[kind]) return true;
+    return kindOwned(p, kind);
+  }
+  function reviveCode(p) {
+    if (!p || !p.reviveHad) return 0;
+    const bit = k => !p.reviveHad[k] ? 0 : (p.reviveSpent && p.reviveSpent[k]) ? 2 : kindOwned(p, k) ? 1 : 0;
+    return bit('revive') + bit('maxrevive') * 3 + bit('revival') * 9;
+  }
+  function kitHas(code, kind) {
+    const i = kind === 'maxrevive' ? 1 : kind === 'revival' ? 2 : 0;
+    return Math.floor((code | 0) / (3 ** i)) % 3 === 1;
+  }
+  function kitReady(code) {
+    return kitHas(code, 'revive') || kitHas(code, 'maxrevive') || kitHas(code, 'revival');
+  }
+  function reviveReady(p) {
+    if (!p || !p.dead || (G.Modes && G.Modes.is('siege'))) return false;
+    if (p.remote) return kitReady(p.net && p.net.rk);
+    return kindReady(p, 'revive') || kindReady(p, 'maxrevive') || kindReady(p, 'revival');
+  }
+  /** Lo aplica quien tiene el Pokémon, y sólo después de que el anfitrión lo acepte. */
+  function useRevive(p, kind) {
+    if (!p || !p.dead || (G.Modes && G.Modes.is('siege'))) return false;
+    if (!REVIVE_RATIO[kind] || !kindReady(p, kind)) return false;
+    p.reviveSpent = p.reviveSpent || {};
+    p.reviveSpent[kind] = true;
+    if (kind !== 'revival' && p.stacks) p.stacks[kind] = 0;
+    p.revive(REVIVE_RATIO[kind]);
+    return true;
   }
   function gain(p, id) {
     const it = BY[id];
@@ -624,20 +660,7 @@ G.Items = (() => {
     say(p, '1', '#ff9a3d');
     return true;
   }
-  function revive(p) {
-    if (!p || (G.Modes && G.Modes.is('siege'))) return false;
-    const c = p.reviveCharge;
-    if (!c || c.used || !(c.hpRatio > 0)) return false;
-    c.used = true;
-    p.hp = Math.max(1, p.maxHp * c.hpRatio);
-    p.dead = false;
-    p.invuln = 1.5;
-    p.reviveSafe = 1.5;
-    p._hitBy = '';
-    if (G.MasteryFX) G.MasteryFX.onRevive(p);
-    say(p, Math.round(c.hpRatio * 100) + '%', '#7dffb3');
-    return true;
-  }
+  function revive() { return false; }
   function onDamaged(p) {
     if (held(p, 'metronome')) { p._metroT = 0; metro(p, 0); }
     if (held(p, 'smokeball') && Math.random() < 0.25) p.invuln = Math.max(p.invuln || 0, 1.5);
@@ -704,15 +727,11 @@ G.Items = (() => {
       return lang === 'zh' ? '持有上限：x1\n特殊效果不可重複' : lang === 'en' ? 'Hold limit: x1\nThis effect does not stack' : 'Tope: x1\nEl efecto no se repite';
     }
     if (it.stackType === 'revive') {
-      const c = pl && pl.reviveCharge;
-      const ratio = c && c.hpRatio ? c.hpRatio : (it.reviveRatio || 0);
-      const who = c && c.source === 'maxrevive' ? (lang === 'zh' ? '活力塊' : lang === 'en' ? 'Max Revive' : 'Revivir Máximo')
-        : c && c.source === 'revive' ? (lang === 'zh' ? '復活草' : lang === 'en' ? 'Revive' : 'Revivir')
-        : c && c.source === 'upgrade' ? (lang === 'zh' ? '重新振作' : lang === 'en' ? 'Revival' : 'Reponerse')
-        : (lang === 'zh' ? it.zh : lang === 'en' ? it.en : it.name);
-      if (lang === 'zh') return '本局自動復活：' + who + '\n倒下時恢復 ' + Math.round(ratio * 100) + '% HP\n每局限一次';
-      if (lang === 'en') return 'Automatic revival: ' + who + '\nGet up at ' + Math.round(ratio * 100) + '% HP\nOnce per run';
-      return 'Levantarse: ' + who + '\nTe levantas con el ' + Math.round(ratio * 100) + ' %\nUna vez por partida';
+      const ratio = Math.round((it.reviveRatio || 0) * 100);
+      const spent = pl && pl.reviveSpent && pl.reviveSpent[it.id];
+      if (lang === 'zh') return '倒下後自己選擇是否使用\n恢復 ' + ratio + '% HP\n每局限一次' + (spent ? '\n本局已使用' : '');
+      if (lang === 'en') return 'Choose it when you fall\nGet up at ' + ratio + '% HP\nOnce per run' + (spent ? '\nAlready used' : '');
+      return 'Lo eliges al caer\nTe levantas con el ' + ratio + ' %\nUna vez por partida' + (spent ? '\nYa se usó' : '');
     }
     const nowN = n || 0;
     const pair = effectPair(it, nowN, lang);
@@ -777,6 +796,7 @@ G.Items = (() => {
 
   return {
     LIST, BY, BALL, RARITY, roll, rollChoices, gain, text, ballName, choices, breakHeld, canOffer, stackText,
-    shaped, outMul, critMul, onHit, onKill, sash, revive, onDamaged, tick, luckMul, canEvolve, thorns, stackPower, refreshRevive
+    shaped, outMul, critMul, onHit, onKill, sash, revive, onDamaged, tick, luckMul, canEvolve, thorns, stackPower, refreshRevive,
+    kindReady, showRevive, reviveCode, kitHas, reviveReady, useRevive
   };
 })();

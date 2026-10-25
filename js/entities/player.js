@@ -67,8 +67,12 @@ G.Player = class Player {
     this.skipBonus = perks.skips || 0;       // saltos de carta de nivel en esta run
     this.skips = 0;
     this.fourthCard = perks.fourth || 0;
-    this.revival = perks.revival || 0;       // entra en el único levantamiento, al 35 %
-    this.reviveCharge = this.revival ? { source: 'upgrade', hpRatio: 0.35, used: false } : { source: null, hpRatio: 0, used: false };
+    this.revival = perks.revival || 0;       // Reponerse: 35 %, se elige al caer
+    this.reviveHad = { revive: false, maxrevive: false, revival: !!this.revival };
+    this.reviveSpent = { revive: false, maxrevive: false, revival: false };
+    this.reviveAsk = '';
+    this.revivePick = '';
+    this.reviveGiveUp = false;
     this.banned = new Set();                 // movimientos vetados (Mejoras → Veto): no salen en las cartas
     this.sealed = new Set();                 // objetos que dejas de ver (Mejoras → Sellar)
     this.bind = {};                          // movimiento -> hueco fijo (0-3), elegido en Mejoras
@@ -382,7 +386,6 @@ G.Player = class Player {
       G.FX.dmgText(this.x, this.y - this.bodyH - 16, '¡Robustez!', '#c9b48a', true);
       G.FX.ring(this.x, this.y, 6, 70, '#c9b48a', 0.5, 4);
     }
-    if (this.hp <= 0) G.Items.revive(this);
     if (ab && ab.hurt && this.hp > 0) ab.hurt(this, type, cls);
     G.Items.onDamaged(this);
     if (this.hp <= 0) {
@@ -391,6 +394,10 @@ G.Player = class Player {
       this.anim.play('Faint', { hold: true });
       G.Projectiles.clearOrbs(this);
       this.reviveT = 0;
+      this.reviveAsk = '';
+      this.revivePick = '';
+      this.reviveGiveUp = false;
+      this._reviveLock = false;
       if (!this.remote && G.Siege && G.Siege.noteDeath) G.Siege.noteDeath(this);
     }
   }
@@ -640,6 +647,10 @@ G.Player = class Player {
     this.invuln = 2;
     this.reviveSafe = 2;
     this.reviveT = 0;
+    this.reviveAsk = '';
+    this.revivePick = '';
+    this.reviveGiveUp = false;
+    this._reviveLock = false;
     this.anim._start('Idle', false);
     if (G.MasteryFX) G.MasteryFX.onRevive(this);
     G.FX.ring(this.x, this.y, 6, 70, '#5fe08a', 0.5, 4);
@@ -667,7 +678,10 @@ G.Player = class Player {
     this.hp = n.hp; this.maxHp = n.maxHp;
     this.magnet = n.mag || this.magnet;
     this.reviveT = n.rev || 0;
-    if (n.dead && !this.dead) { this.dead = true; if (G.MasteryFX) G.MasteryFX.clear(this); this.anim.play('Faint', { hold: true }); G.Projectiles.clearOrbs(this); }
+    if (n.dead && !this.dead) {
+      this.dead = true; this._reviveLock = false; this.reviveGiveUp = false;
+      if (G.MasteryFX) G.MasteryFX.clear(this); this.anim.play('Faint', { hold: true }); G.Projectiles.clearOrbs(this);
+    }
     else if (!n.dead && this.dead) this.revive(n.hp / (n.maxHp || 1));
     // Movimiento activo (para el halo, el HUD y los orbes).
     if (n.mv && (!this.moves[0] || this.moves[0].id !== n.mv || this.moves[0].lvl !== n.ml) && G.Moves.BY_ID[n.mv]) {
