@@ -10,7 +10,7 @@ const html = fs.readFileSync(path.join(root, 'dev.html'), 'utf8');
 
 test('paid balls start in near and far rings and later rotate through three distance bands', () => {
   assert.match(game, /placeField\(\{ min: 420, max: 780, paid: true \}\)/);
-  assert.match(game, /placeField\(\{ min: 1050, max: 1750, paid: true \}\)/);
+  assert.match(game, /placeField\(\{ min: 1250, max: 1900, paid: true \}\)/);
   assert.match(game, /\[\[420, 780\], \[780, 1250\], \[1250, 1900\]\]/);
   assert.match(game, /if \(n >= 6\) return/);
 });

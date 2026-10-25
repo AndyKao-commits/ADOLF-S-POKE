@@ -281,7 +281,7 @@ G.HUD = (() => {
     if (found >= 0) marks.splice(found, 1);
     else {
       if (marks.length >= 3) marks.shift();
-      marks.push({ x: target.x, y: target.y, col: target.col || '#fff' });
+      marks.push({ x: target.x, y: target.y, col: target.col || '#fff', kind: target.kind || '' });
     }
     pl.mark = marks.length ? marks[marks.length - 1] : null;
   }
@@ -339,7 +339,7 @@ G.HUD = (() => {
     const mark = (wx, wy, kind) => {
       const [sx, sy] = at(wx, wy);
       drawMark(ctx, sx, sy, kind, 3);
-      hits.push({ sx, sy, x: wx, y: wy, col: MARK_COL[kind] });
+      hits.push({ sx, sy, x: wx, y: wy, col: MARK_COL[kind], kind });
     };
     if (G.World.shops) for (const s of G.World.shops) mark(s.x, s.y, 'shop');
     for (const p of G.Pickups.all()) {
@@ -385,26 +385,27 @@ G.HUD = (() => {
 
   /** Flecha hacia la marca puesta en el mapa. */
   function pinArrow(ctx, w, h, pl) {
-    const mk = pl.mark;
-    if (!mk) return;
+    const list = Array.isArray(pl.marks) && pl.marks.length ? pl.marks : (pl.mark ? [pl.mark] : []);
     const cam = G.Camera;
-    const sx = (mk.x - cam.left()) * cam.scale, sy = (mk.y - cam.top()) * cam.scale;
-    const on = sx > 28 && sx < w - 28 && sy > 64 && sy < h - 86;
-    ctx.save();
-    ctx.fillStyle = mk.col || '#fff';
-    if (on) {
-      ctx.translate(sx, sy - 16);
-      ctx.beginPath(); ctx.moveTo(0, 12); ctx.lineTo(-7, -7); ctx.lineTo(7, -7); ctx.closePath();
-      ctx.fill();
-    } else {
-      const M = 58;
-      const ex = G.U.clamp(sx, M, w - M), ey = G.U.clamp(sy, M + 36, h - M);
-      const a = Math.atan2(sy - ey, sx - ex);
-      ctx.translate(ex, ey); ctx.rotate(a);
-      ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-10, 9); ctx.lineTo(-10, -9); ctx.closePath();
-      ctx.fill();
+    for (const mk of list) {
+      const sx = (mk.x - cam.left()) * cam.scale, sy = (mk.y - cam.top()) * cam.scale;
+      const on = sx > 28 && sx < w - 28 && sy > 64 && sy < h - 86;
+      ctx.save();
+      ctx.fillStyle = mk.col || '#fff';
+      if (on) {
+        ctx.translate(sx, sy - 16);
+        ctx.beginPath(); ctx.moveTo(0, 12); ctx.lineTo(-7, -7); ctx.lineTo(7, -7); ctx.closePath();
+        ctx.fill();
+      } else {
+        const M = 58;
+        const ex = G.U.clamp(sx, M, w - M), ey = G.U.clamp(sy, M + 36, h - M);
+        const a = Math.atan2(sy - ey, sx - ex);
+        ctx.translate(ex, ey); ctx.rotate(a);
+        ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-10, 9); ctx.lineTo(-10, -9); ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
     }
-    ctx.restore();
   }
 
   function interactButton(ctx, w, h, touch, place) {

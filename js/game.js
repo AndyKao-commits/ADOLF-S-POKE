@@ -220,7 +220,7 @@ G.Game = (() => {
     if (!(G.Modes.is('siege') || G.Modes.is('castle')) && (!coop || G.Coop.isHost)) {
       // Una cerca y otra lejos: desde el principio el mapa invita a explorar.
       placeField({ min: 420, max: 780, paid: true });
-      placeField({ min: 1050, max: 1750, paid: true });
+      placeField({ min: 1250, max: 1900, paid: true });
     }
   }
 

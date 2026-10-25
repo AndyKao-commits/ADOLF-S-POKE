@@ -1483,4 +1483,7 @@ G.I18n.add({
   "En el móvil, si aparece una carta mientras mueves el joystick, al cerrarla ya no sigues andando solo.": "手機移動搖桿時如果跳出技能選擇，關掉之後不會再自己往原方向走。",
   "En el móvil, la ficha de investigación se desplaza: el dibujo grande va arriba y debajo están el progreso, los fragmentos, las estrellas y el botón de investigar.": "手機上的研究詳情可以滑動：大型立繪在上方，下方是研究進度、碎片、星級和投入研究。",
   "El Abuelo Olvido puede visitarte una vez por partida. Junto a él, E olvida un movimiento y después se marcha con un destello morado.": "遺忘爺爺每局可能來訪一次。靠近後按 E 遺忘一個招式，之後會帶著紫色光芒離開。",
+  "El mapa grande lista lo que hay ahora, del más cercano al más lejano, y puedes seguir hasta 3 marcas. La cuarta sustituye a la más antigua.": "大地圖會列出目前的物件，由近到遠排列，最多同時追蹤 3 個。第 4 個會換掉最早追蹤的目標。",
+  "El Abuelo Olvido señala el borde de la pantalla, como una grieta: nombre, dirección y distancia. Al entrar en pantalla, la marca pasa a estar sobre su cabeza. Al irse, se quitan también las marcas que lo seguían.": "遺忘爺爺會像裂縫一樣在畫面邊緣指出名稱、方向和距離。進入畫面後，標記改到他頭上。他離開時，跟著他的追蹤也會一起消失。",
+  "Al empezar hay una Poké Ball de pago cerca (420–780) y otra lejos (1250–1900). Después, cada 45 s se intenta otra en el anillo cercano, medio o lejano. Entre las de pago y las malditas no hay más de 6.": "開局會有一顆近圈付費精靈球（420～780）和一顆遠圈付費精靈球（1250～1900）。之後每 45 秒依序在近圈、中圈、遠圈嘗試再生成一顆。付費球和詛咒球加起來最多 6 顆。",
 }, 'zh-Hant');

@@ -75,7 +75,7 @@ G.MoveForgetter = (() => {
     if (npc) {
       const pl = G.Game.player;
       if (pl && Array.isArray(pl.marks)) {
-        pl.marks = pl.marks.filter(m => G.U.dist2(m.x, m.y, npc.x, npc.y) >= 28 * 28);
+        pl.marks = pl.marks.filter(m => m.kind !== 'forgetter' && G.U.dist2(m.x, m.y, npc.x, npc.y) >= 28 * 28);
         pl.mark = pl.marks.length ? pl.marks[pl.marks.length - 1] : null;
       }
       G.FX.ring(npc.x, npc.y - 18, 8, 64, '#bba7ff', 0.55, 4);
