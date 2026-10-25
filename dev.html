@@ -681,10 +681,14 @@
     </div>
     <div class="map-body">
       <canvas id="map-radar" width="480" height="480"></canvas>
-      <ul id="map-legend" class="map-legend" style="list-style:none"></ul>
+      <aside class="map-side">
+        <h3 id="map-current">目前地圖物件 · 追蹤 0/3</h3>
+        <div id="map-objects" class="map-objects"></div>
+        <details class="map-key"><summary>圖示說明</summary><ul id="map-legend" class="map-legend" style="list-style:none"></ul></details>
+      </aside>
     </div>
     <p class="map-foot">M 或 Esc 關閉。這一局先暫停。</p>
-    <p class="map-hint">點一個標記可以記方向，再點一次取消。</p>
+    <p class="map-hint">點地圖標記或右側物件即可追蹤，最多 3 個；再點一次取消。</p>
   </div>
 </section>
 

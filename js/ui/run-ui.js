@@ -418,7 +418,9 @@ G.RunUI = (() => {
       foot: coop
         ? t('M 或 Esc 關閉。其他人還在打。', 'M or Esc closes it. The others keep playing.', 'M o Esc para cerrar. Los demás siguen.')
         : t('M 或 Esc 關閉。這一局先暫停。', 'M or Esc closes it. This run is paused.', 'M o Esc para cerrar. La partida está en pausa.'),
-      hint: t('點一個標記可以記方向，再點一次取消。', 'Click a marker to remember the way. Click it again to clear it.', 'Pulsa una marca para recordar el camino. Otra vez para quitarla.'),
+      hint: t('點地圖標記或右側物件即可追蹤，最多 3 個；再點一次取消。', 'Click a map marker or an object on the right to track it, up to 3. Click again to clear it.', 'Pulsa una marca o un objeto de la derecha para seguirlo, hasta 3. Otra vez para quitarlo.'),
+      current: t('目前地圖物件', 'On the map now', 'Ahora en el mapa'),
+      tracking: t('追蹤', 'Tracking', 'Siguiendo'),
       rows: [
         { shapes: [['mk-enemy', '#ff4d5a']], text: t('敵人。紅點。', 'Enemies. A red dot.', 'Enemigos. Un punto rojo.') },
         { shapes: [['mk-boss', '#e1061c']], text: t('Boss。比較大的紅點。', 'Bosses. The bigger red dot.', 'Jefes. El punto rojo más grande.') },
@@ -437,6 +439,9 @@ G.RunUI = (() => {
     box.querySelector('#map-close').textContent = copy.close;
     box.querySelector('.map-foot').textContent = copy.foot;
     box.querySelector('.map-hint').textContent = copy.hint;
+    box.querySelector('#map-current').textContent = `${copy.current} · ${copy.tracking} 0/3`;
+    box.dataset.mapCurrent = copy.current;
+    box.dataset.mapTracking = copy.tracking;
     box.querySelector('#map-legend').innerHTML = copy.rows.map(row =>
       `<li><span class="map-icons">${row.shapes.map(([k, col]) => k === 'img'
         ? `<img class="map-swatch mk-img" src="${col}" alt="">`
@@ -455,11 +460,20 @@ G.RunUI = (() => {
           const d = (h.sx - x) * (h.sx - x) + (h.sy - y) * (h.sy - y);
           if (d < bd) { bd = d; best = h; }
         }
-        if (!best || (pl.mark && Math.hypot(pl.mark.x - best.x, pl.mark.y - best.y) < 28)) pl.mark = null;
-        else pl.mark = { x: best.x, y: best.y, col: best.col };
+        if (best && G.HUD.toggleMapMark) G.HUD.toggleMapMark(pl, best);
       };
       cv.addEventListener('click', pick);
       cv.addEventListener('contextmenu', ev => { ev.preventDefault(); pick(ev); });
+    }
+    const objects = $('map-objects');
+    if (objects && !objects._wired) {
+      objects._wired = true;
+      objects.onclick = ev => {
+        const row = ev.target.closest('[data-map-target]');
+        const pl = G.Game.player;
+        const target = row && objects._targets && objects._targets[+row.dataset.mapTarget];
+        if (pl && target && G.HUD.toggleMapMark) G.HUD.toggleMapMark(pl, target);
+      };
     }
     $('map-close').onclick = () => G.Game.toggleMap();
     G.UI.show('scr-map');
