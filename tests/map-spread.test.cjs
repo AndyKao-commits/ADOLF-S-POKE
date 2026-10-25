@@ -26,3 +26,11 @@ test('Move Forgetter is shown in the radar, object list and edge indicator', () 
   assert.match(hud, /kind === 'forgetter'/);
   assert.match(hud, /遺忘爺爺/);
 });
+
+test('map uses dedicated icons for enemies, elites, bosses, shop and hatching egg', () => {
+  assert.match(hud, /assets\/future-use\/map-icons\//);
+  for (const file of ['enemy.png', 'elite.png', 'boss.png', 'shop.png', 'hatching-egg.png']) {
+    assert.match(hud, new RegExp(file.replace('.', '\\.') ));
+  }
+  assert.match(hud, /e\.eliteWave \|\| e\.eliteMods/);
+});

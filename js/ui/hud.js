@@ -172,17 +172,32 @@ G.HUD = (() => {
 
   /** Color used when a map pin points at this kind of mark. */
   const MARK_COL = {
-    enemy: '#ff4d5a', boss: '#e1061c', egg: '#fff1c2',
+    enemy: '#ff4d5a', elite: '#c86cff', boss: '#e1061c', egg: '#fff1c2',
     ball1: '#e23d3d', ball2: '#3a7ee0', ball3: '#f0d24a', ball4: '#7b4ec8', curse: '#c47bff',
     shop: '#ffd23f', mate: '#5fd4ff', forgetter: '#d7caff'
   };
   const forgetterMapPic = new Image();
   forgetterMapPic.src = 'assets/future-use/npc/move-forgetter/move-forgetter.png';
+  const MAP_ICON_PATH = 'assets/future-use/map-icons/';
+  const mapIconFiles = {
+    enemy: 'enemy.png', elite: 'elite.png', boss: 'boss.png',
+    shop: 'shop.png', egg: 'hatching-egg.png'
+  };
+  const mapIcons = Object.fromEntries(Object.entries(mapIconFiles).map(([kind, file]) => {
+    const img = new Image();
+    img.src = MAP_ICON_PATH + file;
+    return [kind, img];
+  }));
 
   /** One shape per thing. s = 1 on the corner radar, larger on the pause map. */
   function drawMark(ctx, x, y, kind, s) {
     ctx.save();
-    if (kind === 'enemy') {
+    const icon = mapIcons[kind];
+    if (icon && icon.complete && icon.naturalWidth) {
+      const sz = (kind === 'boss' ? 11 : kind === 'shop' ? 10 : 8) * s;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(icon, x - sz / 2, y - sz / 2, sz, sz);
+    } else if (kind === 'enemy' || kind === 'elite') {
       ctx.fillStyle = MARK_COL.enemy;
       ctx.beginPath(); ctx.arc(x, y, 2.2 * s, 0, 6.2832); ctx.fill();
     } else if (kind === 'boss') {
@@ -258,7 +273,7 @@ G.HUD = (() => {
       else if (p.kind === 'ball' || p.kind === 'vend') blot(p.x, p.y, p.kind === 'vend' ? 'ball1' : p.value >= 4 ? 'ball4' : p.value >= 3 ? 'ball3' : p.value === 2 ? 'ball2' : 'ball1');
       else if (p.kind === 'curse') blot(p.x, p.y, 'curse');
     }
-    for (const e of G.EnemyMgr.all()) if (!e.dead) blot(e.x, e.y, e.boss ? 'boss' : 'enemy');
+    for (const e of G.EnemyMgr.all()) if (!e.dead) blot(e.x, e.y, e.boss ? 'boss' : (e.eliteWave || e.eliteMods) ? 'elite' : 'enemy');
     if (G.Coop && G.Coop.active && G.Coop.puppets) {
       for (const m of G.Coop.puppets()) if (!m.dead) blot(m.x, m.y, 'mate');
     }
@@ -292,9 +307,9 @@ G.HUD = (() => {
     const zh = String(lang).startsWith('zh'), en = lang === 'en';
     const text = (z, e, s) => zh ? z : en ? e : s;
     const add = (x, y, kind, name, img = '') => out.push({ x, y, kind, name, img, col: MARK_COL[kind] || '#fff', d: Math.hypot(x - pl.x, y - pl.y) });
-    if (G.World.shops) for (const s of G.World.shops) add(s.x, s.y, 'shop', text('商店', 'Shop', 'Tienda'), 'assets/future-use/shop/shop-only.png');
+    if (G.World.shops) for (const s of G.World.shops) add(s.x, s.y, 'shop', text('商店', 'Shop', 'Tienda'), MAP_ICON_PATH + mapIconFiles.shop);
     for (const p of G.Pickups.all()) {
-      if (p.kind === 'egg') add(p.x, p.y, 'egg', text('孵化蛋', 'Hatching Egg', 'Huevo de incubar'));
+      if (p.kind === 'egg') add(p.x, p.y, 'egg', text('孵化蛋', 'Hatching Egg', 'Huevo de incubar'), MAP_ICON_PATH + mapIconFiles.egg);
       else if (p.kind === 'vend') add(p.x, p.y, 'ball1', text('付費精靈球', 'Paid Poké Ball', 'Poké Ball de pago'), 'assets/future-use/balls/poke-ball.png');
       else if (p.kind === 'curse') add(p.x, p.y, 'curse', text('詛咒球', 'Cursed Poké Ball', 'Poké Ball maldita'), 'assets/future-use/balls/cursed-ball.png');
       else if (p.kind === 'ball') {
@@ -306,7 +321,9 @@ G.HUD = (() => {
     }
     for (const e of G.EnemyMgr.all()) if (!e.dead) {
       const mon = G.DEX_BY && G.DEX_BY[e.dex];
-      add(e.x, e.y, e.boss ? 'boss' : 'enemy', mon ? mon.name : text(e.boss ? 'Boss' : '敵人', e.boss ? 'Boss' : 'Enemy', e.boss ? 'Jefe' : 'Enemigo'));
+      const kind = e.boss ? 'boss' : (e.eliteWave || e.eliteMods) ? 'elite' : 'enemy';
+      const fallback = kind === 'boss' ? ['Boss', 'Boss', 'Jefe'] : kind === 'elite' ? ['菁英怪', 'Elite', 'Élite'] : ['敵人', 'Enemy', 'Enemigo'];
+      add(e.x, e.y, kind, mon ? mon.name : text(...fallback), MAP_ICON_PATH + mapIconFiles[kind]);
     }
     if (G.Coop && G.Coop.active && G.Coop.puppets) for (const m of G.Coop.puppets()) if (!m.dead) add(m.x, m.y, 'mate', m.name || text('隊友', 'Teammate', 'Compañero'));
     const grandpa = G.MoveForgetter && G.MoveForgetter.position;
@@ -347,7 +364,7 @@ G.HUD = (() => {
       else if (p.kind === 'ball' || p.kind === 'vend') mark(p.x, p.y, p.kind === 'vend' ? 'ball1' : p.value >= 4 ? 'ball4' : p.value >= 3 ? 'ball3' : p.value === 2 ? 'ball2' : 'ball1');
       else if (p.kind === 'curse') mark(p.x, p.y, 'curse');
     }
-    for (const e of G.EnemyMgr.all()) if (!e.dead) mark(e.x, e.y, e.boss ? 'boss' : 'enemy');
+    for (const e of G.EnemyMgr.all()) if (!e.dead) mark(e.x, e.y, e.boss ? 'boss' : (e.eliteWave || e.eliteMods) ? 'elite' : 'enemy');
     if (G.Coop && G.Coop.active && G.Coop.puppets) {
       for (const m of G.Coop.puppets()) if (!m.dead) mark(m.x, m.y, 'mate');
     }
