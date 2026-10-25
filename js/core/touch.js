@@ -36,6 +36,15 @@ G.Touch = (() => {
     cv.addEventListener('pointerup', up);
     cv.addEventListener('pointercancel', up);
     cv.addEventListener('contextmenu', e => e.preventDefault());
+    // La carta de nivel (u otra pantalla) puede tapar el lienzo mientras el dedo
+    // sigue puesto. En el móvil el "soltar" llega a la carta, no al lienzo, y el
+    // joystick se quedaba empujando solo. Se suelta también desde la ventana.
+    addEventListener('pointerdown', noteFinger, true);
+    addEventListener('pointerup', endPointer, true);
+    addEventListener('pointercancel', endPointer, true);
+    addEventListener('lostpointercapture', endPointer, true);
+    document.addEventListener('touchend', endTouches, true);
+    document.addEventListener('touchcancel', endTouches, true);
     // iPhone: la pulsación larga sobre el juego abría la lupa y el menú de
     // "Copiar / Seleccionar todo". Cortar el toque aquí lo evita (los eventos
     // pointer, que son los que usa el joystick, siguen llegando).
@@ -71,9 +80,29 @@ G.Touch = (() => {
     b.fn();
   }
 
+  // Dedos que el navegador todavía considera pulsados. Si el id del joystick
+  // ya no está, el dedo se fue (aunque el lienzo no recibiera el evento).
+  const fingers = new Set();
+  function noteFinger(e) { if (e.pointerType !== 'mouse') fingers.add(e.pointerId); }
+  function endPointer(e) {
+    if (e.pointerType === 'mouse') return;
+    endFinger(e.pointerId);
+  }
+  function endTouches(e) { for (const t of e.changedTouches) endFinger(t.identifier); }
+  function endFinger(id) {
+    fingers.delete(id);
+    if (stick && stick.id === id) release();
+  }
+  function release() {
+    const id = stick && stick.id;
+    stick = null;
+    if (id != null && cv) { try { cv.releasePointerCapture(id); } catch (err) { /* nada */ } }
+  }
+
   function down(e) {
     const touchy = e.pointerType !== 'mouse';
     if (touchy && !active) { active = true; document.body.classList.add('touch'); }
+    if (stick && !fingers.has(stick.id)) release();
     const b = hit(e.clientX, e.clientY);
     if (b) { e.preventDefault(); press(b); return; }
     if (!touchy || stick || !G.Game || G.Game.state !== 'playing') return;
@@ -98,11 +127,15 @@ G.Touch = (() => {
     if (d > r) { stick.ox = stick.x - dx / d * r; stick.oy = stick.y - dy / d * r; }
   }
 
-  function up(e) { if (stick && e.pointerId === stick.id) stick = null; }
-  function reset() { stick = null; }
+  function up(e) { endFinger(e.pointerId); }
+  function reset() { fingers.clear(); release(); }
 
   /** Dirección del joystick (con fuerza 0..1), o null si no se usa. */
   function vector() {
+    // Una pantalla de elección (cartas, objeto, vínculo) deja el dedo "pulsado"
+    // aunque ya no lo esté. Sin esto, al cerrarla el personaje sigue andando.
+    if (stick && G.Game && G.Game.state !== 'playing') release();
+    if (stick && !fingers.has(stick.id)) release();
     if (!stick) return null;
     const dx = stick.x - stick.ox, dy = stick.y - stick.oy, d = Math.hypot(dx, dy);
     if (d < 7) return [0, 0];

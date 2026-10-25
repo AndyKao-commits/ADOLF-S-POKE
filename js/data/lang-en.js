@@ -1259,4 +1259,7 @@ G.I18n.add({
   "En cada partida puedes conseguir como mucho 25 tickets y 2 tickets ×10. Al llegar al límite se avisa una vez, y los tickets que ya tenías siguen en la cuenta.": "Each run can grant at most 25 tickets and 2 ×10 tickets. You are told once at the limit, and tickets you already had stay on the account.",
   "En el asedio, un disparo que persigue al castillo ya no corta la partida.": "In siege, a shot that chases a castle no longer ends the match.",
   "En la colección, debajo del dibujo, vuelven las seis estadísticas: vida, ataque, ataque especial, defensa, defensa especial y velocidad.": "In the collection, under the picture, all six stats are back: HP, Attack, Sp. Atk, Defense, Sp. Def and Speed.",
+  "En el móvil, si aparece una carta mientras mueves el joystick, al cerrarla ya no sigues andando solo.": "On mobile, if a card appears while you move the joystick, you no longer keep walking on your own after it closes.",
+  "En el móvil, la ficha de investigación se desplaza: el dibujo grande va arriba y debajo están el progreso, los fragmentos, las estrellas y el botón de investigar.": "On mobile, the research card scrolls: the large picture is on top, and below it are the progress, fragments, stars and the research button.",
+  "El Abuelo Olvido puede visitarte una vez por partida. Junto a él, E olvida un movimiento y después se marcha con un destello morado.": "The Move Forgetter can visit once per run. Next to him, E forgets a move, and then he leaves with a purple flash.",
 });

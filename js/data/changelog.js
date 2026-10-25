@@ -6,6 +6,18 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-26', title: ['Investigación', 'Research'], chg: [
+    ['En el móvil, la ficha de investigación se desplaza: el dibujo grande va arriba y debajo están el progreso, los fragmentos, las estrellas y el botón de investigar.',
+     'On mobile, the research card scrolls: the large picture is on top, and below it are the progress, fragments, stars and the research button.']
+  ] },
+  { d: '2026-10-26', title: ['Abuelo Olvido', 'Move Forgetter'], new: [
+    ['El Abuelo Olvido puede visitarte una vez por partida. Junto a él, E olvida un movimiento y después se marcha con un destello morado.',
+     'The Move Forgetter can visit once per run. Next to him, E forgets a move, and then he leaves with a purple flash.']
+  ] },
+  { d: '2026-10-26', title: ['Móvil', 'Mobile'], fix: [
+    ['En el móvil, si aparece una carta mientras mueves el joystick, al cerrarla ya no sigues andando solo.',
+     'On mobile, if a card appears while you move the joystick, you no longer keep walking on your own after it closes.']
+  ] },
   { d: '2026-10-25', title: ['Incubadora', 'Incubator'], chg: [
     ['Los huevos de incubar dan investigación según el nivel: normal 5–10 %, raro 8–13 %, legendario 11–16 % y épico 15–20 %. El resultado se guarda antes de la animación.',
      'Hatching eggs grant research by tier: normal 5–10%, rare 8–13%, legendary 11–16% and epic 15–20%. The result is saved before the animation.']

@@ -1480,4 +1480,7 @@ G.I18n.add({
   "En cada partida puedes conseguir como mucho 25 tickets y 2 tickets ×10. Al llegar al límite se avisa una vez, y los tickets que ya tenías siguen en la cuenta.": "每局最多再取得一般券 25 張、十連券 2 張。達到上限只提醒一次，帳號裡原本的券不會被清掉。",
   "En el asedio, un disparo que persigue al castillo ya no corta la partida.": "攻防戰裡，會追著城堡飛的攻擊不會再把對局弄斷。",
   "En la colección, debajo del dibujo, vuelven las seis estadísticas: vida, ataque, ataque especial, defensa, defensa especial y velocidad.": "圖鑑立繪下面會再顯示六項能力：生命、攻擊、特攻、防禦、特防和速度。",
+  "En el móvil, si aparece una carta mientras mueves el joystick, al cerrarla ya no sigues andando solo.": "手機移動搖桿時如果跳出技能選擇，關掉之後不會再自己往原方向走。",
+  "En el móvil, la ficha de investigación se desplaza: el dibujo grande va arriba y debajo están el progreso, los fragmentos, las estrellas y el botón de investigar.": "手機上的研究詳情可以滑動：大型立繪在上方，下方是研究進度、碎片、星級和投入研究。",
+  "El Abuelo Olvido puede visitarte una vez por partida. Junto a él, E olvida un movimiento y después se marcha con un destello morado.": "遺忘爺爺每局可能來訪一次。靠近後按 E 遺忘一個招式，之後會帶著紫色光芒離開。",
 }, 'zh-Hant');
