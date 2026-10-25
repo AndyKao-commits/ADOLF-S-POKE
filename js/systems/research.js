@@ -36,7 +36,7 @@ G.Research = (() => {
     add(dex, 100 / (NEED[p.rarity] || 40), true);
   }
 
-  /** Lo que sale de un huevo de incubar: +5 % a esa especie. */
+  /** Porcentaje sorteado por el nivel del huevo de incubar. */
   function addPct(dex, pct) { add(dex, pct, false); }
 
   function view(dex) {

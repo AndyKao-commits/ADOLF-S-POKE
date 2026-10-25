@@ -194,6 +194,7 @@ G.RunUI = (() => {
   }
 
   function showOver(r, onBack) {
+    const ticketLimit = (G.Game && G.Game.ticketLimits) || { t1: 25, t10: 2 };
     $('over-title').textContent = r.cause === 'castle-win' ? '¡Has protegido al cachorro!'
       : r.cause === 'castle' ? 'El cachorro ha caído…'
       : r.cause === 'siege-win' ? 'Eres el último en pie'
@@ -219,8 +220,10 @@ G.RunUI = (() => {
       <div style="grid-column:1/-1"><span>Caramelos que quedan</span>
         <b><img src="assets/future-use/candy/candy-token.png" alt="" style="height:14px;width:auto;image-rendering:pixelated;vertical-align:middle" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'◆'}))"> ${r.candyLeft || 0}</b>
         <div style="font-size:12px;color:var(--muted)">Los caramelos sólo valen en esta partida</div></div>
-      ${r.t1 || r.t10 ? `<div style="grid-column:1/-1"><span>Tickets del gacha</span><b>
-        ${r.t1 ? G.Icons.html('ticket', 22) + ' +' + r.t1 + ' ' : ''}${r.t10 ? G.Icons.html('ticket10', 22) + ' +' + r.t10 + ' ×10' : ''}</b></div>` : ''}
+      <div style="grid-column:1/-1"><span>Tickets del gacha</span>
+        <div style="font-size:12px;color:var(--muted)">Esta partida / límite</div>
+        <b>${G.Icons.html('ticket', 22)} ${r.t1 || 0}/${ticketLimit.t1}
+          &nbsp;${G.Icons.html('ticket10', 22)} ${r.t10 || 0}/${ticketLimit.t10}</b></div>
       <div style="grid-column:1/-1"><span>Movimientos</span><b style="font-size:15px">
         ${r.moves.map(m => `${G.Icons.html('move:' + m.id, 16)} ${G.T(m.name, 'move')} Nv.${m.lvl}`).join(' · ') || '—'}</b></div>
       ${r.caught && r.caught.length ? `<div style="grid-column:1/-1" class="caught"><span>${G.Icons.html('shiny', 12)} Shinies conseguidos</span>

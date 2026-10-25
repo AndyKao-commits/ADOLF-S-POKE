@@ -12,6 +12,14 @@ G.Hatch = (() => {
   const FROM = { 1: 1, 2: 2, 3: 2, 4: 4, 5: 3 };
   const RATE = { 1: 0.04, 2: 0.03, 3: 0.03, 4: 0.02, 5: 0.025 };
   const REWARD = { common: 1, rare: 3, legendary: 5, epic: 4 };
+  // Investigación que concede cada huevo al abrirse. Todos los enteros del
+  // intervalo tienen la misma probabilidad.
+  const RESEARCH = {
+    common: { min: 5, max: 10 },
+    rare: { min: 8, max: 13 },
+    legendary: { min: 11, max: 16 },
+    epic: { min: 15, max: 20 }
+  };
   const SRC = 'assets/future-use/hatching-eggs/hatching-egg-';
 
   const pics = {};
@@ -24,6 +32,12 @@ G.Hatch = (() => {
   function tierName(n) { return TIERS[(n | 0) - 1] || ''; }
   function tierOf(rarity) { return FROM[rarity] || 0; }
   function rateOf(rarity) { return RATE[rarity] || 0; }
+  function researchRange(name) { return RESEARCH[name] || null; }
+  function rollResearch(name, random = Math.random) {
+    const range = researchRange(name);
+    if (!range) return 0;
+    return Math.floor(random() * (range.max - range.min + 1)) + range.min;
+  }
 
   function blank() { return { bag: {}, slots: [null, null, null] }; }
   function data() {
@@ -140,11 +154,11 @@ G.Hatch = (() => {
     const slot = h && h.slots[i];
     if (!slot || !slot.dex) { stopAnim(true); render(); return; }
     const dex = slot.dex;
-    if (G.Research) G.Research.addPct(dex, 5);
+    const research = slot.researchPct | 0;
     h.slots[i] = null;
     G.DB.commit();
     const mon = G.DEX_BY[dex];
-    G.UI.toast(G.I18n.f('Investigación +5 %: {x}', mon ? mon.name : ''));
+    G.UI.toast(G.I18n.f('Investigación +{x} %: {x}', research, mon ? mon.name : ''));
     stopAnim(false);
     render();
   }
@@ -161,8 +175,15 @@ G.Hatch = (() => {
     if (!slot.dex) {
       slot.dex = roll(slot.tier);
       if (!slot.dex) { G.UI.toast('Vuelve a intentarlo'); return; }
-      G.DB.commit();
     }
+    // El resultado y la recompensa se guardan antes de la animación. Si se
+    // cierra la pestaña durante ella, no se pierde ni se puede cobrar dos veces.
+    if (!slot.researchPct) slot.researchPct = rollResearch(slot.tier);
+    if (!slot.researchGranted) {
+      if (G.Research) G.Research.addPct(slot.dex, slot.researchPct);
+      slot.researchGranted = true;
+    }
+    G.DB.commit();
     resultDex = slot.dex;
     resultAnim = new G.Sprites.Animator(resultDex, 2);
     G.Sprites.preload([resultDex]);
@@ -237,5 +258,5 @@ G.Hatch = (() => {
     if (skip) skip.onclick = () => { if (anim) anim.skip(); };
   }
 
-  return { init, open, collect, noteRun, tierOf, rateOf, tierName, NEED, pics };
+  return { init, open, collect, noteRun, tierOf, rateOf, tierName, researchRange, rollResearch, NEED, pics };
 })();

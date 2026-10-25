@@ -21,6 +21,8 @@ G.Game = (() => {
   let pl = null;
   let caught = [];          // shinies conseguidos en esta run
   let biome = -1;
+  const TICKET_LIMIT = Object.freeze({ t1: 25, t10: 2 });
+  let ticketCapTold = { t1: false, t10: false };
 
   const st = { get time() { return time; } };
 
@@ -173,6 +175,7 @@ G.Game = (() => {
     if (G.Research) G.Research.apply(pl);
     pl.setAbility(G.Mons.abilityOf(mon.dex).id);
     banked = { t1: 0, t10: 0 };
+    ticketCapTold = { t1: false, t10: false };
     caught = [];
     // Atajos: movimientos con hueco fijo (save.pbind[dex] = [id del 1, id del 2, ...]),
     // antes de aprender nada: addMove ya los coloca.
@@ -718,7 +721,15 @@ G.Game = (() => {
       return;
     }
     if (p.kind === 'ticket' || p.kind === 'ticket10') {
-      if (p.kind === 'ticket') pl.t1++; else pl.t10++;
+      const key = p.kind === 'ticket' ? 't1' : 't10';
+      if (pl[key] >= TICKET_LIMIT[key]) {
+        if (mine && !ticketCapTold[key]) {
+          ticketCapTold[key] = true;
+          G.UI.toast(key === 't1' ? 'Límite de tickets alcanzado: 25 / 25' : 'Límite de tickets ×10 alcanzado: 2 / 2');
+        }
+        return;
+      }
+      pl[key] = Math.min(TICKET_LIMIT[key], (pl[key] || 0) + 1);
       bankTickets();
       G.FX.dmgText(who.x, who.y - who.bodyH - 8, p.kind === 'ticket' ? '+1 ticket' : '¡Ticket ×10!', p.kind === 'ticket' ? '#ffd23f' : '#d9a6ff', true);
       G.FX.ring(who.x, who.y, 6, 50, p.kind === 'ticket' ? '#ffd23f' : '#c47bff', 0.4, 3);
@@ -1441,6 +1452,7 @@ G.Game = (() => {
     init, startRun, everyone, levelXp, flash, offerBond, siegeOver, castleClear, noteXp,
     nearestShop, nearestField, useNear, vendPrice, openStall, closeStall, stallPrice,
     addCandy, spendCandy, grantCandy,
+    ticketLimits: TICKET_LIMIT,
     giveItem: offerItem,
     /** Para pruebas: salta el reloj de la run. */
     debugTime(t) { tampered = true; time = t; },

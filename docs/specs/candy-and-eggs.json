@@ -51,16 +51,23 @@
     "tier_rules": "1 普通紅白、2 稀有藍紅、3 傳說黑金、4 史詩紫粉；依精靈球配色。",
     "hatching_duration_seconds": null,
     "cost": null,
-    "reward_pool": null,
+    "reward_pool": "依蛋級抽出對應稀有度寶可夢，並增加該物種研究進度。",
+    "research_reward_percent": {
+      "common": "5-10",
+      "rare": "8-13",
+      "legendary": "11-16",
+      "epic": "15-20",
+      "roll": "範圍內整數等機率；結果於動畫開始前保存，同一顆蛋只入帳一次。"
+    },
     "rarity_probabilities": null,
     "inventory_limit": null,
-    "rules_status": "尚未定義孵化數值與獎勵；不可當作已可玩的功能。",
+    "rules_status": "已接入遊戲；四級孵化蛋使用不同研究進度範圍。",
     "implementation_proposal": [
       "取得蛋後保存蛋的唯一 ID、等級與狀態。",
       "孵化條件達成後先保存結果，再播放動畫；動畫結束顯示已保存的結果。",
       "同一顆蛋只結算一次，重新整理或動畫重播不重複發獎。"
     ],
-    "proposal_status": "工程接入建議，尚未實作",
+    "proposal_status": "已實作",
     "legacy_tier_assets": [
       "assets/future-use/eggs/egg-level-1.png",
       "assets/future-use/eggs/egg-level-2.png",

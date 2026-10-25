@@ -216,7 +216,10 @@ G.I18n.add({
   'Has caído…': 'You fell…', 'Run terminada': 'Run over', 'Volver al menú': 'Back to menu', 'Salir de la partida': 'Leave the game',
   'Tiempo': 'Time', 'Nivel': 'Level', 'Derrotados': 'Defeated', 'Jefes': 'Bosses', 'Pokémonedas ganadas': 'PokéCoins earned',
   'Movimientos': 'Moves', '¡Nuevo récord de tiempo!': 'New time record!', '· ¡nuevo!': '· new!', '{x} Shinies conseguidos': '{x} shinies caught',
-  'Tickets del gacha': 'Gacha tickets', 'Nivel máximo': 'Max level',
+  'Tickets del gacha': 'Gacha tickets', 'Esta partida / límite': 'This run / limit',
+  'Límite de tickets alcanzado: 25 / 25': 'Ticket limit reached: 25 / 25',
+  'Límite de tickets ×10 alcanzado: 2 / 2': '×10 ticket limit reached: 2 / 2',
+  'Nivel máximo': 'Max level',
 
   // ---------------- inicio de sesión y test ----------------
   'Mundo Misterioso': 'Mystery Dungeon', 'Entrar': 'Log in', 'Crear cuenta': 'Sign up', 'Nombre': 'Name', 'Contraseña': 'Password',
@@ -1079,6 +1082,7 @@ G.I18n.add({
   "Investigación {x}% · Derrotas {x}": "Research {x}% · Defeats {x}",
   "Investigado {x}/{x} · Conseguidos {x}/{x}": "Researched {x}/{x} · Caught {x}/{x}",
   "Investigación +5 %: {x}": "Research +5%: {x}",
+  "Investigación +{x} %: {x}": "Research +{x}%: {x}",
   "Poseídos": "Owned",
   "No poseídos": "Not owned",
   "Compañero al azar": "Random partner",

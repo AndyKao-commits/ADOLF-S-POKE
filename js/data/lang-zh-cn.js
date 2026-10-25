@@ -248,6 +248,9 @@ G.I18n.add({
   "· ¡nuevo!": "· 新获得！",
   "{x} Shinies conseguidos": "获得 {x} 只异色宝可梦",
   "Tickets del gacha": "抽取券",
+  "Esta partida / límite": "本局获得／上限",
+  "Límite de tickets alcanzado: 25 / 25": "普通抽取券已达本局上限：25／25",
+  "Límite de tickets ×10 alcanzado: 2 / 2": "十连抽取券已达本局上限：2／2",
   "Nivel máximo": "最高等级",
   "Mundo Misterioso": "不可思议迷宫",
   "Entrar": "登录",
@@ -1177,5 +1180,6 @@ G.I18n.add({
   "Sólo los ataques hacen daño; los cuerpos no": "只有攻击会造成伤害，身体碰撞不扣血",
   "Muerte con reaparición, sin rescate ni espectador": "死亡后自动重生，没有队友救援或观战",
   "Jefe central activado · grietas desactivadas": "中央 Boss 开启・裂缝关闭",
-  "Has caído · reapareces en {x}": "你已倒下・{x} 秒后重生"
+  "Has caído · reapareces en {x}": "你已倒下・{x} 秒后重生",
+  "Investigación +{x} %: {x}": "研究进度 +{x}%：{x}"
 }, 'zh-Hans');

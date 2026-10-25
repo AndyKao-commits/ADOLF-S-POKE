@@ -1274,4 +1274,8 @@ G.I18n.add({
   "Cambiar: {x} caramelos": "Trocar: {x} doces",
   "Cada compra sube los precios {x} caramelos": "Cada compra aumenta os preços em {x} doces",
   "En la partida caen caramelos azules. Sirven para la tienda de Meowth y las Poké Balls de pago, y al terminar se pierden. Las Pokémonedas del menú siguen igual.": "Doces azuis caem na partida. Servem para a loja do Meowth e as Poké Bolas pagas, e somem no fim. As Pokémoedas do menu continuam iguais.",
+  "Esta partida / límite": "Nesta partida / limite",
+  "Límite de tickets alcanzado: 25 / 25": "Limite de tickets atingido: 25 / 25",
+  "Límite de tickets ×10 alcanzado: 2 / 2": "Limite de tickets ×10 atingido: 2 / 2",
+  "Investigación +{x} %: {x}": "Pesquisa +{x}%: {x}",
 }, 'pt-BR');

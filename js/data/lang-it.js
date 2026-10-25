@@ -597,4 +597,8 @@ G.I18n.add({
   "Cambiar: {x} caramelos": "Cambia: {x} caramelle",
   "Cada compra sube los precios {x} caramelos": "Ogni acquisto alza i prezzi di {x} caramelle",
   "En la partida caen caramelos azules. Sirven para la tienda de Meowth y las Poké Balls de pago, y al terminar se pierden. Las Pokémonedas del menú siguen igual.": "Nella partita cadono caramelle blu. Servono per il negozio di Meowth e le Poké Ball a pagamento, e a fine partita spariscono. I Pokémonini del menu restano uguali.",
+  "Esta partida / límite": "Questa partita / limite",
+  "Límite de tickets alcanzado: 25 / 25": "Limite ticket raggiunto: 25 / 25",
+  "Límite de tickets ×10 alcanzado: 2 / 2": "Limite ticket ×10 raggiunto: 2 / 2",
+  "Investigación +{x} %: {x}": "Ricerca +{x}%: {x}",
 }, 'it');
