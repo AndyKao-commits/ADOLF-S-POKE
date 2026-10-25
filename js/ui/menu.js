@@ -518,14 +518,15 @@ G.MenuUI = (() => {
       const can = v.frags >= 2 && v.stars < 4;
       detail = `<div class="res-detail">
         <button type="button" class="res-close" id="res-close">×</button>
-        <div class="res-detail-body"><div class="res-detail-copy">
+        <div class="res-detail-body"><div class="res-detail-art" aria-label="${sel.name}"><canvas id="res-detail-sprite" width="180" height="144"></canvas></div>
+        <div class="res-detail-copy">
           <b>${sel.name}</b>
           <div>${G.I18n.f('Investigación {x}% · Derrotas {x}', pct, v.k)}</div>
           <p>${line}</p>
           <p>${G.I18n.f('Fragmentos: {x}', v.frags)} · <span class="dex-stars">${starGlyph(v.stars)}</span> ${v.stars}/4</p>
           <p>${starBuffLine(v.stars)}</p>
           <button type="button" class="btn" id="res-star" ${can ? '' : 'disabled'}>Usar dos fragmentos</button>
-        </div><div class="res-detail-art" aria-label="${sel.name}"><canvas id="res-detail-sprite" width="150" height="120"></canvas></div></div>
+        </div></div>
       </div>`;
     }
     host.innerHTML = `
