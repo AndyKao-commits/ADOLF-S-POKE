@@ -188,6 +188,24 @@ G.Player = class Player {
     return true;
   }
 
+  /** Quita un movimiento durante la run y conserva al menos un hueco jugable. */
+  forgetMove(id) {
+    if (this.moves.length <= 1) return false;
+    const m = this.moves.find(x => x.id === id);
+    if (!m) return false;
+    const gi = this.slots.findIndex(g => g.includes(m));
+    if (gi >= 0) {
+      const g = this.slots[gi];
+      g.splice(g.indexOf(m), 1);
+      if (!g.length) this.slots.splice(gi, 1);
+    }
+    this.moves.splice(this.moves.indexOf(m), 1);
+    this.active = Math.max(0, Math.min(this.active, this.slots.length - 1));
+    this.focus = Math.max(0, Math.min(this.focus, this.slots.length - 1));
+    this.arrange();
+    return true;
+  }
+
   /**
    * Huecos fijos (Mejoras → Atajos): cada movimiento con hueco elegido se pone
    * en ese número para la memoria muscular (Confusión siempre en el 1...).

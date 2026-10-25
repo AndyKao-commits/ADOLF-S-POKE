@@ -470,6 +470,24 @@ G.RunUI = (() => {
     $('btn-quit').onclick = onQuit;
   }
 
+  function showForgetMoves(moves, onPick, onCancel) {
+    const box = $('forget-cards');
+    box.innerHTML = '';
+    moves.forEach((m, i) => {
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'card forget-card';
+      el.innerHTML = `<div class="ico">${G.Icons.html('move:' + m.id, 38)}</div>
+        <div class="txt"><div class="nm">${G.T(m.name, 'move')} <span class="tag-chip">Nv.${m.lvl}</span></div>
+        <div class="ds">${G.T((G.Moves.BY_ID[m.id] || {}).desc || '', 'move')}</div></div>
+        <div class="key">${i + 1}</div>`;
+      el.onclick = () => onPick(m.id);
+      box.appendChild(el);
+    });
+    $('forget-cancel').onclick = onCancel;
+    G.UI.show('scr-forget');
+  }
+
   function showStall(shop, api) {
     const lang = (G.I18n && G.I18n.lang) || '';
     const zh = String(lang).startsWith('zh');
@@ -513,5 +531,5 @@ G.RunUI = (() => {
     G.UI.show('scr-stall');
   }
 
-  return { showLevelUp, reroll, showItemChoice, showBallChoice, showBond, pickBond, bondBack, pick, skip: skipCard, setWaiting, closeLevelUp, showOver, wirePause, showPause, showMap, showStall };
+  return { showLevelUp, reroll, showItemChoice, showBallChoice, showForgetMoves, showBond, pickBond, bondBack, pick, skip: skipCard, setWaiting, closeLevelUp, showOver, wirePause, showPause, showMap, showStall };
 })();

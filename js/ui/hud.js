@@ -338,7 +338,8 @@ G.HUD = (() => {
   function interactButton(ctx, w, h, touch, place) {
     const shop = G.Game.nearestShop && G.Game.nearestShop();
     const field = G.Game.nearestField && G.Game.nearestField();
-    if (!shop && !field) return;
+    const forgetter = G.MoveForgetter && G.MoveForgetter.near(G.Game.player);
+    if (!shop && !field && !forgetter) return;
     const dash = 54, bs = place ? place.s : 46, gap = 14;
     const dashX = w - dash - 18;
     const dashY = h - dash - (touch ? 28 : 18);
