@@ -6,7 +6,7 @@
  */
 G.Castle = (() => {
   const aim = { x: 0, y: 80, r: 34, _vx: 0, _vy: 0, level: 1, dead: false };
-  const WAVES = 50, BASE_CAP = 12;
+  const WAVES = 50, BASE_CAP = 16;
   const PUPPY_MAX_HP = 4500;
   const FINAL_WAVE = 50;
   const FINAL_HP_MUL = 2.4;
@@ -33,7 +33,7 @@ G.Castle = (() => {
       mobHp: 1 + extra * 0.30,
       bossHp: 1 + 1.10 * Math.pow(extra, 0.82),
       damage: 1 + extra * 0.08,
-      cap: Math.min(30, BASE_CAP + extra * 2)
+      cap: Math.min(34, BASE_CAP + extra * 2)
     };
   }
 
@@ -41,7 +41,7 @@ G.Castle = (() => {
     const m = G.Difficulty ? G.Difficulty.combat() : { hp: 1, dmg: 1, rate: 1 };
     const party = partyScale(playerCount());
     return {
-      n: Math.max(1, Math.round((6 + Math.round(w * 0.62)) * m.rate * party.count)),
+      n: Math.max(1, Math.round((6 + Math.round(w * 0.62)) * (1.18 + Math.min(0.20, w * 0.004)) * m.rate * party.count)),
       hp: Math.round(22 + w * 13 + Math.pow(w, 1.32) * 0.9),
       dmg: Math.round((3.6 + w * 0.72) * 10) / 10,
       spd: Math.min(104, Math.round(48 + w * 1.05)),
@@ -76,7 +76,7 @@ G.Castle = (() => {
     const s = spec(w);
     const boss = w % 10 === 0;
     if (w === FINAL_WAVE) hp = Math.max(hp, Math.round(maxHp * FINAL_MIN_PUPPY_HP));
-    queued = w === FINAL_WAVE ? 0 : boss ? Math.max(4, Math.round(s.n * 0.4)) : s.n;
+    queued = w === FINAL_WAVE ? 0 : boss ? Math.max(6, Math.round(s.n * 0.6)) : s.n;
     acc = boss ? 0.35 : s.gap;
     if (boss) spawnBoss(s, w);
     if (G.Spawner) G.Spawner.say(boss ? ('Oleada ' + w + ' de 50 · ¡Jefe!') : ('Oleada ' + w + ' de 50'), 2.6);
@@ -152,6 +152,10 @@ G.Castle = (() => {
     e.xp = 16 + w;
     e.castleWave = w;
     e.castleBoss = true;
+    // Todos los jefes pueden castigar al objetivo, pero siempre avisan antes.
+    e.castleBossTier = tier;
+    e.castleBossSiegeCd = 2.5;
+    e.castleBossWindup = null;
     if (final) dressFinalBoss(e);
     G.EnemyMgr.add(e);
     G.Audio.sfx('boss');
@@ -230,6 +234,32 @@ G.Castle = (() => {
     if (!on || hp <= 0) return false;
     for (const e of G.EnemyMgr.all()) {
       if (e.dead || e.remote || e.behavior === 'thief' || e.stunT > 0 || e.siegeBoss) continue;
+      if (e.castleBoss && !e.finalCastleBoss) {
+        if (e.castleBossSiegeCd > 0) { e.castleBossSiegeCd -= dt; continue; }
+        const reach = e.r + aim.r + 16;
+        if (G.U.dist2(e.x, e.y, aim.x, aim.y) > reach * reach) {
+          e.castleBossWindup = null;
+          continue;
+        }
+        if (e.castleBossWindup == null) {
+          e.castleBossWindup = 1.1;
+          G.FX.ring(aim.x, aim.y, aim.r, aim.r * 2.2, '#ff654f', 1.1, 5);
+          if (e.strike) e.strike(aim);
+          continue;
+        }
+        e.castleBossWindup -= dt;
+        if (e.castleBossWindup > 0) continue;
+        const tier = Math.max(1, Math.min(4, e.castleBossTier || wave / 10));
+        const pct = 0.03 + tier * 0.01;
+        const dmg = Math.round(maxHp * pct);
+        hp = Math.max(0, hp - dmg);
+        e.castleBossWindup = null;
+        e.castleBossSiegeCd = Math.max(5.5, 7.5 - tier * 0.5);
+        G.Camera.kick(0.8);
+        G.FX.dmgText(aim.x + G.U.rand(-10, 10), aim.y - 62, dmg, '#ff654f');
+        if (hp <= 0) return true;
+        continue;
+      }
       if (e.finalCastleBoss) {
         updateFinalPhase(e);
         if (e.finalCastleCd > 0) { e.finalCastleCd -= dt; continue; }
@@ -304,7 +334,8 @@ G.Castle = (() => {
   return {
     begin, end, net, snapshot, touch, tick, draw, aim, onBossDown, giveBond, partyScale, dressFinalBoss,
     balance: { puppyHp: PUPPY_MAX_HP, finalWave: FINAL_WAVE, finalHpMul: FINAL_HP_MUL,
-      finalVisualMul: FINAL_VISUAL_MUL, finalMinPuppyHp: FINAL_MIN_PUPPY_HP },
+      finalVisualMul: FINAL_VISUAL_MUL, finalMinPuppyHp: FINAL_MIN_PUPPY_HP,
+      baseCap: BASE_CAP, maxCap: 34, bossEscortRatio: 0.6 },
     get up() { return on; },
     get hp() { return hp; },
     get maxHp() { return maxHp; },
