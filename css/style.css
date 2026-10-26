@@ -278,7 +278,8 @@ label { display: block; font-size: 14px; color: var(--muted); margin: 8px 0 4px;
 .map-side { flex: 1; min-width: 230px; max-height: 480px; display: flex; flex-direction: column; }
 .map-side h3 { margin: 0 0 7px; font-size: 15px; }
 .map-objects { min-height: 120px; flex: 1; overflow-y: auto; border-top: 1px solid rgba(160,195,235,.35); }
-.map-object { width: 100%; display: grid; grid-template-columns: 24px minmax(0,1fr) auto; gap: 7px; align-items: center; padding: 7px 5px; color: var(--ink); background: transparent; border: 0; border-bottom: 1px solid rgba(160,195,235,.25); font: inherit; text-align: left; cursor: pointer; }
+.map-object { width: 100%; display: grid; grid-template-columns: 32px minmax(0,1fr) auto; gap: 7px; align-items: center; padding: 7px 5px; color: var(--ink); background: transparent; border: 0; border-bottom: 1px solid rgba(160,195,235,.25); font: inherit; text-align: left; cursor: pointer; }
+.map-object canvas.map-mon { width: 32px; height: 32px; image-rendering: pixelated; }
 .map-object:hover, .map-object.on { background: rgba(90,140,220,.2); }
 .map-object .dist { color: #d9e6ff; white-space: nowrap; }
 .map-object img { width: 20px; height: 20px; object-fit: contain; image-rendering: pixelated; }

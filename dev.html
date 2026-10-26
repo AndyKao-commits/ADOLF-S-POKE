@@ -641,6 +641,15 @@
   </div>
 </section>
 
+<section id="scr-ditto" class="scr dim hidden" translate="no">
+  <div class="box center forget-box">
+    <h2 id="ditto-title">Ditto</h2>
+    <p id="ditto-sub" class="sub">Elige un objeto que ya llevas. Ditto copia uno. Revivir no se copia.</p>
+    <div id="ditto-cards" class="cards forget-cards"></div>
+    <button id="ditto-cancel" type="button" class="btn ghost">Ahora no</button>
+  </div>
+</section>
+
 <section id="scr-bond" class="scr dim hidden">
   <div class="box center">
     <h2 class="bond-title">¡Vínculo!</h2>
@@ -684,7 +693,6 @@
       <aside class="map-side">
         <h3 id="map-current">目前地圖物件 · 追蹤 0/3</h3>
         <div id="map-objects" class="map-objects"></div>
-        <details class="map-key"><summary>圖示說明</summary><ul id="map-legend" class="map-legend" style="list-style:none"></ul></details>
       </aside>
     </div>
     <p class="map-foot">M 或 Esc 關閉。這一局先暫停。</p>
@@ -779,6 +787,7 @@
 <script defer src="js/systems/gacha.js"></script>
 <script defer src="js/systems/interact.js"></script>
 <script defer src="js/systems/move-forgetter.js"></script>
+<script defer src="js/systems/ditto.js"></script>
 <script defer src="js/systems/rift.js"></script>
 <script defer src="js/systems/orbs.js"></script>
 <script defer src="js/systems/judgment.js"></script>
@@ -823,6 +832,7 @@
 <script defer src="js/core/updater.js"></script>
 <!-- juego -->
 <script defer src="js/game.js"></script>
+<script defer src="js/ui/clock-lab.js"></script>
 <script defer src="js/core/watch.js"></script>
 <script defer src="js/main.js"></script>
 <!-- scripts:end -->

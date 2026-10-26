@@ -577,13 +577,18 @@ G.Items = (() => {
     p.revive(REVIVE_RATIO[kind]);
     return true;
   }
-  function gain(p, id) {
+  function gain(p, id, opt) {
     const it = BY[id];
-    if (!it || !p || !canOffer(p, it)) return false;
+    const copy = !!(opt && opt.copy);
+    if (!it || !p) return false;
+    if (copy) {
+      if (sealed(p, id) || it.stackType === 'revive') return false;
+      if (!((p.stacks && p.stacks[id]) || 0)) return false;
+    } else if (!canOffer(p, it)) return false;
     p.stacks = p.stacks || {};
     const n = p.stacks[id] || 0;
     if (n && it.off) it.off(p);
-    p.stacks[id] = Math.min(it.max, n + 1);
+    p.stacks[id] = copy ? n + 1 : Math.min(it.max, n + 1);
     if (it.on) it.on(p, p.stacks[id]);
     if (it.stackType === 'revive') refreshRevive(p);
     p.item = id;

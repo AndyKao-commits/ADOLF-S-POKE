@@ -420,15 +420,7 @@ G.RunUI = (() => {
         : t('M 或 Esc 關閉。這一局先暫停。', 'M or Esc closes it. This run is paused.', 'M o Esc para cerrar. La partida está en pausa.'),
       hint: t('點地圖標記或右側物件即可追蹤，最多 3 個；再點一次取消。', 'Click a map marker or an object on the right to track it, up to 3. Click again to clear it.', 'Pulsa una marca o un objeto de la derecha para seguirlo, hasta 3. Otra vez para quitarlo.'),
       current: t('目前地圖物件', 'On the map now', 'Ahora en el mapa'),
-      tracking: t('追蹤', 'Tracking', 'Siguiendo'),
-      rows: [
-        { shapes: [['mk-enemy', '#ff4d5a']], text: t('敵人。紅點。', 'Enemies. A red dot.', 'Enemigos. Un punto rojo.') },
-        { shapes: [['mk-boss', '#e1061c']], text: t('Boss。比較大的紅點。', 'Bosses. The bigger red dot.', 'Jefes. El punto rojo más grande.') },
-        { shapes: [['mk-egg', '#fff1c2']], text: t('孵化蛋。走過去就撿起來，先放進背包。', 'Hatching eggs. Walk over them. They go into the bag first.', 'Huevos de incubar. Se cogen al pasar y van primero a la mochila.') },
-        { shapes: [['img', 'assets/future-use/balls/poke-ball.png'], ['img', 'assets/future-use/balls/great-ball.png'], ['img', 'assets/future-use/balls/ultra-ball.png']], text: t('精靈球。走過去後三選一。紅是一般、藍是超級、黃是高級。', 'Poké Balls. Walk over one and choose 1 of 3. Red is normal, blue is super, yellow is ultra.', 'Poké Balls. Al pasar eliges 1 de 3. Roja normal, azul super, amarilla ultra.') },
-        { shapes: [['img', 'assets/future-use/shop/shop-only.png']], text: t('商店。紅白條紋的攤位。', 'Shops. The red and white stall.', 'Tiendas. El puesto de rayas rojas y blancas.') },
-        { shapes: [['mk-mate', '#5fd4ff']], text: t('隊友。青色菱形。聯機時才會出現。', 'Teammates. A cyan diamond, only in co-op.', 'Compañeros. Un rombo cian, sólo en cooperativo.') }
-      ]
+      tracking: t('追蹤', 'Tracking', 'Siguiendo')
     };
   }
 
@@ -442,10 +434,6 @@ G.RunUI = (() => {
     box.querySelector('#map-current').textContent = `${copy.current} · ${copy.tracking} 0/3`;
     box.dataset.mapCurrent = copy.current;
     box.dataset.mapTracking = copy.tracking;
-    box.querySelector('#map-legend').innerHTML = copy.rows.map(row =>
-      `<li><span class="map-icons">${row.shapes.map(([k, col]) => k === 'img'
-        ? `<img class="map-swatch mk-img" src="${col}" alt="">`
-        : `<i class="map-swatch ${k}" style="--c:${col}"></i>`).join('')}</span><span>${row.text}</span></li>`).join('');
     const cv = $('map-radar');
     if (cv && !cv._wired) {
       cv._wired = true;
@@ -502,6 +490,37 @@ G.RunUI = (() => {
     G.UI.show('scr-forget');
   }
 
+  function showDitto(items, onPick, onCancel) {
+    const lang = (G.I18n && G.I18n.lang) || '';
+    const zh = String(lang).startsWith('zh');
+    const en = lang === 'en';
+    $('ditto-title').textContent = zh ? '百變怪' : 'Ditto';
+    $('ditto-sub').textContent = G.I18n.t('Elige un objeto que ya llevas. Ditto copia uno. Revivir no se copia.');
+    const box = $('ditto-cards');
+    box.innerHTML = '';
+    if (!items.length) {
+      const note = document.createElement('p');
+      note.className = 'sub';
+      note.textContent = G.I18n.t('No llevas ningún objeto que se pueda copiar');
+      box.appendChild(note);
+    }
+    items.forEach((it, i) => {
+      const n = (G.Game.player.stacks && G.Game.player.stacks[it.id]) || 0;
+      const el = document.createElement('button');
+      el.type = 'button';
+      el.className = 'card forget-card';
+      el.innerHTML = `<div class="ico">${G.Icons.html(it.id, 38)}</div>
+        <div class="txt"><div class="nm">${G.Items.text(it, 'name')} <span class="tag-chip">x${n}</span></div>
+        <div class="ds">${G.Items.text(it, 'desc')}</div></div>
+        <div class="key">${i + 1}</div>`;
+      el.onclick = () => onPick(it.id);
+      box.appendChild(el);
+    });
+    $('ditto-cancel').textContent = zh ? '暫時不要' : en ? 'Not now' : 'Ahora no';
+    $('ditto-cancel').onclick = onCancel;
+    G.UI.show('scr-ditto');
+  }
+
   function showStall(shop, api) {
     const lang = (G.I18n && G.I18n.lang) || '';
     const zh = String(lang).startsWith('zh');
@@ -545,5 +564,5 @@ G.RunUI = (() => {
     G.UI.show('scr-stall');
   }
 
-  return { showLevelUp, reroll, showItemChoice, showBallChoice, showForgetMoves, showBond, pickBond, bondBack, pick, skip: skipCard, setWaiting, closeLevelUp, showOver, wirePause, showPause, showMap, showStall };
+  return { showLevelUp, reroll, showItemChoice, showBallChoice, showForgetMoves, showDitto, showBond, pickBond, bondBack, pick, skip: skipCard, setWaiting, closeLevelUp, showOver, wirePause, showPause, showMap, showStall };
 })();

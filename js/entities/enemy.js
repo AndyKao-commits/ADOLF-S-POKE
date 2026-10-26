@@ -1161,7 +1161,17 @@
       return nearestPlayer(players, e.x, e.y) || pl;
     }
 
-    return { clear, all, add, get, addRemote, removeRemote, stash, restore, clearRemote, update, drawables, queryCircle, rebuildGrid, bossAlive, shinies, nearestPlayer,
+    /** Quita enemigos sin contar la baja. Lo usa el salto de tiempo de pruebas. */
+    function dropWhere(pred) {
+      for (let i = list.length - 1; i >= 0; i--) {
+        const e = list[i];
+        if (e.remote || !pred(e)) continue;
+        list.splice(i, 1);
+        byId.delete(e.id);
+      }
+    }
+
+    return { clear, all, add, get, addRemote, removeRemote, stash, restore, clearRemote, update, drawables, queryCircle, rebuildGrid, bossAlive, shinies, nearestPlayer, dropWhere,
              get count() { return list.length; } };
   })();
 })();

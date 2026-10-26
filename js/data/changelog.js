@@ -7,6 +7,26 @@
  */
 G.CHANGELOG = [
   { d: '2026-10-26', title: ['Mapa', 'Map'], chg: [
+    ['La lista del mapa sólo muestra NPC, Poké Balls de pago, Poké Balls y huevos. Los enemigos ya no salen ahí, y se quitó la leyenda de iconos.',
+     'The map list only shows NPCs, paid Poké Balls, Poké Balls and eggs. Enemies are no longer listed, and the icon key is gone.']
+  ] },
+  { d: '2026-10-26', title: ['Ataques', 'Moves'], chg: [
+    ['Encima de cada ataque de la barra se lee su nombre en letra pequeña, no sólo el que está resaltado.',
+     'Each move on the bar shows its name in small text above it, not only the highlighted one.']
+  ] },
+  { d: '2026-10-26', title: ['Ditto', 'Ditto'], new: [
+    ['Ditto puede visitarte una vez por partida. Junto a él, E copia un objeto que ya llevas: eliges uno y recibes una copia más. Revivir no se copia.',
+     'Ditto can visit once per run. Next to it, E copies an item you already carry: you choose one and get one more copy. Revives are not copied.']
+  ] },
+  { d: '2026-10-26', title: ['Poké Ball maldita', 'Cursed Poké Ball'], chg: [
+    ['La Poké Ball maldita saca élites según lo fuerte que estés ahora: más vida, un poco más de daño y una dote (guarda, prisa o regeneración). Si ya pegas muy fuerte, llevan dos.',
+     'A cursed Poké Ball brings elites that match how strong you are now: more HP, a little more damage, and one gift (guard, haste or regeneration). If you already hit very hard, they bring two.']
+  ] },
+  { d: '2026-10-26', title: ['Mapa', 'Map'], fix: [
+    ['En el mapa, los monstruos se ven con su propio dibujo y la lista de la derecha no pone su nombre. Si lo que seguías desaparece, esa marca se quita.',
+     'On the map, monsters show their own picture and the list on the right does not name them. If something you were tracking disappears, that mark is removed.']
+  ] },
+  { d: '2026-10-26', title: ['Mapa', 'Map'], chg: [
     ['El mapa grande lista lo que hay ahora, del más cercano al más lejano, y puedes seguir hasta 3 marcas. La cuarta sustituye a la más antigua.',
      'The large map lists what is out there, nearest first, and you can track up to 3 marks. A fourth replaces the oldest.']
   ] },

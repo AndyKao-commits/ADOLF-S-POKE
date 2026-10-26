@@ -21,6 +21,14 @@ test('large map has a distance-sorted object list and supports three tracked tar
   assert.match(hud, /if \(marks\.length >= 3\) marks\.shift\(\)/);
 });
 
+test('the object list keeps NPCs, balls and eggs, and a dead target drops its track', () => {
+  assert.match(hud, /drawMonIcon/);
+  assert.doesNotMatch(hud, /add\(e\.x, e\.y, e\.boss \? 'boss' : 'enemy'/);
+  assert.match(hud, /function syncMarks/);
+  assert.match(hud, /if \(!live\) continue/);
+  assert.doesNotMatch(html, /id="map-legend"/);
+});
+
 test('Move Forgetter is shown in the radar, object list and edge indicator', () => {
   assert.match(hud, /G\.MoveForgetter\.position/);
   assert.match(hud, /kind === 'forgetter'/);

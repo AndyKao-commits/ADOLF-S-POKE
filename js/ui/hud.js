@@ -174,23 +174,32 @@ G.HUD = (() => {
   const MARK_COL = {
     enemy: '#ff4d5a', boss: '#e1061c', egg: '#fff1c2',
     ball1: '#e23d3d', ball2: '#3a7ee0', ball3: '#f0d24a', ball4: '#7b4ec8', curse: '#c47bff',
-    shop: '#ffd23f', mate: '#5fd4ff', forgetter: '#d7caff'
+    shop: '#ffd23f', mate: '#5fd4ff', forgetter: '#d7caff', ditto: '#f2a3d0'
   };
   const forgetterMapPic = new Image();
   forgetterMapPic.src = 'assets/future-use/npc/move-forgetter/move-forgetter.png';
 
+  /** El dibujo del Pokémon, encajado en una caja. Si la hoja aún no llega, un punto. */
+  function drawMonIcon(ctx, x, y, dex, shiny, box) {
+    const m = dex && G.Sprites && G.Sprites.animMeta(dex, 'Idle', !!shiny);
+    const s = dex && G.Sprites && G.Sprites.sheet(dex, 'Idle', !!shiny);
+    if (!m || !s || !s.ready) {
+      ctx.fillStyle = '#ff4d5a';
+      ctx.beginPath(); ctx.arc(x, y, Math.max(2, box * 0.22), 0, 6.2832); ctx.fill();
+      return;
+    }
+    const k = box / Math.max(m.w, m.h, 1);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(s.img, 0, 0, m.w, m.h,
+      Math.round(x - m.w * k / 2), Math.round(y - m.h * k / 2),
+      Math.max(1, Math.round(m.w * k)), Math.max(1, Math.round(m.h * k)));
+  }
+
   /** One shape per thing. s = 1 on the corner radar, larger on the pause map. */
-  function drawMark(ctx, x, y, kind, s) {
+  function drawMark(ctx, x, y, kind, s, info) {
     ctx.save();
-    if (kind === 'enemy') {
-      ctx.fillStyle = MARK_COL.enemy;
-      ctx.beginPath(); ctx.arc(x, y, 2.2 * s, 0, 6.2832); ctx.fill();
-    } else if (kind === 'boss') {
-      ctx.fillStyle = MARK_COL.boss;
-      ctx.beginPath(); ctx.arc(x, y, 4.4 * s, 0, 6.2832); ctx.fill();
-      ctx.lineWidth = Math.max(1, s * 0.7);
-      ctx.strokeStyle = '#6e0010';
-      ctx.stroke();
+    if (kind === 'enemy' || kind === 'boss') {
+      drawMonIcon(ctx, x, y, info && info.dex, info && info.shiny, (kind === 'boss' ? 12 : 9) * s);
     } else if (kind === 'egg') {
       ctx.fillStyle = MARK_COL.egg;
       ctx.beginPath(); ctx.ellipse(x, y, 2.3 * s, 3.5 * s, 0, 0, 6.2832); ctx.fill();
@@ -225,6 +234,8 @@ G.HUD = (() => {
       ctx.beginPath();
       ctx.moveTo(x, y - r); ctx.lineTo(x + r * 0.8, y); ctx.lineTo(x, y + r); ctx.lineTo(x - r * 0.8, y);
       ctx.closePath(); ctx.fill();
+    } else if (kind === 'ditto') {
+      drawMonIcon(ctx, x, y, 132, false, 9 * s);
     } else if (kind === 'forgetter') {
       const sz = 8 * s;
       if (forgetterMapPic.complete && forgetterMapPic.naturalWidth) {
@@ -247,10 +258,10 @@ G.HUD = (() => {
     ctx.strokeStyle = 'rgba(244,248,255,.18)';
     ctx.beginPath(); ctx.arc(cx, cy, R * 0.55, 0, 6.2832); ctx.stroke();
     const REACH = 820;
-    const blot = (x, y, kind) => {
+    const blot = (x, y, kind, info) => {
       const dx = (x - pl.x) / REACH * (R - 6), dy = (y - pl.y) / REACH * (R - 6);
       if (dx * dx + dy * dy > (R - 6) * (R - 6)) return;
-      drawMark(ctx, cx + dx, cy + dy, kind, 1);
+      drawMark(ctx, cx + dx, cy + dy, kind, kind === 'enemy' || kind === 'boss' || kind === 'ditto' ? 1.7 : 1, info);
     };
     if (G.World.shops) for (const s of G.World.shops) blot(s.x, s.y, 'shop');
     for (const p of G.Pickups.all()) {
@@ -258,12 +269,14 @@ G.HUD = (() => {
       else if (p.kind === 'ball' || p.kind === 'vend') blot(p.x, p.y, p.kind === 'vend' ? 'ball1' : p.value >= 4 ? 'ball4' : p.value >= 3 ? 'ball3' : p.value === 2 ? 'ball2' : 'ball1');
       else if (p.kind === 'curse') blot(p.x, p.y, 'curse');
     }
-    for (const e of G.EnemyMgr.all()) if (!e.dead) blot(e.x, e.y, e.boss ? 'boss' : 'enemy');
+    for (const e of G.EnemyMgr.all()) if (!e.dead) blot(e.x, e.y, e.boss ? 'boss' : 'enemy', { dex: e.dex, shiny: e.shiny });
     if (G.Coop && G.Coop.active && G.Coop.puppets) {
       for (const m of G.Coop.puppets()) if (!m.dead) blot(m.x, m.y, 'mate');
     }
     const grandpa = G.MoveForgetter && G.MoveForgetter.position;
     if (grandpa) blot(grandpa.x, grandpa.y, 'forgetter');
+    const ditto = G.Ditto && G.Ditto.position;
+    if (ditto) blot(ditto.x, ditto.y, 'ditto', { dex: 132 });
     ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.arc(cx, cy, 3.2, 0, 6.2832); ctx.stroke();
     ctx.restore();
@@ -277,13 +290,57 @@ G.HUD = (() => {
   function toggleMapMark(pl, target) {
     if (!pl || !target) return;
     const marks = Array.isArray(pl.marks) ? pl.marks : (pl.marks = pl.mark ? [pl.mark] : []);
-    const found = marks.findIndex(m => Math.hypot(m.x - target.x, m.y - target.y) < 28);
+    const found = marks.findIndex(m => (target.ref && m.ref === target.ref && m.kind === target.kind) || Math.hypot(m.x - target.x, m.y - target.y) < 28);
     if (found >= 0) marks.splice(found, 1);
     else {
       if (marks.length >= 3) marks.shift();
-      marks.push({ x: target.x, y: target.y, col: target.col || '#fff', kind: target.kind || '' });
+      marks.push({ x: target.x, y: target.y, col: target.col || '#fff', kind: target.kind || '', ref: target.ref || '' });
     }
     pl.mark = marks.length ? marks[marks.length - 1] : null;
+  }
+
+  /** El objeto que sigue una marca. null si ya no está (muerto, cogido o ido). */
+  function markLive(mark) {
+    if (!mark || !mark.ref) return null;
+    if (mark.kind === 'enemy' || mark.kind === 'boss') {
+      const e = G.EnemyMgr.all().find(e => e.id === mark.ref && !e.dead);
+      return e ? { x: e.x, y: e.y } : null;
+    }
+    if (mark.kind === 'shop') {
+      const s = (G.World.shops || []).find(s => 's:' + Math.round(s.x) + ':' + Math.round(s.y) === mark.ref);
+      return s ? { x: s.x, y: s.y } : null;
+    }
+    if (mark.kind === 'mate') {
+      const mates = G.Coop && G.Coop.puppets ? G.Coop.puppets() : [];
+      const m = mates.find(p => p.uid === mark.ref && !p.dead);
+      return m ? { x: m.x, y: m.y } : null;
+    }
+    if (mark.kind === 'forgetter') {
+      const g = G.MoveForgetter && G.MoveForgetter.position;
+      return g ? { x: g.x, y: g.y } : null;
+    }
+    if (mark.kind === 'ditto') {
+      const d = G.Ditto && G.Ditto.position;
+      return d ? { x: d.x, y: d.y } : null;
+    }
+    const p = G.Pickups.all().find(p => p.id === mark.ref);
+    return p ? { x: p.x, y: p.y } : null;
+  }
+
+  /** Quita las marcas cuyo objetivo ya no existe y mueve las demás con él. */
+  function syncMarks(pl) {
+    if (!pl || !Array.isArray(pl.marks) || !pl.marks.length) return;
+    const next = [];
+    for (const m of pl.marks) {
+      const live = markLive(m);
+      if (!live) continue;
+      m.x = live.x; m.y = live.y;
+      next.push(m);
+    }
+    if (next.length !== pl.marks.length) {
+      pl.marks = next;
+      pl.mark = next.length ? next[next.length - 1] : null;
+    }
   }
 
   function mapTargets(pl) {
@@ -291,32 +348,30 @@ G.HUD = (() => {
     const lang = (G.I18n && G.I18n.lang) || '';
     const zh = String(lang).startsWith('zh'), en = lang === 'en';
     const text = (z, e, s) => zh ? z : en ? e : s;
-    const add = (x, y, kind, name, img = '') => out.push({ x, y, kind, name, img, col: MARK_COL[kind] || '#fff', d: Math.hypot(x - pl.x, y - pl.y) });
-    if (G.World.shops) for (const s of G.World.shops) add(s.x, s.y, 'shop', text('商店', 'Shop', 'Tienda'), 'assets/future-use/shop/shop-only.png');
+    const add = (x, y, kind, name, img = '', ref = '', dex = 0, shiny = false) => out.push({ x, y, kind, name, img, ref, dex, shiny, col: MARK_COL[kind] || '#fff', d: Math.hypot(x - pl.x, y - pl.y) });
+    if (G.World.shops) for (const s of G.World.shops) add(s.x, s.y, 'shop', text('商店', 'Shop', 'Tienda'), 'assets/future-use/shop/shop-only.png', 's:' + Math.round(s.x) + ':' + Math.round(s.y));
     for (const p of G.Pickups.all()) {
-      if (p.kind === 'egg') add(p.x, p.y, 'egg', text('孵化蛋', 'Hatching Egg', 'Huevo de incubar'));
-      else if (p.kind === 'vend') add(p.x, p.y, 'ball1', text('付費精靈球', 'Paid Poké Ball', 'Poké Ball de pago'), 'assets/future-use/balls/poke-ball.png');
-      else if (p.kind === 'curse') add(p.x, p.y, 'curse', text('詛咒球', 'Cursed Poké Ball', 'Poké Ball maldita'), 'assets/future-use/balls/cursed-ball.png');
+      if (p.kind === 'egg') add(p.x, p.y, 'egg', text('孵化蛋', 'Hatching Egg', 'Huevo de incubar'), '', p.id);
+      else if (p.kind === 'vend') add(p.x, p.y, 'ball1', text('付費精靈球', 'Paid Poké Ball', 'Poké Ball de pago'), 'assets/future-use/balls/poke-ball.png', p.id);
+      else if (p.kind === 'curse') add(p.x, p.y, 'curse', text('詛咒球', 'Cursed Poké Ball', 'Poké Ball maldita'), 'assets/future-use/balls/cursed-ball.png', p.id);
       else if (p.kind === 'ball') {
         const tier = p.value >= 4 ? 4 : p.value >= 3 ? 3 : p.value === 2 ? 2 : 1;
         const names = ['Poké Ball', 'Super Ball', 'Ultra Ball', 'Master Ball'];
         const files = ['poke-ball.png', 'great-ball.png', 'ultra-ball.png', 'master-ball.png'];
-        add(p.x, p.y, 'ball' + tier, G.T(names[tier - 1]), 'assets/future-use/balls/' + files[tier - 1]);
+        add(p.x, p.y, 'ball' + tier, G.T(names[tier - 1]), 'assets/future-use/balls/' + files[tier - 1], p.id);
       }
     }
-    for (const e of G.EnemyMgr.all()) if (!e.dead) {
-      const mon = G.DEX_BY && G.DEX_BY[e.dex];
-      add(e.x, e.y, e.boss ? 'boss' : 'enemy', mon ? mon.name : text(e.boss ? 'Boss' : '敵人', e.boss ? 'Boss' : 'Enemy', e.boss ? 'Jefe' : 'Enemigo'));
-    }
-    if (G.Coop && G.Coop.active && G.Coop.puppets) for (const m of G.Coop.puppets()) if (!m.dead) add(m.x, m.y, 'mate', m.name || text('隊友', 'Teammate', 'Compañero'));
     const grandpa = G.MoveForgetter && G.MoveForgetter.position;
-    if (grandpa) add(grandpa.x, grandpa.y, 'forgetter', text('遺忘爺爺', 'Move Forgetter', 'Abuelo Olvido'), 'assets/future-use/npc/move-forgetter/move-forgetter.png');
+    if (grandpa) add(grandpa.x, grandpa.y, 'forgetter', text('遺忘爺爺', 'Move Forgetter', 'Abuelo Olvido'), 'assets/future-use/npc/move-forgetter/move-forgetter.png', 'forgetter');
+    const ditto = G.Ditto && G.Ditto.position;
+    if (ditto) add(ditto.x, ditto.y, 'ditto', text('百變怪', 'Ditto', 'Ditto'), '', 'ditto', 132);
     return out.sort((a, b) => a.d - b.d).slice(0, 80);
   }
 
   /** Mapa grande (la pantalla de pausa): anillos y las mismas marcas que el radar. */
   function paintMap(canvas, pl) {
     if (!canvas || !pl) return;
+    syncMarks(pl);
     const ctx = canvas.getContext('2d');
     const w = canvas.width, h = canvas.height;
     const cx = w / 2, cy = h / 2, R = Math.min(w, h) / 2 - 18;
@@ -336,23 +391,25 @@ G.HUD = (() => {
       if (d > R - 8) { const k = (R - 8) / (d || 1); dx *= k; dy *= k; }
       return [cx + dx, cy + dy];
     };
-    const mark = (wx, wy, kind) => {
+    const mark = (wx, wy, kind, ref, info) => {
       const [sx, sy] = at(wx, wy);
-      drawMark(ctx, sx, sy, kind, 3);
-      hits.push({ sx, sy, x: wx, y: wy, col: MARK_COL[kind], kind });
+      drawMark(ctx, sx, sy, kind, 3, info);
+      hits.push({ sx, sy, x: wx, y: wy, col: MARK_COL[kind], kind, ref: ref || '' });
     };
-    if (G.World.shops) for (const s of G.World.shops) mark(s.x, s.y, 'shop');
+    if (G.World.shops) for (const s of G.World.shops) mark(s.x, s.y, 'shop', 's:' + Math.round(s.x) + ':' + Math.round(s.y));
     for (const p of G.Pickups.all()) {
-      if (p.kind === 'egg') mark(p.x, p.y, 'egg');
-      else if (p.kind === 'ball' || p.kind === 'vend') mark(p.x, p.y, p.kind === 'vend' ? 'ball1' : p.value >= 4 ? 'ball4' : p.value >= 3 ? 'ball3' : p.value === 2 ? 'ball2' : 'ball1');
-      else if (p.kind === 'curse') mark(p.x, p.y, 'curse');
+      if (p.kind === 'egg') mark(p.x, p.y, 'egg', p.id);
+      else if (p.kind === 'ball' || p.kind === 'vend') mark(p.x, p.y, p.kind === 'vend' ? 'ball1' : p.value >= 4 ? 'ball4' : p.value >= 3 ? 'ball3' : p.value === 2 ? 'ball2' : 'ball1', p.id);
+      else if (p.kind === 'curse') mark(p.x, p.y, 'curse', p.id);
     }
-    for (const e of G.EnemyMgr.all()) if (!e.dead) mark(e.x, e.y, e.boss ? 'boss' : 'enemy');
+    for (const e of G.EnemyMgr.all()) if (!e.dead) mark(e.x, e.y, e.boss ? 'boss' : 'enemy', e.id, { dex: e.dex, shiny: e.shiny });
     if (G.Coop && G.Coop.active && G.Coop.puppets) {
-      for (const m of G.Coop.puppets()) if (!m.dead) mark(m.x, m.y, 'mate');
+      for (const m of G.Coop.puppets()) if (!m.dead) mark(m.x, m.y, 'mate', m.uid);
     }
     const grandpa = G.MoveForgetter && G.MoveForgetter.position;
-    if (grandpa) mark(grandpa.x, grandpa.y, 'forgetter');
+    if (grandpa) mark(grandpa.x, grandpa.y, 'forgetter', 'forgetter');
+    const ditto = G.Ditto && G.Ditto.position;
+    if (ditto) mark(ditto.x, ditto.y, 'ditto', 'ditto', { dex: 132 });
     const marks = Array.isArray(pl.marks) ? pl.marks : (pl.mark ? [pl.mark] : []);
     for (const mk of marks) {
       const [sx, sy] = at(mk.x, mk.y);
@@ -370,21 +427,31 @@ G.HUD = (() => {
     const head = document.getElementById('map-current');
     if (objects && head) {
       const targets = mapTargets(pl);
-      const chosen = t => marks.some(m => Math.hypot(m.x - t.x, m.y - t.y) < 28);
+      const chosen = t => marks.some(m => (t.ref && m.ref === t.ref && m.kind === t.kind) || Math.hypot(m.x - t.x, m.y - t.y) < 28);
       objects._targets = targets;
       const side = document.getElementById('scr-map');
       head.textContent = `${side.dataset.mapCurrent || '目前地圖物件'} · ${side.dataset.mapTracking || '追蹤'} ${marks.length}/3`;
       const sig = targets.map(t => `${Math.round(t.x / 24)},${Math.round(t.y / 24)},${Math.round(t.d / 24)},${chosen(t) ? 1 : 0}`).join('|');
       if (objects._sig !== sig) {
         objects._sig = sig;
-        objects.innerHTML = targets.map((t, i) => `<button type="button" class="map-object${chosen(t) ? ' on' : ''}" data-map-target="${i}">
-          ${t.img ? `<img src="${t.img}" alt="">` : `<i style="--c:${t.col}"></i>`}<span>${t.name}</span><span class="dist">${Math.max(1, Math.round(t.d / 24))} m</span></button>`).join('') || '<p class="sub">—</p>';
+        objects.innerHTML = targets.map((t, i) => {
+          const icon = t.dex ? `<canvas class="map-mon" width="32" height="32" data-dex="${t.dex}" data-shiny="${t.shiny ? 1 : 0}"></canvas>`
+            : t.img ? `<img src="${t.img}" alt="">` : `<i style="--c:${t.col}"></i>`;
+          return `<button type="button" class="map-object${chosen(t) ? ' on' : ''}" data-map-target="${i}">
+          ${icon}<span>${t.name}</span><span class="dist">${Math.max(1, Math.round(t.d / 24))} m</span></button>`;
+        }).join('') || '<p class="sub">—</p>';
       }
+      objects.querySelectorAll('canvas.map-mon').forEach(cv => {
+        const c = cv.getContext('2d');
+        c.clearRect(0, 0, cv.width, cv.height);
+        drawMonIcon(c, cv.width / 2, cv.height / 2, +cv.dataset.dex, cv.dataset.shiny === '1', 28);
+      });
     }
   }
 
   /** Flecha hacia la marca puesta en el mapa. */
   function pinArrow(ctx, w, h, pl) {
+    syncMarks(pl);
     const list = Array.isArray(pl.marks) && pl.marks.length ? pl.marks : (pl.mark ? [pl.mark] : []);
     const cam = G.Camera;
     for (const mk of list) {
@@ -412,7 +479,8 @@ G.HUD = (() => {
     const shop = G.Game.nearestShop && G.Game.nearestShop();
     const field = G.Game.nearestField && G.Game.nearestField();
     const forgetter = G.MoveForgetter && G.MoveForgetter.near(G.Game.player);
-    if (!shop && !field && !forgetter) return;
+    const dittoNear = G.Ditto && G.Ditto.near(G.Game.player);
+    if (!shop && !field && !forgetter && !dittoNear) return;
     const dash = 54, bs = place ? place.s : 46, gap = 14;
     const dashX = w - dash - 18;
     const dashY = h - dash - (touch ? 28 : 18);
@@ -720,6 +788,44 @@ G.HUD = (() => {
       }
       ctx.restore();
     }
+    const dittoNpc = G.Ditto && G.Ditto.position;
+    if (dittoNpc && !G.Rift.inArena) {
+      const sx = (dittoNpc.x - cam.left()) * cam.scale, sy = (dittoNpc.y - 58 - cam.top()) * cam.scale;
+      const now = performance.now() / 1000, beat = 0.5 + Math.sin(now * 6) * 0.5;
+      const metres = Math.max(1, Math.round(G.U.dist(pl.x, pl.y, dittoNpc.x, dittoNpc.y) / 24));
+      const name = G.T('Ditto'), label = name + ' · ' + metres + ' m';
+      const off = sx < 28 || sx > w - 28 || sy < 64 || sy > h - 82;
+      ctx.save();
+      if (off) {
+        const M = 54, ex = G.U.clamp(sx, M, w - M), ey = G.U.clamp(sy, M + 70, h - M - 82);
+        const a = Math.atan2(sy - ey, sx - ex), ca = Math.cos(a), sa = Math.sin(a);
+        ctx.translate(ex, ey);
+        ctx.globalAlpha = 0.16 + beat * 0.2;
+        ctx.fillStyle = '#f2a3d0'; ctx.beginPath(); ctx.arc(0, 0, 24 + beat * 7, 0, 6.2832); ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.moveTo(ca * 36, sa * 36);
+        ctx.lineTo(Math.cos(a + 2.45) * 18, Math.sin(a + 2.45) * 18);
+        ctx.lineTo(Math.cos(a - 2.45) * 18, Math.sin(a - 2.45) * 18);
+        ctx.closePath();
+        ctx.lineWidth = 4; ctx.strokeStyle = '#3a1830'; ctx.stroke();
+        ctx.fillStyle = beat > 0.5 ? '#ffe4f2' : '#e070b0'; ctx.fill();
+        ctx.font = F(800, 11); ctx.textAlign = ca > 0.3 ? 'right' : ca < -0.3 ? 'left' : 'center';
+        const lx = -ca * 31, ly = -sa * 27 + 4;
+        ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.strokeText(label, lx, ly);
+        ctx.fillStyle = '#ffe4f2'; ctx.fillText(label, lx, ly);
+      } else {
+        const by = sy - 18 - Math.abs(Math.sin(now * 4)) * 8;
+        ctx.translate(sx, by);
+        ctx.beginPath(); ctx.moveTo(-12, -10); ctx.lineTo(12, -10); ctx.lineTo(0, 7); ctx.closePath();
+        ctx.lineWidth = 4; ctx.strokeStyle = '#3a1830'; ctx.stroke();
+        ctx.fillStyle = '#f2a3d0'; ctx.fill();
+        ctx.font = F(800, 11); ctx.textAlign = 'center';
+        ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(0,0,0,.85)'; ctx.strokeText(name, 0, -15);
+        ctx.fillStyle = '#ffe4f2'; ctx.fillText(name, 0, -15);
+      }
+      ctx.restore();
+    }
     if (G.Rift.inArena) {
       ctx.textAlign = 'center';
       ctx.font = F(800, 12);
@@ -962,13 +1068,22 @@ G.HUD = (() => {
         ctx.beginPath(); ctx.moveTo(x + 12, y + 12); ctx.lineTo(x + S - 12, y + S - 12); ctx.stroke();
       }
 
-      // nombre encima del resaltado (con un vínculo: "Ascuas +2")
-      if (focused) {
-        ctx.font = F(700, 10);
-        ctx.textAlign = 'center';
-        ctx.fillStyle = fused ? BOND : col;
-        ctx.fillText(fused ? G.T(m.name, 'move') + ' +' + (g.length - 1) : G.T(m.name, 'move'), x + S / 2, y - 7);
+      // Nombre pequeño encima de cada hueco (con un vínculo: "Ascuas +2").
+      const label = fused ? G.T(m.name, 'move') + ' +' + (g.length - 1) : G.T(m.name, 'move');
+      ctx.font = F(focused ? 700 : 600, 9);
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      const maxW = (slotAt ? S : S + GAP) - 4;
+      let shown = label;
+      if (ctx.measureText(shown).width > maxW) {
+        while (shown.length > 1 && ctx.measureText(shown + '…').width > maxW) shown = shown.slice(0, -1);
+        shown += '…';
       }
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(0,0,0,.78)';
+      ctx.strokeText(shown, x + S / 2, y - 6);
+      ctx.fillStyle = fused ? BOND : on ? col : 'rgba(180,200,230,.6)';
+      ctx.fillText(shown, x + S / 2, y - 6);
     }
 
     // ---------- vínculo guardado (aún no hay dos movimientos sueltos) ----------

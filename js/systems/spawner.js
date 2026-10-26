@@ -143,8 +143,10 @@ G.Spawner = (() => {
     if (G.Difficulty) G.Difficulty.dress(e);
     if (G.Endless) G.Endless.dress(e);
     if (opts && opts.elite) {
-      e.maxHp = e.hp = Math.round(e.maxHp * 1.3);
-      e.dmg *= 1.3;
+      const tune = opts.tune || curseTune(pl);
+      e.maxHp = e.hp = Math.round(e.maxHp * tune.hp);
+      e.dmg *= tune.dmg;
+      if (tune.mods) e.eliteMods = Object.assign({}, e.eliteMods, tune.mods);
       e.eliteWave = opts.elite;
       e.eliteOwner = opts.owner || 'me';
       e.ring = '#c47bff';
@@ -267,15 +269,39 @@ G.Spawner = (() => {
     return true;
   }
 
-  /** Seis élites junto a quien usó la bola maldita. Un poco más fuertes que la horda de ese minuto. */
+  /**
+   * La bola maldita mira al que la usó. La horda de ese minuto sigue siendo la base;
+   * encima, vida y daño crecen con su nivel y con lo que pega ahora.
+   * Un recién llegado queda en ×1.8 de vida; alguien ya muy fuerte, en ×2.8.
+   */
+  function curseTune(pl) {
+    const lv = Math.max(1, (pl && (pl.level || (pl.net && pl.net.lv))) || 1);
+    let ratio = 1;
+    if (pl && !pl.remote && pl.baseAtk > 0 && typeof pl.atk === 'number') ratio = pl.atk / pl.baseAtk;
+    else if (pl && pl.remote && pl.net && pl.net.skills) {
+      const parts = String(pl.net.skills).split(',').filter(Boolean);
+      let extra = 0;
+      for (const part of parts) extra += Math.max(0, (Number(part.split(':')[1]) || 1) - 1);
+      ratio = 1 + Math.max(0, parts.length - 1) * 0.12 + extra * 0.08;
+    }
+    const hp = G.U.clamp(1.8 + (lv - 1) * 0.035 + Math.max(0, ratio - 1) * 0.22, 1.8, 2.8);
+    const mods = {};
+    const pool = ['guard', 'haste', 'regen'];
+    const n = hp >= 2.35 ? 2 : 1;
+    while (Object.keys(mods).length < n && pool.length) mods[pool.splice((Math.random() * pool.length) | 0, 1)[0]] = true;
+    return { hp, dmg: 1.2 + (hp - 1.8) * 0.28, mods };
+  }
+
+  /** Seis élites junto a quien usó la bola maldita. */
   function eliteWave(center) {
     if (!center) return;
     if (!players.length) players = [center];
     const id = ++eliteSeq;
     const t = (G.Game.st && G.Game.st.time) || 0;
     const owner = center.uid || 'me';
+    const tune = curseTune(center);
     const base = Math.random() * 6.2832;
-    for (let i = 0; i < 6; i++) spawnOne(center, t, base + (i / 6) * 6.2832, { near: true, elite: id, owner });
+    for (let i = 0; i < 6; i++) spawnOne(center, t, base + (i / 6) * 6.2832, { near: true, elite: id, owner, tune });
     say('¡Han salido élites: acaba con ellas!', 4);
   }
 

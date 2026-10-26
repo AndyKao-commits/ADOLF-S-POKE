@@ -9,11 +9,11 @@ G.UI = (() => {
   const $ = id => document.getElementById(id);
   const SCREENS = ['scr-login', 'scr-test', 'scr-result', 'scr-starters', 'scr-menu',
                    'scr-dex', 'scr-upgrades', 'scr-shop', 'scr-bag', 'scr-hatch', 'scr-gacha', 'scr-levelup', 'scr-pause', 'scr-over',
-                   'scr-nick', 'scr-friends', 'scr-lobby', 'scr-rank', 'scr-item', 'scr-forget', 'scr-stall', 'scr-goals', 'scr-bond', 'scr-mod', 'scr-region', 'scr-map'];
+                   'scr-nick', 'scr-friends', 'scr-lobby', 'scr-rank', 'scr-item', 'scr-forget', 'scr-ditto', 'scr-stall', 'scr-goals', 'scr-bond', 'scr-mod', 'scr-region', 'scr-map'];
 
   // Estas pantallas salen encima de la partida. Si el dedo seguía en el joystick,
   // hay que soltarlo: si no, al cerrarlas el móvil sigue andando en esa dirección.
-  const RELEASE_STICK = ['scr-levelup', 'scr-item', 'scr-bond', 'scr-forget', 'scr-pause', 'scr-map', 'scr-stall', 'scr-over'];
+  const RELEASE_STICK = ['scr-levelup', 'scr-item', 'scr-bond', 'scr-forget', 'scr-ditto', 'scr-pause', 'scr-map', 'scr-stall', 'scr-over'];
   function show(id, keepMenu = false) {
     if (RELEASE_STICK.includes(id) && G.Touch) G.Touch.reset();
     for (const s of SCREENS) if (s !== id && !(keepMenu && s === 'scr-menu')) $(s).classList.add('hidden');

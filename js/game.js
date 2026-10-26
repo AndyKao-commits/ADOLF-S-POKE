@@ -166,6 +166,7 @@ G.Game = (() => {
     if (G.CombatAuthority) G.CombatAuthority.reset();
     if (G.MasteryFX) G.MasteryFX.reset();
     if (G.MoveForgetter) G.MoveForgetter.reset();
+    if (G.Ditto) G.Ditto.reset();
     biome = 0;
     time = 0; pendingLevels = 0;
     runReal = performance.now(); tampered = false;
@@ -867,7 +868,16 @@ G.Game = (() => {
     if (offerBall(1) === false) refundCandy(pl, price);
   }
   function useNear() {
-    if (G.MoveForgetter && G.MoveForgetter.near(pl)) { openForgetter(); return true; }
+    const forgetter = G.MoveForgetter && G.MoveForgetter.near(pl);
+    const ditto = G.Ditto && G.Ditto.near(pl);
+    if (forgetter && ditto) {
+      const g = G.MoveForgetter.position, d = G.Ditto.position;
+      if (G.U.dist2(pl.x, pl.y, d.x, d.y) <= G.U.dist2(pl.x, pl.y, g.x, g.y)) { openDitto(); return true; }
+      openForgetter();
+      return true;
+    }
+    if (forgetter) { openForgetter(); return true; }
+    if (ditto) { openDitto(); return true; }
     const shop = nearestShop();
     const field = nearestField();
     if (shop && field) {
@@ -902,6 +912,37 @@ G.Game = (() => {
       G.Audio.sfx('confirm');
       G.Spawner.say(G.I18n.f('Has olvidado {x}', G.T(m.name, 'move')), 3, true);
       G.MoveForgetter.leave();
+      close();
+    }, close);
+  }
+  function dittoItems() {
+    const out = [];
+    for (const id of Object.keys(pl.stacks || {})) {
+      const it = G.Items.BY[id];
+      if (!it || it.stackType === 'revive' || !(pl.stacks[id] > 0)) continue;
+      if (pl.sealed && pl.sealed.has(id)) continue;
+      out.push(it);
+    }
+    out.sort((a, b) => G.Items.text(a, 'name').localeCompare(G.Items.text(b, 'name')));
+    return out;
+  }
+  function openDitto() {
+    if (!pl || state !== 'playing' || !G.Ditto || !G.Ditto.near(pl)) return;
+    state = 'choice';
+    pl.frozen = true;
+    if (G.Coop.active) G.Coop.holdStart('ditto');
+    const close = () => {
+      G.UI.hide('scr-ditto');
+      if (G.Coop.active) G.Coop.holdEnd();
+      state = holdBy.length ? 'held' : 'playing';
+      if (pl) pl.frozen = state !== 'playing';
+    };
+    G.RunUI.showDitto(dittoItems(), id => {
+      const it = G.Items.BY[id];
+      if (!it || !G.Items.gain(pl, id, { copy: true })) return;
+      G.Audio.sfx('confirm');
+      G.Spawner.say(G.I18n.f('Ditto ha copiado {x}', G.Items.text(it, 'name')), 3, true);
+      G.Ditto.leave();
       close();
     }, close);
   }
@@ -1204,6 +1245,7 @@ G.Game = (() => {
     G.Hazards.update(dt);
     G.Interact.update(dt, pl);
     if (G.MoveForgetter) G.MoveForgetter.update(dt, pl, time);
+    if (G.Ditto) G.Ditto.update(dt, pl, time);
     G.Rift.update(dt, pl, time);
     G.Judgment.update(dt, pl, time);
     G.Events.update(dt, all, time);
@@ -1302,6 +1344,8 @@ G.Game = (() => {
     if (pl && state !== 'ui') for (const d of G.Events.drawables()) items.push({ y: d.y, ent: d });
     const forgetter = pl && state !== 'ui' && G.MoveForgetter ? G.MoveForgetter.drawable() : null;
     if (forgetter) items.push({ y: forgetter.y, ent: { draw: G.MoveForgetter.draw } });
+    const ditto = pl && state !== 'ui' && G.Ditto ? G.Ditto.drawable() : null;
+    if (ditto) items.push({ y: ditto.y, ent: { draw: G.Ditto.draw } });
     if (G.Castle.up) items.push({ y: G.Castle.y, ent: G.Castle });
     if (G.Siege && G.Siege.up) for (const d of G.Siege.drawables()) items.push(d);
     items.sort((a, b) => a.y - b.y);
@@ -1490,6 +1534,60 @@ G.Game = (() => {
     giveItem: offerItem,
     /** Para pruebas: salta el reloj de la run. */
     debugTime(t) { tampered = true; time = t; },
+    /**
+     * Avanza la partida de verdad, en trozos de 1 s: oleadas, jefes, bolas,
+     * eventos y NPC. No pega, no cura y no abre cartas. Los jefes se quedan;
+     * el resto de monstruos se renueva para que salgan los de ese minuto.
+     * Esta partida ya no entra en el ranking.
+     */
+    debugSkip(seconds) {
+      seconds = Math.max(0, Number(seconds) || 0);
+      if (!pl || !seconds || state !== 'playing' || pl.dead) return 0;
+      if (G.Judgment && G.Judgment.cinematic) return 0;
+      tampered = true;
+      const step = 1;
+      let left = seconds, guard = 0;
+      const thin = () => {
+        if (!G.EnemyMgr.dropWhere) return;
+        G.EnemyMgr.dropWhere(e => !e.boss && !e.eliteWave && !e.siegeCreep && !e.siegeBoss && !e.castleWave && !e.judge);
+      };
+      while (left > 0 && guard++ < 4000 && state === 'playing' && pl && !pl.dead) {
+        if (G.Judgment && (G.Judgment.cinematic || G.Judgment.active)) break;
+        let dt = Math.min(step, left);
+        const judgmentAt = 30 * 60;
+        const judged = G.Modes && (G.Modes.is('endless') || G.Modes.is('siege') || G.Modes.is('castle'));
+        if (!judged && time < judgmentAt && time + dt >= judgmentAt) dt = Math.max(0.05, judgmentAt - time);
+        const before = time;
+        time += dt;
+        const biomeNow = Math.floor(time / 240);
+        if (biomeNow !== biome && !G.Rift.inArena && !(G.Judgment && G.Judgment.active) && !(G.Siege && G.Siege.up) && !(G.Castle && G.Castle.up)) {
+          biome = biomeNow;
+          G.World.setBiome(G.World.runBiome(biomeNow));
+        }
+        if (Math.floor(time / 12) !== Math.floor(before / 12)) thin();
+        const all = everyone();
+        if (!G.Coop.active || G.Coop.isHost) {
+          G.Spawner.update(dt, all, time);
+          if (G.Difficulty) G.Difficulty.tick(dt);
+          if (G.Endless) G.Endless.tick(dt, time);
+          if (G.Castle && G.Castle.up) G.Castle.tick(dt);
+        }
+        if (G.Siege && G.Siege.up) G.Siege.tick(dt, pl, time);
+        if (state !== 'playing') break;
+        tickFields(dt);
+        if (G.MoveForgetter) G.MoveForgetter.update(dt, pl, time);
+        if (G.Ditto) G.Ditto.update(dt, pl, time);
+        G.Rift.update(dt, pl, time);
+        G.Judgment.update(dt, pl, time);
+        G.Events.update(dt, all, time);
+        G.Weather.update(dt, time, pl);
+        left -= dt;
+        if (!judged && time >= judgmentAt) break;
+        if (G.Judgment && (G.Judgment.cinematic || G.Judgment.active)) break;
+      }
+      if (pl && state === 'playing') pl.invuln = Math.max(pl.invuln || 0, 2);
+      return Math.round((seconds - left) * 10) / 10;
+    },
     /** Para grabar vídeos: cámara lenta (0,5 = mitad de velocidad). */
     debugSpeed(k) { if (k > 1) tampered = true; speedK = k; },
     togglePause, toggleMap, cycleWatch, askRevive, confirmRevive, cancelRevive, keepRevive, giveUpRevive,
