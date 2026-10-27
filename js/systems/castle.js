@@ -43,7 +43,7 @@ G.Castle = (() => {
   let puppyShield = { active: false, left: 0, bossBlockReady: false };
   let pulseFx = 0, usingCore = false;
   const img = new Image();
-  img.src = 'assets/maps/Perrito.png';
+  img.src = 'assets/castle-puppy.png?v=char';
   const aim = { x: 0, y: 0, r: 28, bodyH: 40 };
 
   function applyPreset(id) {
