@@ -44,6 +44,7 @@ G.MoveForgetter = (() => {
   function spawn(pl) {
     const p = freeNear(pl);
     npc = { x: p.x, y: p.y, tx: p.x, ty: p.y, wait: 0, bob: 0, leaving: false };
+    if (G.MasteryFX) G.MasteryFX.paintNpc(npc, { dex: 0, r: 14, bodyH: 48 });
     announced = true;
     G.Audio.sfx('select');
     G.Spawner.say('¡Ha llegado el Abuelo Olvido! Ve a buscarlo para olvidar un movimiento', 4.5, true);
@@ -54,6 +55,7 @@ G.MoveForgetter = (() => {
     if (!npc && time >= due) spawn(pl);
     if (!npc) return;
     npc.bob += dt;
+    if (G.MasteryFX) G.MasteryFX.update(npc, dt);
     npc.wait -= dt;
     if (npc.wait <= 0 || G.U.dist2(npc.x, npc.y, npc.tx, npc.ty) < 12 * 12) {
       npc.wait = G.U.rand(2.5, 5.5);
@@ -78,6 +80,7 @@ G.MoveForgetter = (() => {
         pl.marks = pl.marks.filter(m => m.kind !== 'forgetter' && G.U.dist2(m.x, m.y, npc.x, npc.y) >= 28 * 28);
         pl.mark = pl.marks.length ? pl.marks[pl.marks.length - 1] : null;
       }
+      if (G.MasteryFX) G.MasteryFX.clear(npc);
       G.FX.ring(npc.x, npc.y - 18, 8, 64, '#bba7ff', 0.55, 4);
       G.FX.burst(npc.x, npc.y - 24, '#d7caff', 20, 150);
     }
@@ -90,6 +93,7 @@ G.MoveForgetter = (() => {
     const x = Math.round(npc.x), y = Math.round(npc.y + Math.sin(npc.bob * 3) * 1.5);
     ctx.save();
     ctx.imageSmoothingEnabled = false;
+    if (G.MasteryFX) G.MasteryFX.drawNpc(ctx, npc);
     ctx.fillStyle = 'rgba(0,0,0,.32)'; ctx.beginPath(); ctx.ellipse(x, y + 2, 16, 6, 0, 0, Math.PI * 2); ctx.fill();
     if (sprite.complete && sprite.naturalWidth) {
       ctx.drawImage(sprite, x - 29, y - 63, 58, 63);
@@ -101,6 +105,7 @@ G.MoveForgetter = (() => {
       ctx.fillStyle = '#fff'; ctx.fillRect(x - 6, y - 40, 4, 4); ctx.fillRect(x + 2, y - 40, 4, 4);
       ctx.fillStyle = '#33264c'; ctx.fillRect(x - 5, y - 39, 2, 2); ctx.fillRect(x + 3, y - 39, 2, 2);
     }
+    if (G.MasteryFX) G.MasteryFX.drawNpcFront(ctx, npc);
     ctx.font = '700 10px Pixelify, sans-serif'; ctx.textAlign = 'center';
     ctx.fillStyle = '#fff3b0'; ctx.strokeStyle = '#10162c'; ctx.lineWidth = 3;
     ctx.strokeText(G.T('Abuelo Olvido'), x, y - 70); ctx.fillText(G.T('Abuelo Olvido'), x, y - 70);

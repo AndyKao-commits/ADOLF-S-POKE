@@ -544,14 +544,22 @@ G.RunUI = (() => {
       const rare = G.Items.RARITY[it.rarity] || G.Items.RARITY.common;
       const label = zh ? rare.zh : en ? rare.en : rare.es;
       const el = document.createElement('div');
-      el.className = 'card stall-card' + (full ? ' off' : '');
-      el.innerHTML = `<div class="ico">${G.Icons.html(it.id, 40)}</div>
+      const instant = !!(it.castleOnly || it.instant);
+      const count = instant
+        ? G.I18n.t('Uso instantáneo')
+        : G.I18n.f('Llevas x{x} · tope x{x}', n, it.max);
+      const puppyFull = G.Castle && G.Castle.up && G.Castle.hp >= G.Castle.maxHp;
+      const puppyHigh = instant && G.Castle && G.Castle.up && G.Castle.hp > 0 && G.Castle.hp / G.Castle.maxHp > 0.85;
+      const puppyLocked = instant && G.Castle && G.Castle.up && !G.Castle.canBuyHeal();
+      const blocked = instant ? (puppyFull || puppyHigh || puppyLocked || !(G.Castle && G.Castle.shopOpen && G.Castle.shopOpen())) : full;
+      el.className = 'card stall-card' + (blocked ? ' off' : '');
+      el.innerHTML = `<div class="ico">${G.Icons.html(it.icon || it.id, 40)}</div>
         <div class="txt" style="flex:1">
-          <div class="nm"><b>${G.Items.text(it, 'name')}</b> <span class="stall-rarity" style="background:${rare.color}">${label}</span><span class="stall-count">${G.I18n.f('Llevas x{x} · tope x{x}', n, it.max)}</span></div>
-          <div class="ds">${G.Items.text(it, 'desc')}<br>${G.Items.stackText(pl, it).replace(/\n/g, '<br>')}</div>
-          <div class="stall-price">${full ? G.I18n.t('Has llegado al tope de este objeto.') : candyMark + ' ' + G.I18n.f('Cuesta {x} caramelos', price)}</div>
+          <div class="nm"><b>${G.Items.text(it, 'name')}</b> <span class="stall-rarity" style="background:${rare.color}">${label}</span><span class="stall-count">${count}</span></div>
+          <div class="ds">${G.Items.text(it, 'desc')}${instant ? '' : '<br>' + G.Items.stackText(pl, it).replace(/\n/g, '<br>')}</div>
+          <div class="stall-price">${!instant && blocked ? G.I18n.t('Has llegado al tope de este objeto.') : (instant && puppyFull ? G.I18n.t('Tu cachorro ya está al máximo.') : (instant && puppyHigh ? G.I18n.t('El cachorro tiene demasiada vida (más del 85 %).') : (instant && puppyLocked ? G.I18n.t('Ya compraste un corazón en este tramo de jefe.') : (instant && blocked ? G.I18n.t('La tienda está cerrada durante el jefe.') : candyMark + ' ' + G.I18n.f('Cuesta {x} caramelos', price)))))}</div>
         </div>`;
-      el.onclick = () => { if (!full) api.buy(id); };
+      el.onclick = () => { if (!blocked) api.buy(id); };
       box.appendChild(el);
     });
     const refresh = $('stall-refresh');

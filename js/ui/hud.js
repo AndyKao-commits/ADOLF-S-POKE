@@ -495,6 +495,52 @@ G.HUD = (() => {
     G.Touch.addButton(bx, by, bs, bs, () => { if (G.Game.useNear) G.Game.useNear(); }, 8);
   }
 
+  function guardianCoreButton(ctx, w, h, pl, touch, dashAt) {
+    if (!(G.Castle && G.Castle.up) || !pl || pl.dead) return;
+    const held = !!G.Castle.coreHeld;
+    const warn = !!G.Castle.warnBoss;
+    const can = held && G.Castle.canUseGuardianCore(pl);
+    const reason = (!can && G.Castle.coreBlockReason) ? G.Castle.coreBlockReason(pl) : '';
+    const bs = touch ? 52 : 46;
+    const dashS = dashAt ? dashAt.s : 54;
+    const bx = dashAt
+      ? G.U.clamp(dashAt.cx - bs / 2, 8, w - bs - 8)
+      : w - bs - 18;
+    const by = dashAt
+      ? G.U.clamp(dashAt.cy - dashS / 2 - bs - 14, 56, h - bs - 8)
+      : h - bs - (touch ? 96 : 86);
+    const flash = warn && held && ((Math.floor((G.Game.st && G.Game.st.time || 0) * 6) % 2) === 0);
+    ctx.beginPath(); ctx.arc(bx + bs / 2, by + bs / 2, bs / 2, 0, 6.2832);
+    ctx.fillStyle = can ? (flash ? '#ffe08a' : '#2a5f8a') : 'rgba(10,16,28,.72)';
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = can ? (flash ? '#fff6d0' : '#9ad8ff') : 'rgba(244,248,255,.35)';
+    ctx.stroke();
+    if (G.Icons) G.Icons.draw(ctx, 'shield', bx + bs / 2 - 12, by + bs / 2 - 14, 24);
+    ctx.font = F(700, touch ? 9 : 8);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = flash ? '#1a1404' : '#f4f8ff';
+    const label = !held
+      ? (G.I18n ? G.I18n.t('Sin núcleo') : 'Sin núcleo')
+      : (warn
+        ? (G.I18n ? G.I18n.t('¡Activar escudo!') : '¡Activar escudo!')
+        : (G.I18n ? G.I18n.t('Núcleo Guardián ×1') : 'Núcleo Guardián ×1'));
+    ctx.fillText(label, bx + bs / 2, by + bs + 12);
+    if (reason && held) {
+      ctx.fillStyle = 'rgba(255,180,180,.85)';
+      ctx.fillText(reason, bx + bs / 2, by - 6);
+    } else if (!touch) {
+      ctx.fillStyle = 'rgba(180,200,230,.7)';
+      ctx.fillText('G', bx + bs / 2, by - 6);
+    }
+    if (touch || can) {
+      G.Touch.addButton(bx, by, bs, bs, () => {
+        if (G.Game.state === 'playing' && G.Castle.useGuardianCore) G.Castle.useGuardianCore(pl);
+      }, 8);
+    }
+  }
+
   function dashButton(ctx, w, h, pl, touch, place) {
     const bs = place ? place.s : 54;
     const bx = place ? place.cx - bs / 2 : w - bs - 18;
@@ -1111,6 +1157,7 @@ G.HUD = (() => {
       s: Math.round(S * 0.85)
     } : null);
     dashButton(ctx, w, h, pl, touch, dashAt);
+    guardianCoreButton(ctx, w, h, pl, touch, dashAt);
 
     // ---------- botón de pausa (táctil) ----------
     if (touch) {

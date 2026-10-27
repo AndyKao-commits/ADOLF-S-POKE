@@ -6,13 +6,23 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-27', title: ['Cachorro', 'Puppy'], new: [
+    ['Núcleo Guardián: cae en la oleada previa al jefe. Con G (o el botón en el móvil) cerca del cachorro activas un escudo de 4 s y una onda que empuja tropa, élites y jefes, e interrumpe el ataque del jefe.',
+     'Guardian Core: drops on the wave before each boss. Press G (or the mobile button) near the puppy to raise a 4 s shield and a pulse that knocks back troop, elites and bosses, and interrupts the boss attack.'],
+    ['Curación del cachorro: corazones al derrotar tropa (3 % cada uno, máx. 3 por oleada), Corazón del cachorro en la tienda Miaumia (1 compra por tramo de jefe; no si tiene más del 85 %) y altar de corazones (2 usos por tramo: 5 % y luego 10 %, con canalización de 2 s).',
+     'Puppy healing: hearts from troop kills (3% each, max 3 per wave), Puppy Heart in the Meowth shop (1 buy per boss segment; not above 85% HP) and a heart altar (2 uses per segment: 5% then 10%, with a 2 s channel).']
+  ] },
+  { d: '2026-10-27', title: ['NPC', 'NPCs'], chg: [
+    ['Ditto se ve del tamaño de un Pokémon normal, y Ditto y el Abuelo Olvido llevan el brillo plata de la maestría para reconocerlos mejor.',
+     'Ditto is now normal Pokémon size, and Ditto and the Move Forgetter use silver mastery glow so they are easier to spot.']
+  ] },
   { d: '2026-10-27', title: ['Cachorro', 'Puppy'], chg: [
     ['Hay dos modos de Protege al cachorro: 50 oleadas (el de siempre) y Cachorro rápido de 20 oleadas (unos 10 minutos).',
      'There are two Protect-the-puppy modes: 50 waves (the usual one) and Fast puppy with 20 waves (about 10 minutes).'],
-    ['En Cachorro rápido el cachorro aguanta menos y la tropa le muerde más. En los dos modos, derrotar jefes ya no le cura vida.',
-     'In Fast puppy the puppy has less HP and the troop bites harder. In both modes, beating bosses no longer heals it.'],
-    ['Los jefes de Protege al cachorro son más duros: más vida, pegan más y muerden más fuerte al cachorro.',
-     'Protect-the-puppy bosses are tougher: more HP, they hit harder and bite the puppy harder.']
+    ['En Cachorro rápido el mordisco de la tropa ya no escala con el daño plano del enemigo: usa un porcentaje acotado (hasta ~5 % en Corriente). El jefe final tiene ×2,4 de vida y la escolta es el 50 %.',
+     'In Fast puppy troop bites no longer stack flat enemy damage: they use a capped percent (up to ~5% on Normal). The final boss has ×2.4 HP and escort is 50%.'],
+    ['Derrotar jefes ya no cura al cachorro: la curación viene de corazones, tienda, altar y el Núcleo Guardián para el asalto del jefe.',
+     'Beating bosses no longer heals the puppy: healing comes from hearts, shop, altar, and the Guardian Core for the boss assault.']
   ] },
   { d: '2026-10-26', title: ['Mapa', 'Map'], chg: [
     ['La lista del mapa sólo muestra NPC, Poké Balls de pago, Poké Balls y huevos. Los enemigos ya no salen ahí, y se quitó la leyenda de iconos.',

@@ -43,11 +43,12 @@ G.Ditto = (() => {
     G.Sprites.preload([DEX]);
     let anim = null;
     try {
-      anim = new G.Sprites.Animator(DEX, 2, false);
+      anim = new G.Sprites.Animator(DEX, 1, false);
       anim.loop('Idle');
       anim.dir = G.Sprites.dirFromAngle(Math.PI / 2);
     } catch (e) { anim = null; }
     npc = { x: p.x, y: p.y, tx: p.x, ty: p.y, wait: 0, bob: 0, anim };
+    if (G.MasteryFX) G.MasteryFX.paintNpc(npc, { dex: DEX, r: 12, bodyH: 24 });
     G.Audio.sfx('select');
     G.Spawner.say('¡Ha llegado Ditto! Ve a buscarlo: puede copiar un objeto que ya llevas', 4.5, true);
   }
@@ -58,6 +59,7 @@ G.Ditto = (() => {
     if (!npc) return;
     npc.bob += dt;
     if (npc.anim) npc.anim.update(dt);
+    if (G.MasteryFX) G.MasteryFX.update(npc, dt);
     npc.wait -= dt;
     if (npc.wait <= 0 || G.U.dist2(npc.x, npc.y, npc.tx, npc.ty) < 12 * 12) {
       npc.wait = G.U.rand(2.5, 5.5);
@@ -84,6 +86,7 @@ G.Ditto = (() => {
         pl.marks = pl.marks.filter(m => m.kind !== 'ditto' && G.U.dist2(m.x, m.y, npc.x, npc.y) >= 28 * 28);
         pl.mark = pl.marks.length ? pl.marks[pl.marks.length - 1] : null;
       }
+      if (G.MasteryFX) G.MasteryFX.clear(npc);
       G.FX.ring(npc.x, npc.y - 16, 8, 64, '#f2a3d0', 0.55, 4);
       G.FX.burst(npc.x, npc.y - 20, '#ffd0ea', 18, 140);
     }
@@ -96,18 +99,20 @@ G.Ditto = (() => {
     const x = Math.round(npc.x), y = Math.round(npc.y + Math.sin(npc.bob * 3) * 1.5);
     ctx.save();
     ctx.imageSmoothingEnabled = false;
+    if (G.MasteryFX) G.MasteryFX.drawNpc(ctx, npc);
     ctx.fillStyle = 'rgba(0,0,0,.32)';
-    ctx.beginPath(); ctx.ellipse(x, y + 2, 16, 6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(x, y + 2, 12, 5, 0, 0, Math.PI * 2); ctx.fill();
     if (npc.anim) {
-      G.Sprites.drawShadow(ctx, DEX, x, y, 2);
+      G.Sprites.drawShadow(ctx, DEX, x, y, 1);
       npc.anim.draw(ctx, x, y);
     } else {
-      ctx.fillStyle = '#e070b0'; ctx.beginPath(); ctx.ellipse(x, y - 16, 14, 12, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = '#fff'; ctx.fillRect(x - 6, y - 20, 3, 3); ctx.fillRect(x + 3, y - 20, 3, 3);
+      ctx.fillStyle = '#e070b0'; ctx.beginPath(); ctx.ellipse(x, y - 12, 10, 9, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillRect(x - 5, y - 15, 2, 2); ctx.fillRect(x + 2, y - 15, 2, 2);
     }
+    if (G.MasteryFX) G.MasteryFX.drawNpcFront(ctx, npc);
     ctx.font = '700 10px Pixelify, sans-serif'; ctx.textAlign = 'center';
     ctx.fillStyle = '#ffd0ea'; ctx.strokeStyle = '#10162c'; ctx.lineWidth = 3;
-    ctx.strokeText(G.T('Ditto'), x, y - 52); ctx.fillText(G.T('Ditto'), x, y - 52);
+    ctx.strokeText(G.T('Ditto'), x, y - 40); ctx.fillText(G.T('Ditto'), x, y - 40);
     ctx.restore();
   }
 

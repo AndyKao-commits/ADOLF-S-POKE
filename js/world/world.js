@@ -589,6 +589,7 @@ G.World = (() => {
       for (const p of chunkData(cx, cy).props) if (p.flash > 0) p.flash -= dt;
     }
     for (const s of shops) if (s.cat) s.cat.anim.update(dt);
+    for (const s of extraShops) if (s.cat) s.cat.anim.update(dt);
   }
 
   // ---------------- control ----------------
@@ -602,8 +603,10 @@ G.World = (() => {
   }
 
   let shops = [];
+  let extraShops = [];
   function placeShops() {
     shops = [];
+    extraShops = [];
     const spots = [[22, 8], [-16, 18], [12, -20], [28, -6]];
     for (const [tx, ty] of spots) {
       if (!walkable(tx, ty)) continue;
@@ -620,6 +623,28 @@ G.World = (() => {
       }
     }
     G.Sprites.preload([52]);
+  }
+  /** Tiendas temporales (asedio): mismas reglas que las del mapa. */
+  function setExtraShops(list) {
+    extraShops = (list || []).map(s => {
+      if (s.cat) return s;
+      const shop = { x: s.x, y: s.y, markup: s.markup || 0, stock: s.stock || null };
+      const anim = new G.Sprites.Animator(52, 1.5, false);
+      anim.loop('Idle');
+      anim.dir = G.Sprites.dirFromAngle(Math.PI / 2);
+      shop.cat = {
+        x: shop.x + 56, y: shop.y, anim,
+        draw(ctx) {
+          G.Sprites.drawShadow(ctx, 52, this.x, this.y, 1.5);
+          const smooth = ctx.imageSmoothingEnabled;
+          ctx.imageSmoothingEnabled = false;
+          this.anim.draw(ctx, this.x, this.y);
+          ctx.imageSmoothingEnabled = smooth;
+        }
+      };
+      return shop;
+    });
+    if (extraShops.length) G.Sprites.preload([52]);
   }
   function shopAt(tx, ty) {
     const s = { x: tx * TS + TS / 2, y: ty * TS + TS / 2 };
@@ -644,7 +669,8 @@ G.World = (() => {
 
   function drawShops(ctx) {
     const dw = 128, dh = 112;
-    for (const s of shops) {
+    const all = extraShops.length ? shops.concat(extraShops) : shops;
+    for (const s of all) {
       if (!G.Camera.sees(s.x, s.y, 90)) continue;
       ctx.fillStyle = 'rgba(0,0,0,.28)';
       ctx.beginPath(); ctx.ellipse(s.x, s.y, 40, 12, 0, 0, 6.2832); ctx.fill();
@@ -705,8 +731,8 @@ G.World = (() => {
       }
     },
     get arena() { return arena; }, drawGround, drawLiquid, visibleProps, drawProp, drawShops, drawVignette,
-    get shops() { return shops; }, shopImg,
-    shopCats() { return shops.filter(s => s.cat).map(s => s.cat); },
+    get shops() { return extraShops.length ? shops.concat(extraShops) : shops; }, shopImg, setExtraShops,
+    shopCats() { return (extraShops.length ? shops.concat(extraShops) : shops).filter(s => s.cat).map(s => s.cat); },
     get biome() { return biome; }
   };
 })();

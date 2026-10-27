@@ -203,6 +203,14 @@ G.Items = (() => {
     desc: '+15 de vida máxima.', zd: '最大 HP +15。', ed: 'Max HP +15.' }, {
     on(p, n) { bumpHp(p, 'oranberry', 15 * stackPower(n)); }, off(p) { bumpHp(p, 'oranberry', 0); }
   });
+  // Sólo en Protege al cachorro: cura al cachorro al instante (no se equipa).
+  card({ id: 'puppyheal', name: 'Corazón del cachorro', zh: '奶狗愛心', en: 'Puppy Heart',
+    desc: 'Cura al cachorro al instante (15 % en 50 oleadas, 12 % en la rápida). Una compra por tramo de jefe. No se puede si tiene más del 85 % de vida.',
+    zd: '立刻恢復奶狗生命（50 波 15%，速戰 12%）。每個首領區段限購 1 次。生命高於 85% 時無法購買。',
+    ed: 'Instantly heals the puppy (15% in 50-wave, 12% in sprint). One purchase per boss segment. Cannot buy above 85% HP.',
+    tier: 1, max: 99, shopBase: 40, rarity: 'uncommon', castleOnly: true, instant: true, icon: 'heart' }, {
+    on() {}, off() {}
+  });
   card({ id: 'sitrusberry', name: 'Baya Zidra', zh: '文柚果', en: 'Sitrus Berry', file: 'sitrus-berry.png', tier: 2, max: 1,
     desc: 'Por debajo del 30 % de vida, recuperas un 25 %. Como mucho una vez cada 60 s. No se apila.',
     zd: 'HP 低於 30% 時恢復 25% HP，每 60 秒一次。不可重複。',
@@ -512,6 +520,7 @@ G.Items = (() => {
   }
   function canOffer(pl, it) {
     if (!it || !pl) return false;
+    if (it.castleOnly) return !!(G.Castle && G.Castle.up && G.Castle.shopOpen && G.Castle.shopOpen());
     if (copies(pl, it.id) >= it.max) return false;
     if (sealed(pl, it.id)) return false;
     if (it.stackType === 'revive') {
@@ -521,7 +530,7 @@ G.Items = (() => {
     return true;
   }
   function rollChoices(tier, pl, n = 3) {
-    const ok = i => canOffer(pl, i);
+    const ok = i => canOffer(pl, i) && !i.castleOnly;
     const pool = t => LIST.filter(i => i.tier === t && ok(i));
     let bag = pool(tier);
     if (bag.length < n) bag = bag.concat(pool(Math.max(1, tier - 1)).filter(i => !bag.includes(i)));
@@ -595,7 +604,7 @@ G.Items = (() => {
     return true;
   }
   function roll(except) {
-    const pool = LIST.filter(i => i.id !== except);
+    const pool = LIST.filter(i => i.id !== except && !i.castleOnly);
     return G.U.pick(pool).id;
   }
 

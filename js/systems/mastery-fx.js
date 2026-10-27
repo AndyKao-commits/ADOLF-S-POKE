@@ -374,5 +374,27 @@ G.MasteryFX = (() => {
     }
   }
 
-  return { valid, init, update, drawGround, drawBehind, drawFront, onSpawn, onRevive, clear, reset };
+  /** NPC de visita (Ditto, Abuelo…): mismo brillo plata para reconocerlos de lejos. */
+  function paintNpc(obj, opt) {
+    if (!obj) return obj;
+    opt = opt || {};
+    obj.masteryRank = 'silver';
+    if (obj.r == null) obj.r = opt.r != null ? opt.r : 14;
+    if (obj.bodyH == null) obj.bodyH = opt.bodyH != null ? opt.bodyH : 28;
+    if (obj.dex == null) obj.dex = opt.dex != null ? opt.dex : 0;
+    obj.dead = false;
+    init(obj);
+    return obj;
+  }
+  function drawNpc(ctx, obj) {
+    if (!obj) return;
+    drawGround(ctx, obj);
+    drawBehind(ctx, obj);
+  }
+  function drawNpcFront(ctx, obj) {
+    if (!obj) return;
+    drawFront(ctx, obj);
+  }
+
+  return { valid, init, update, drawGround, drawBehind, drawFront, onSpawn, onRevive, clear, reset, paintNpc, drawNpc, drawNpcFront };
 })();

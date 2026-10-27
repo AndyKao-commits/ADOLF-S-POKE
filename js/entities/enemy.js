@@ -236,6 +236,7 @@
         return;
       }
       if (this.castleBoss && G.Castle && G.Castle.onBossDown) G.Castle.onBossDown();
+      if (G.Castle && G.Castle.up && G.Castle.tryHeartDrop) G.Castle.tryHeartDrop(this);
       if (this.siegeCreep || this.siegeBoss) {
         if (this.siegeBoss) G.Camera.kick(0.9);
         G.Audio.sfx(this.siegeBoss ? 'bossDown' : 'faint');

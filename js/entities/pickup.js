@@ -16,6 +16,8 @@ G.Pickups = (() => {
     xp:    { color: '#7fe0ff', glow: '#2a8fd0', r: 4.5 },
     xpBig: { color: '#ffd95e', glow: '#c08a10', r: 7 },
     heal:  { color: '#5fe08a', glow: '#1f8f4d', r: 6.5 },
+    heart: { color: '#ff5f6d', glow: '#c23a4b', r: 7 },   // Protege al cachorro
+    guardian: { color: '#9ad8ff', glow: '#4a8ec8', r: 8 }, // Núcleo Guardián
     magnet:{ color: '#ff9ed8', glow: '#b03d84', r: 6.5 },
     bomb:  { color: '#ff7b3d', glow: '#b03d10', r: 6.5 },
     coin:  { color: '#ffd23f', glow: '#b8860b', r: 5.5 },
@@ -298,7 +300,7 @@ G.Pickups = (() => {
         ctx.beginPath(); ctx.ellipse(p.x, y, r * sx * 0.5, r * 0.5, 0, 0, 6.2832); ctx.fill();
       } else {
         // Baya, imán y bomba: su icono pixel art.
-        const ICON = { heal: 'berry', magnet: 'magnet', bomb: 'bomb', ticket: 'ticket', ticket10: 'ticket10' };
+        const ICON = { heal: 'berry', heart: 'heart', guardian: 'shield', magnet: 'magnet', bomb: 'bomb', ticket: 'ticket', ticket10: 'ticket10' };
         const sz = p.kind === 'ticket10' || p.kind === 'item' || p.kind === 'sphere' ? 24 : 18;
         if (p.kind === 'sphere' && G.Orbs) {
           ctx.globalAlpha = 0.3 + Math.sin(p.t * 1.5) * 0.12;
@@ -307,6 +309,12 @@ G.Pickups = (() => {
           ctx.globalAlpha = 1;
           G.Icons.draw(ctx, 'orb:' + p.value, p.x - sz / 2, y - sz / 2 - 1, sz);
           continue;
+        }
+        if (p.kind === 'guardian') {
+          ctx.globalAlpha = 0.28 + Math.sin(p.t * 2) * 0.1;
+          ctx.fillStyle = '#9ad8ff';
+          ctx.beginPath(); ctx.arc(p.x, y, 16, 0, 6.2832); ctx.fill();
+          ctx.globalAlpha = 1;
         }
         if (p.kind === 'item') {
           // Objeto: brillo dorado latiendo, para que se vea desde lejos.

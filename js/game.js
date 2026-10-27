@@ -205,7 +205,7 @@ G.Game = (() => {
       pl._modePicks = 19;
       if (!G.Coop.active || G.Coop.isHost) pendingLevels = 19;
     }
-    if (G.Modes.isCastle()) G.Castle.begin();
+    if (G.Modes.isCastle()) G.Castle.begin(G.Modes.id);
     if (G.Modes.is('siege')) G.Siege.begin(coop ? coop.members : null);
     G.Camera.x = pl.x; G.Camera.y = pl.y; G.Camera.shake = 0;
     // Hojas de sprites locales: el compa√±ero y los primeros enemigos.
@@ -608,7 +608,7 @@ G.Game = (() => {
 
   // ---------------- recogida ----------------
 
-  const PICK_SFX = { xp: 'xp', xpBig: 'xp', coin: 'coin', candy: 'coin', heal: 'heal', bomb: 'break', magnet: 'confirm', ticket: 'shiny', ticket10: 'legend', item: 'legend', ball: 'confirm', egg: 'shiny', sphere: 'confirm' };
+  const PICK_SFX = { xp: 'xp', xpBig: 'xp', coin: 'coin', candy: 'coin', heal: 'heal', heart: 'heal', bomb: 'break', magnet: 'confirm', ticket: 'shiny', ticket10: 'legend', item: 'legend', ball: 'confirm', egg: 'shiny', sphere: 'confirm' };
 
   /*
    * Cooperativo: la elecci√≥n de objeto y las cartas de nivel no pueden taparse.
@@ -741,6 +741,27 @@ G.Game = (() => {
     if (p.kind === 'heal') {
       if (mine) pl.heal(pl.maxHp * (p.value > 0 ? p.value : 0.25));
       G.FX.ring(who.x, who.y, 6, 60, '#5fe08a', 0.4, 3);
+      return;
+    }
+    if (p.kind === 'heart') {
+      if (G.Castle && G.Castle.up) {
+        const frac = p.value > 0 ? p.value : (G.Castle.HEART_HEAL || 0.03);
+        if (G.Castle.hp >= G.Castle.maxHp) {
+          if (G.Castle.heartToCandy) G.Castle.heartToCandy(who);
+        } else if (G.Castle.takeHeart) {
+          G.Castle.takeHeart(frac);
+        } else {
+          G.Castle.requestHeal(frac, 'heart');
+        }
+        G.FX.ring(who.x, who.y, 6, 60, '#ff5f6d', 0.45, 3);
+      }
+      return;
+    }
+    if (p.kind === 'guardian') {
+      if (G.Castle && G.Castle.up && G.Castle.pickupGuardianCore) {
+        G.Castle.pickupGuardianCore(who);
+        G.FX.ring(who.x, who.y, 8, 70, '#9ad8ff', 0.5, 4);
+      }
       return;
     }
     if (p.kind === 'magnet') {
@@ -948,6 +969,7 @@ G.Game = (() => {
   }
   function nearestShop() {
     if (!pl || pl.dead || state !== 'playing') return null;
+    if (G.Castle && G.Castle.up && G.Castle.shopOpen && !G.Castle.shopOpen()) return null;
     let best = null, bd = SHOP_R * SHOP_R;
     for (const s of (G.World.shops || [])) {
       const d = G.U.dist2(pl.x, pl.y, s.x, s.y);
@@ -956,11 +978,15 @@ G.Game = (() => {
     return best;
   }
   function rollStall(shop) {
-    const pool = G.Items.LIST.filter(i => G.Items.canOffer(pl, i));
-    shop.stock = G.U.pickN(pool, Math.min(3, pool.length)).map(i => i.id);
+    const puppy = G.Castle && G.Castle.up;
+    const pool = G.Items.LIST.filter(i => !i.castleOnly && G.Items.canOffer(pl, i));
+    const n = puppy ? 2 : 3;
+    shop.stock = G.U.pickN(pool, Math.min(n, pool.length)).map(i => i.id);
+    if (puppy && G.Items.BY.puppyheal) shop.stock.unshift('puppyheal');
   }
   function stallPrice(it, shop) {
-    const raw = (it.shopBase || 36) + (shop.markup || 0);
+    let raw = (it.shopBase || 36) + (shop.markup || 0);
+    if (it.id === 'puppyheal' && G.Castle && G.Castle.up) raw *= G.Castle.shopPriceMul || 1;
     return Math.max(1, Math.round(raw * (1 - Math.min(0.4, pl.ballCut || 0))));
   }
   function paintStall() {
@@ -991,9 +1017,29 @@ G.Game = (() => {
   function buyStall(id) {
     if (!stallShop || !pl) return;
     const it = G.Items.BY[id];
-    if (!it) { stallNote = 'Ese objeto no est√°.'; paintStall(); return; }
+    if (!it) { stallNote = 'Ese objeto no est·.'; paintStall(); return; }
     const price = stallPrice(it, stallShop);
     if ((pl.runCandy | 0) < price) { stallNote = 'No tienes bastantes caramelos.'; showCandyShortage(); paintStall(); return; }
+    if (it.castleOnly || it.instant) {
+      if (!(G.Castle && G.Castle.up)) { stallNote = 'SÛlo en Protege al cachorro.'; paintStall(); return; }
+      if (!G.Castle.shopOpen()) { stallNote = 'La tienda est· cerrada durante el jefe.'; paintStall(); return; }
+      if (G.Castle.hp <= 0) { stallNote = 'Tu cachorro ya ha caÌdo.'; paintStall(); return; }
+      if (G.Castle.hp >= G.Castle.maxHp) { stallNote = 'Tu cachorro ya est· al m·ximo.'; paintStall(); return; }
+      if (G.Castle.hp / G.Castle.maxHp > 0.85) { stallNote = 'El cachorro tiene demasiada vida (m·s del 85 %).'; paintStall(); return; }
+      if (!G.Castle.canBuyHeal()) { stallNote = 'Ya compraste un corazÛn en este tramo de jefe.'; paintStall(); return; }
+      if (!spendCandy(pl, price)) { stallNote = 'No tienes bastantes caramelos.'; showCandyShortage(); paintStall(); return; }
+      if (!G.Castle.buyHeal()) {
+        refundCandy(pl, price);
+        stallNote = 'No se pudo curar al cachorro.';
+        paintStall();
+        return;
+      }
+      stallShop.markup = (stallShop.markup || 0) + 3;
+      stallNote = 'Compra hecha.';
+      G.Audio.sfx('buy');
+      paintStall();
+      return;
+    }
     if (!G.Items.canOffer(pl, it)) { stallNote = 'Has llegado al tope de este objeto.'; paintStall(); return; }
     if (!spendCandy(pl, price)) { stallNote = 'No tienes bastantes caramelos.'; showCandyShortage(); paintStall(); return; }
     if (!G.Items.gain(pl, id)) { refundCandy(pl, price); stallNote = 'Has llegado al tope de este objeto.'; paintStall(); return; }
@@ -1080,6 +1126,10 @@ G.Game = (() => {
     }
     // Ca√≠do en grupo: Q / E cambian a qui√©n miras.
     if (pl.dead) { if (G.Input.tap('keyq')) cycleWatch(-1); if (G.Input.tap('keye') || G.Input.tap('tab')) cycleWatch(1); return; }
+    if (G.Input.tap('keyg') && G.Castle && G.Castle.up && G.Castle.useGuardianCore) {
+      G.Castle.useGuardianCore(pl);
+      return;
+    }
     if (G.Input.tap('keye') && useNear()) return;
     if (G.Input.tap('keyq')) pl.cycle(-1);
     if (G.Input.tap('keye') || G.Input.tap('tab')) pl.cycle(1);

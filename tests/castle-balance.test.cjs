@@ -5,7 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 function boot() {
-  const ctx = { G: {}, console };
+  const ctx = { G: {}, console, Image: function () { this.src = ''; } };
   ctx.window = ctx;
   vm.createContext(ctx);
   vm.runInContext(
@@ -49,12 +49,19 @@ test('50 波与 20 波是两套固定规则', () => {
   assert.equal(full.puppyHp, 4500);
   assert.equal(full.winWave, 51);
   assert.equal(full.bite, 'classic');
+  assert.equal(full.finalHpMul, 2.8);
+  assert.equal(full.bossEscortRatio, 0.60);
+  assert.equal(full.heartRate, 0.10);
+  assert.equal(full.shopHeal, 0.15);
   assert.equal(fast.waves, 20);
   assert.equal(fast.bossEvery, 4);
-  assert.equal(fast.puppyHp, 3000);
+  assert.equal(fast.puppyHp, 3200);
   assert.equal(fast.winWave, 21);
   assert.equal(fast.bite, 'sprint');
-  assert.equal(full.finalHpMul, 2.8);
+  assert.equal(fast.finalHpMul, 2.4);
+  assert.equal(fast.bossEscortRatio, 0.50);
+  assert.equal(fast.heartRate, 0.08);
+  assert.equal(fast.shopHeal, 0.12);
   assert.equal(fast.bossDmgMul, 1.75);
 });
 
@@ -65,6 +72,14 @@ test('20 波把压力映射到旧的 1–50 曲线', () => {
   assert.ok(Math.abs(Castle.pressureOf(20) - 50) < 1e-9);
   Castle.applyPreset('castle');
   assert.equal(Castle.pressureOf(46), 46);
+});
+
+test('20 波普通怪咬伤使用独立百分比，间隔不少于 0.40', () => {
+  const source = fs.readFileSync(path.join(__dirname, '..', 'js/systems/castle.js'), 'utf8');
+  assert.match(source, /bite === 'sprint'/);
+  assert.match(source, /cd = 0\.40/);
+  assert.match(source, /Math\.min\(0\.05, 0\.009 \+ pw \* 0\.00082\)/);
+  assert.match(source, /Math\.min\(0\.065, basePct \* difficultyMul\)/);
 });
 
 test('Boss 波保留可预警的奶狗百分比伤害，不使用随机秒杀', () => {

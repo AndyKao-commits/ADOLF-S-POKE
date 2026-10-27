@@ -472,6 +472,27 @@ G.Coop = (() => {
         case 'sg':
           if (G.Siege && G.Siege.up) G.Siege.applyHit(ev[1], ev[2], ev[3] || from);
           break;
+        case 'chl':
+          if (G.Castle && G.Castle.up) {
+            if (ev[2] === 'heart' && G.Castle.takeHeart) G.Castle.takeHeart(ev[1]);
+            else G.Castle.healPuppy(ev[1]);
+          }
+          break;
+        case 'csh':
+          if (G.Castle && G.Castle.up) G.Castle.buyHeal();
+          break;
+        case 'cal':
+          if (G.Castle && G.Castle.up) G.Castle.applyAltar(ev[1] || from);
+          break;
+        case 'cgp':
+          if (G.Castle && G.Castle.up) G.Castle.pickupGuardianCore(local);
+          break;
+        case 'cgu': {
+          if (!(G.Castle && G.Castle.up)) break;
+          const who = from === me ? local : ((mates.get(from) || {}).pl);
+          if (who) G.Castle.useGuardianCore(who);
+          break;
+        }
         case 'ph':
           if (ev[3] && ev[3] === ev[1]) break;
           if (ev[1] === me) {
@@ -648,6 +669,21 @@ G.Coop = (() => {
         break;
       case 'so':
         if (G.Siege && G.Siege.knockOut) G.Siege.knockOut(ev[1]);
+        break;
+      case 'cab':
+        if (G.Castle && G.Castle.up && G.Castle.syncAltar) G.Castle.syncAltar(ev[1], ev[2], ev[3], ev[4]);
+        break;
+      case 'css':
+        if (G.Castle && G.Castle.up && G.Castle.syncShop) G.Castle.syncShop(ev[1], ev[2], ev[3]);
+        break;
+      case 'cgd':
+        if (G.Castle && G.Castle.up && G.Castle.syncCoreDrop) G.Castle.syncCoreDrop(ev[1], ev[2]);
+        break;
+      case 'cgh':
+        if (G.Castle && G.Castle.up && G.Castle.syncCoreHeld) G.Castle.syncCoreHeld(ev[1]);
+        break;
+      case 'cgu':
+        if (G.Castle && G.Castle.up && G.Castle.syncCoreUse) G.Castle.syncCoreUse();
         break;
       case 'rift': case 'riftx': case 'arena': case 'aw': case 'al': G.Rift.onEvent(ev); break;
       case 'jd': case 'jk': case 'jb': G.Judgment.onEvent(ev); break;
