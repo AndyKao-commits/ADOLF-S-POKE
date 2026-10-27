@@ -44,7 +44,7 @@ G.Castle = (() => {
   let pulseFx = 0, usingCore = false;
   const img = new Image();
   img.src = 'assets/castle-puppy.png?v=char';
-  const aim = { x: 0, y: 0, r: 28, bodyH: 40 };
+  const aim = { x: 0, y: 80, r: 34, bodyH: 40 };
 
   function applyPreset(id) {
     cfg = PRESETS[id] || PRESETS.castle;
@@ -136,10 +136,9 @@ G.Castle = (() => {
     pulseFx = 0;
     usingCore = false;
     maxHp = hp = cfg.puppyHp;
+    // El cachorro queda junto al punto de aparición del jugador (0,0), como antes.
     aim.x = 0;
-    aim.y = G.World
-      ? Math.min(G.World.pixelH - 96, Math.max(G.World.pixelH * 0.72, G.World.pixelH - 220))
-      : 900;
+    aim.y = 80;
     altar = { x: aim.x + 54, y: aim.y - 8 };
     openWave(1);
   }
