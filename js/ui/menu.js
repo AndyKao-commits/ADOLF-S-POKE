@@ -103,7 +103,7 @@ G.MenuUI = (() => {
     root.querySelectorAll('[data-mode-ico]').forEach(slot => {
       const id = slot.dataset.modeIco;
       slot.replaceChildren();
-      if (id === 'castle') {
+      if (id === 'castle' || id === 'castle20') {
         const img = document.createElement('img');
         img.className = 'pix';
         img.alt = '';
@@ -138,6 +138,7 @@ G.MenuUI = (() => {
     shiny: 'Sólo ves Pokémon shiny.',
     boss: 'Tres jefes a la vez. Empiezas en el nivel 20.',
     castle: 'Cincuenta oleadas. Protege al cachorro.',
+    castle20: 'Veinte oleadas. Cachorro rápido.',
     siege: 'Gana el último castillo en pie.',
     endless: 'No acaba. Cada oleada cambia el peligro.'
   };

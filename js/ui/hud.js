@@ -658,7 +658,8 @@ G.HUD = (() => {
       bar(ctx, (w - bw) / 2, y, bw, 12, G.Castle.hp / G.Castle.maxHp, '#5fe08a');
       ctx.font = F(800, 10);
       ctx.fillStyle = '#06210f';
-      ctx.fillText('Oleada ' + (G.Castle.wave || 1) + ' de 50', w / 2, y + 10);
+      const total = (G.Castle.balance && G.Castle.balance.waves) || 50;
+      ctx.fillText('Oleada ' + (G.Castle.wave || 1) + ' de ' + total, w / 2, y + 10);
     }
 
     // ---------- aviso ----------

@@ -205,7 +205,7 @@ G.Game = (() => {
       pl._modePicks = 19;
       if (!G.Coop.active || G.Coop.isHost) pendingLevels = 19;
     }
-    if (G.Modes.is('castle')) G.Castle.begin();
+    if (G.Modes.isCastle()) G.Castle.begin();
     if (G.Modes.is('siege')) G.Siege.begin(coop ? coop.members : null);
     G.Camera.x = pl.x; G.Camera.y = pl.y; G.Camera.shake = 0;
     // Hojas de sprites locales: el compañero y los primeros enemigos.
@@ -218,7 +218,7 @@ G.Game = (() => {
 
     state = 'playing';
     fieldT = 45; fieldN = 0;
-    if (!(G.Modes.is('siege') || G.Modes.is('castle')) && (!coop || G.Coop.isHost)) {
+    if (!(G.Modes.is('siege') || G.Modes.isCastle()) && (!coop || G.Coop.isHost)) {
       // Una cerca y otra lejos: desde el principio el mapa invita a explorar.
       placeField({ min: 420, max: 780, paid: true });
       placeField({ min: 1250, max: 1900, paid: true });
@@ -396,7 +396,7 @@ G.Game = (() => {
   function endRun(dead = true) {
     if (state === 'over' || !pl) return;
     let waveMark = 0, waveNow = 0;
-    if (G.Modes.is('castle') && G.Castle && G.Castle.up) {
+    if (G.Modes.isCastle() && G.Castle && G.Castle.up) {
       const sec = Math.max(0, Math.min(9999, Math.floor(time)));
       const w = castleWon ? 51 : (G.Castle.wave || 1);
       waveMark = w * 10000 + (9999 - sec);
@@ -406,7 +406,7 @@ G.Game = (() => {
       pl, time, wave: waveNow,
       mapId: (G.World.regionId && G.World.regionId()) || '',
       diff: (G.Modes.is('siege') || (G.Coop && G.Coop.active && !G.Modes.is('normal'))) ? '' : runDiff,
-      win: G.Modes.is('siege') ? !!(siegeResult && siegeResult.win === (pl.uid || 'me')) : (G.Modes.is('castle') ? !!castleWon : !dead),
+      win: G.Modes.is('siege') ? !!(siegeResult && siegeResult.win === (pl.uid || 'me')) : (G.Modes.isCastle() ? !!castleWon : !dead),
       group: !!(G.Coop && G.Coop.active)
     }) : null;
     G.Castle.end();
@@ -474,10 +474,10 @@ G.Game = (() => {
     // Una sala con una sola persona cuenta como solo: si no, ni solo ni grupo la guardan.
     const group = coop && team.length >= 2;
     const siegeWin = G.Modes.is('siege') && siegeResult && siegeResult.win === (pl.uid || 'me');
-    const castleRank = G.Modes.is('castle') && (lostCastle || castleWon);
+    const castleRank = G.Modes.isCastle() && (lostCastle || castleWon);
     const sent = !ok || endlessRun ? null
                : G.Modes.is('siege') ? (siegeWin ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny, runMode: group ? 'siegeParty' : 'siege' })) : null)
-               : G.Modes.is('castle') && !castleRank ? null
+               : G.Modes.isCastle() && !castleRank ? null
                : !group ? G.Ranking.submitSolo(Object.assign(mark, { dex: pl.dex, shiny: pl.shiny, runMode: G.Modes.id }))
                : wasHost ? G.Ranking.submitGroup(Object.assign(mark, { members: team, runMode: G.Modes.id })) : null;
     if (sent) sent.then(b => { if (b && b.some(p => p !== 'a')) G.DB.commit(true); }).catch(() => {});
@@ -785,7 +785,7 @@ G.Game = (() => {
   function tickFields(dt) {
     if (!pl || state === 'over' || state === 'ui') return;
     if (G.Coop.active && !G.Coop.isHost) return;
-    if (G.Modes && (G.Modes.is('siege') || G.Modes.is('castle'))) return;
+    if (G.Modes && (G.Modes.is('siege') || G.Modes.isCastle())) return;
     if (G.Rift.inArena || G.Judgment.active) return;
     fieldT -= dt;
     if (fieldT > 0) return;
@@ -1555,7 +1555,7 @@ G.Game = (() => {
         if (G.Judgment && (G.Judgment.cinematic || G.Judgment.active)) break;
         let dt = Math.min(step, left);
         const judgmentAt = 30 * 60;
-        const judged = G.Modes && (G.Modes.is('endless') || G.Modes.is('siege') || G.Modes.is('castle'));
+        const judged = G.Modes && (G.Modes.is('endless') || G.Modes.is('siege') || G.Modes.isCastle());
         if (!judged && time < judgmentAt && time + dt >= judgmentAt) dt = Math.max(0.05, judgmentAt - time);
         const before = time;
         time += dt;

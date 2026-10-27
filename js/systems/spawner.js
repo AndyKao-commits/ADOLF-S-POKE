@@ -188,7 +188,7 @@ G.Spawner = (() => {
 
     // Asedio: los monstruos salen de cada castillo (siege.js).
     // Protege al cachorro: las oleadas las saca el castillo (castle.js).
-    if (G.Modes && (G.Modes.is('siege') || G.Modes.is('castle'))) return;
+    if (G.Modes && (G.Modes.is('siege') || G.Modes.isCastle())) return;
 
     // Desafío de jefes: nada de hordas. Como mucho tres jefes vivos.
     // El tramo (en la mazmorra, uno cada 3 min) y la curva de vida y daño
@@ -329,7 +329,7 @@ G.Spawner = (() => {
   function tickBanner(dt) { if (announceT > 0) announceT -= dt; }
 
   function nextBossIn(t) {
-    if (G.Modes && (G.Modes.is('siege') || G.Modes.is('castle') || G.Modes.is('boss'))) return null;
+    if (G.Modes && (G.Modes.is('siege') || G.Modes.isCastle() || G.Modes.is('boss'))) return null;
     if (G.EnemyMgr && G.EnemyMgr.bossAlive && G.EnemyMgr.bossAlive()) return null;
     const b = G.Enemies.BOSSES[bossIdx];
     if (b) return Math.max(0, b.at - t);

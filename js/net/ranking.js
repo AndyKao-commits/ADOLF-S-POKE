@@ -86,7 +86,7 @@ G.Ranking = (() => {
   }
 
   /** Trozo del nombre de la tabla según el modo de partida. Vacío = mazmorra normal (las tablas de siempre). */
-  const RUN_TAG = { shiny: 'sh_', boss: 'bo_', castle: 'ca_', siege: 'sg_', siegeParty: 'sgp_' };
+  const RUN_TAG = { shiny: 'sh_', boss: 'bo_', castle: 'ca_', castle20: 'c2_', siege: 'sg_', siegeParty: 'sgp_' };
   // Dificultad de la salida. Vacío = Corriente: las marcas de antes siguen en esa tabla.
   const DIFF_TAG = { hard: 'hd_', challenge: 'ch_', nightmare: 'nm_' };
   const DIFF_TAGS = ['', ...Object.values(DIFF_TAG)];

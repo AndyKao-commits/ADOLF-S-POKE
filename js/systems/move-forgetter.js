@@ -50,7 +50,7 @@ G.MoveForgetter = (() => {
   }
 
   function update(dt, pl, time) {
-    if (!pl || used || G.Modes.is('siege') || G.Modes.is('castle') || G.Rift.inArena || G.Judgment.active) return;
+    if (!pl || used || G.Modes.is('siege') || G.Modes.isCastle() || G.Rift.inArena || G.Judgment.active) return;
     if (!npc && time >= due) spawn(pl);
     if (!npc) return;
     npc.bob += dt;

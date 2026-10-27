@@ -17,7 +17,7 @@ G.Result = (() => {
   function score(bucket, row) {
     if (!row) return -1;
     if (bucket === 'pvp') return row.win ? (1e9 - (row.survivalTime || 0)) : -1;
-    if (row.mode === 'castle') return (row.wave || 0) * 100000 + (row.survivalTime || 0);
+    if (row.mode === 'castle' || row.mode === 'castle20') return (row.wave || 0) * 100000 + (row.survivalTime || 0);
     return row.survivalTime || 0;
   }
 

@@ -710,6 +710,12 @@ G.Player = class Player {
       G.Projectiles.clearOrbs(this);
     }
     if (this.dead) return;
+    // Tras revivir, revive() pone reviveSafe/invuln. El jugador local los baja en
+    // update(); el títere sólo pasa por aquí, y si no bajan, en asedio foePlayers
+    // y poke le dejan inmune para siempre.
+    if (this.reviveSafe > 0) this.reviveSafe -= dt;
+    if (this.invuln > 0) this.invuln -= dt;
+    if (this.spawnGuard > 0) this.spawnGuard -= dt;
     this.walking = !!n.walk;
     this.moveAngle = n.ang;
     this.aim = n.aim;

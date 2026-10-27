@@ -96,10 +96,15 @@ G.RankingUI = (() => {
   function shownRm() { return runMode === 'siege' && siegeSide === 'party' ? 'siegeParty' : runMode; }
   function clock(t) { return t >= 3600 ? Math.floor(t / 3600) + ':' + G.U.mmss(t % 3600).padStart(5, '0') : G.U.mmss(t); }
   function fmt(t) {
-    if (runMode === 'castle' && t >= 10000) {
+    if ((runMode === 'castle' || runMode === 'castle20') && t >= 10000) {
       const waveN = Math.floor(t / 10000);
       const sec = Math.max(0, 9999 - (t % 10000));
-      const label = waveN >= 51 ? 'Oleada 50 superada' : ('Oleada ' + waveN);
+      const bal = G.Castle && G.Castle.balanceOf ? G.Castle.balanceOf(runMode) : null;
+      const winAt = (bal && bal.winWave) || (runMode === 'castle20' ? 21 : 51);
+      const cleared = (bal && bal.waves) || (runMode === 'castle20' ? 20 : 50);
+      const label = waveN >= winAt
+        ? (G.I18n && G.I18n.f ? G.I18n.f('Oleada {x} superada', cleared) : ('Oleada ' + cleared + ' superada'))
+        : ('Oleada ' + waveN);
       return '<span>' + label + '</span> · ' + clock(sec);
     }
     return clock(t);

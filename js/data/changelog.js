@@ -6,6 +6,14 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-10-27', title: ['Cachorro', 'Puppy'], chg: [
+    ['Hay dos modos de Protege al cachorro: 50 oleadas (el de siempre) y Cachorro rápido de 20 oleadas (unos 10 minutos).',
+     'There are two Protect-the-puppy modes: 50 waves (the usual one) and Fast puppy with 20 waves (about 10 minutes).'],
+    ['En Cachorro rápido el cachorro aguanta menos y la tropa le muerde más. En los dos modos, derrotar jefes ya no le cura vida.',
+     'In Fast puppy the puppy has less HP and the troop bites harder. In both modes, beating bosses no longer heals it.'],
+    ['Los jefes de Protege al cachorro son más duros: más vida, pegan más y muerden más fuerte al cachorro.',
+     'Protect-the-puppy bosses are tougher: more HP, they hit harder and bite the puppy harder.']
+  ] },
   { d: '2026-10-26', title: ['Mapa', 'Map'], chg: [
     ['La lista del mapa sólo muestra NPC, Poké Balls de pago, Poké Balls y huevos. Los enemigos ya no salen ahí, y se quitó la leyenda de iconos.',
      'The map list only shows NPCs, paid Poké Balls, Poké Balls and eggs. Enemies are no longer listed, and the icon key is gone.']

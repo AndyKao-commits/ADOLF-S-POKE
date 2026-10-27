@@ -76,7 +76,9 @@ G.Coop = (() => {
     r = r || {};
     const mode = r.mode === 'count' || r.mode === 'custom' ? r.mode : 'auto';
     let cap = clampCap(r.cap == null ? 4 : r.cap);
-    const runMode = r.runMode === 'shiny' || r.runMode === 'boss' || r.runMode === 'castle' || r.runMode === 'siege' ? r.runMode : 'normal';
+    const runMode = G.Modes
+      ? G.Modes.idOf(r.runMode)
+      : (r.runMode === 'shiny' || r.runMode === 'boss' || r.runMode === 'castle' || r.runMode === 'castle20' || r.runMode === 'siege' || r.runMode === 'endless' ? r.runMode : 'normal');
     const diff = r.diff === 'hard' || r.diff === 'challenge' || r.diff === 'nightmare' ? r.diff : 'normal';
     // Asedio es una plantilla oficial 1 contra 1. No hereda el límite
     // configurable de las salas cooperativas.

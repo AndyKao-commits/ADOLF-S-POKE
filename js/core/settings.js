@@ -20,7 +20,7 @@
  *   diffHp      número                            vida de los enemigos, si diffMode es 'custom'
  *   diffXp      número                            entre cuántos se reparte la experiencia, si es 'custom'
  *   bossN       0..10                             cuántos jefes salen (5 es lo de siempre, uno cada 3 minutos)
- *   runMode     normal | shiny | boss | castle | siege    modo de la próxima partida
+ *   runMode     normal | shiny | boss | castle | castle20 | siege | endless    modo de la próxima partida
  *   soloDiff    normal | hard | challenge | nightmare     dificultad de la salida (vida, daño y ritmo; cada una, su ranking)
  *   region      kanto … paldea                    mapa de la próxima partida en solitario
  *
