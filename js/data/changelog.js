@@ -6,6 +6,33 @@
  * Cada línea en español y en inglés.
  */
 G.CHANGELOG = [
+  { d: '2026-11-02', title: ['Móvil', 'Mobile'], new: [
+    ['Joystick «Anclado» (Ajustes → Controles → Colocar los botones): aparece donde tocas y la base se queda ahí.',
+     '“Anchored” joystick (Settings → Controls → Place buttons): it appears where you touch and the base stays put.']
+  ], fix: [
+    ['Con un dedo en el joystick y otro en una carta de nivel, objeto o vínculo, al levantar el dedo se elige la carta (antes el navegador no mandaba el clic y parecía que el joystick se atascaba).',
+     'With one finger on the joystick and another on a level, item or bond card, lifting the finger picks the card (before the browser skipped the click and the joystick seemed stuck).'],
+    ['El botón «atrás» del móvil, en partida, pausa; en una pantalla del menú vuelve atrás; sólo en el menú principal sale de la web. Al perder el foco también se pausa.',
+     'The phone Back button pauses in a run, goes back on a menu screen, and only leaves the site from the main menu. Losing focus also pauses.'],
+    ['La barra de arriba ya no se sale ni se parte en pantallas estrechas: iconos, apodo corto y cantidades en corto.',
+     'The top bar no longer overflows or wraps badly on narrow screens: icons, short nick, and compact amounts.'],
+    ['Tras «Cambiar opciones» las cartas nuevas no se eligen al instante por un toque residual.',
+     'After “Change options”, new cards are not picked instantly by a leftover tap.']
+  ] },
+  { d: '2026-11-02', title: ['Cooperativo', 'Co-op'], fix: [
+    ['Un corte momentáneo del canal o de la base de datos de salas ya no echa de la partida: se espera a reconectar (hasta 45 s) y la plaza se recupera.',
+     'A brief drop of the peer channel or the room database no longer ends the run: it waits to reconnect (up to 45 s) and restores the seat.'],
+    ['Si se pierde el aviso de que alguien terminó de elegir carta u objeto, la partida ya no se queda parada para todos.',
+     'If the “finished picking” notice is lost, the run no longer stalls for everyone.'],
+    ['El clima de Sequía, Llovizna… de un invitado también se aplica (antes sólo el del anfitrión).',
+     'Drought, drizzle… weather from a guest also applies (before only the host’s did).']
+  ] },
+  { d: '2026-11-02', title: ['Objetos y características', 'Items and abilities'], fix: [
+    ['Chaleco Asalto: su armadura ya no consume el tope del 70 % de las cartas de armadura.',
+     'Assault Vest: its armor no longer eats into the 70% armor-card cap.'],
+    ['Una característica que sube la velocidad al recibir un golpe ya no borra las capas de otra (p. ej. Armadura Frágil sobre Impasible).',
+     'An ability that boosts speed when hit no longer wipes another’s stacks (e.g. Weak Armor over Steadfast).']
+  ] },
   { d: '2026-10-27', title: ['Cachorro', 'Puppy'], new: [
     ['Núcleo Guardián: cae en la oleada previa al jefe. Con G (o el botón en el móvil) cerca del cachorro activas un escudo de 4 s y una onda que empuja tropa, élites y jefes, e interrumpe el ataque del jefe.',
      'Guardian Core: drops on the wave before each boss. Press G (or the mobile button) near the puppy to raise a 4 s shield and a pulse that knocks back troop, elites and bosses, and interrupts the boss attack.'],

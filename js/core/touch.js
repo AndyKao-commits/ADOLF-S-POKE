@@ -9,6 +9,9 @@
  *
  * Joystick fijo (Ajustes > Controles > Colocar los botones): siempre en el
  * mismo sitio; sólo se coge tocando cerca de él.
+ *
+ * Joystick anclado: aparece donde pones el dedo y la base se queda ahí
+ * aunque alejes el dedo (el flotante mueve la base para seguirte).
  */
 G.Touch = (() => {
   let cv = null, stick = null;
@@ -21,7 +24,9 @@ G.Touch = (() => {
   /** Dónde ha colocado el jugador una cosa ('bar', 'pause', 'stick'): [x, y] en 0..1, o null. */
   function spot(k) { const p = G.Settings.get('pad'); return p && Array.isArray(p[k]) ? p[k] : null; }
   const STICK_DEF = [0.14, 0.72];
-  const fixed = () => G.Settings.get('stickMode') === 'fixed';
+  const modeOf = () => G.Settings.get('stickMode') || 'float';
+  const fixed = () => modeOf() === 'fixed';
+  const anchored = () => modeOf() === 'anchor';
   /** Centro del joystick fijo, en px de pantalla. */
   function stickBase(w = cv.clientWidth, h = cv.clientHeight) {
     const p = spot('stick') || STICK_DEF, r = R();
@@ -61,6 +66,10 @@ G.Touch = (() => {
     });
     addEventListener('blur', reset);
     document.addEventListener('visibilitychange', reset);
+    // Si el navegador se come el «levantar el dedo», el joystick no debe quedar cogido.
+    const allUp = e => { if (!e.touches || !e.touches.length) reset(); };
+    document.addEventListener('touchend', allUp, true);
+    document.addEventListener('touchcancel', allUp, true);
   }
 
   function hit(x, y) {
@@ -114,7 +123,7 @@ G.Touch = (() => {
       stick = { id: e.pointerId, fixed: true, ox: b0.x, oy: b0.y, x: e.clientX, y: e.clientY };
     } else {
       e.preventDefault();
-      stick = { id: e.pointerId, ox: e.clientX, oy: e.clientY, x: e.clientX, y: e.clientY };
+      stick = { id: e.pointerId, fixed: anchored(), ox: e.clientX, oy: e.clientY, x: e.clientX, y: e.clientY };
     }
     try { cv.setPointerCapture(e.pointerId); } catch (err) { /* nada */ }
   }
@@ -122,7 +131,7 @@ G.Touch = (() => {
   function move(e) {
     if (!stick || e.pointerId !== stick.id) return;
     stick.x = e.clientX; stick.y = e.clientY;
-    if (stick.fixed) return;
+    if (stick.fixed) return;                   // fijo o anclado: la base no sigue
     const dx = stick.x - stick.ox, dy = stick.y - stick.oy, d = Math.hypot(dx, dy), r = R();
     if (d > r) { stick.ox = stick.x - dx / d * r; stick.oy = stick.y - dy / d * r; }
   }

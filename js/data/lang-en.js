@@ -172,8 +172,9 @@ G.I18n.add({
   'Colocar los botones': 'Place the buttons', 'Colocar': 'Place',
   'Pon los ataques, la pausa y el joystick (fijo, si quieres) donde quieras de la pantalla.': 'Put the attacks, the pause button and the joystick (fixed, if you like) anywhere on the screen.',
   'Arrastra los botones a donde quieras': 'Drag the buttons wherever you want', 'Gira el móvil: se juega en horizontal.': 'Turn your phone: the game is played in landscape.',
-  'Joystick': 'Joystick', 'Flotante': 'Floating', 'Fijo': 'Fixed', 'Ataques': 'Attacks',
+  'Joystick': 'Joystick', 'Flotante': 'Floating', 'Anclado': 'Anchored', 'Fijo': 'Fixed', 'Ataques': 'Attacks',
   'Flotante: aparece donde pones el dedo. Fijo: siempre en el mismo sitio.': 'Floating: it appears where you put your finger. Fixed: always in the same place.',
+  'Flotante: la base te sigue. Anclado: aparece donde tocas y se queda. Fijo: siempre en el mismo sitio.': 'Floating: the base follows you. Anchored: it appears where you touch and stays. Fixed: always in the same place.',
   'Restablecer': 'Reset', 'Guardar': 'Save', 'Botones colocados': 'Buttons placed',
   'La única web oficial de PokéSurvivor es aulf-friends-game.firebaseapp.com. El juego es y será gratis: si alguien te pide pagar, no somos nosotros.':
     "The only official PokéSurvivor website is aulf-friends-game.firebaseapp.com. The game is and always will be free: if anyone asks you to pay, it isn't us.",

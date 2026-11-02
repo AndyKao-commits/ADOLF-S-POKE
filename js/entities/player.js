@@ -166,7 +166,10 @@ G.Player = class Player {
   get reduction() {
     const arm = (this.armor || 0) * (this.armorMul || 1);
     const fromArm = arm > 0 ? arm / (arm + 100) : 0;
-    return Math.min(0.70, this.dmgReduce + fromArm + this.buffs.def.n * this.buffs.def.amount);
+    // Chaleco Asalto: fuera del tope del 70 % de las cartas/mejoras de armadura.
+    const vest = (this.vestArmor || 0) * (this.armorMul || 1);
+    const fromVest = vest > 0 ? vest / (vest + 100) : 0;
+    return Math.min(0.85, Math.min(0.70, this.dmgReduce + fromArm + this.buffs.def.n * this.buffs.def.amount) + fromVest);
   }
   get regen() {
     const run = G.Difficulty ? G.Difficulty.healing() : 1;
@@ -482,8 +485,10 @@ G.Player = class Player {
   addBuff(stat, amount, dur, maxStacks) {
     const b = this.buffs[stat];
     if (!b) return;
-    b.amount = amount;
-    b.n = Math.min(maxStacks, b.n + 1);
+    // No borrar capas de otra fuente con un maxStacks más bajo (p. ej. Armadura
+    // Frágil sobre Impasible / Cobardía).
+    const n = Math.min(maxStacks, b.n + 1);
+    if (n >= b.n) { b.n = n; b.amount = amount; }
     b.t = dur;
   }
 
@@ -513,11 +518,12 @@ G.Player = class Player {
     if (this.regen > 0) this.hp = Math.min(this.maxHp, this.hp + this.regen * dt);
     if (G.Items && G.Items.tick) G.Items.tick(this, dt);
     if (this.abil && this.abil.tick) this.abil.tick(this, dt);
-    // Sequía, Llovizna...: su clima al empezar y cada 3 min, si no hay otro (en
-    // grupo lo pone el anfitrión, que es quien manda el clima a todos).
-    if (this.abil && this.abil.summon && (!G.Coop.active || G.Coop.isHost) && (this.sumT = (this.sumT || 0) - dt) <= 0) {
+    // Sequía, Llovizna...: en grupo el anfitrión manda el clima; un invitado lo pide.
+    if (this.abil && this.abil.summon && !this.remote && (this.sumT = (this.sumT || 0) - dt) <= 0) {
       this.sumT = 180;
-      if (!G.Weather.current) G.Weather.debugStart(this.abil.summon, 60);
+      if (G.Weather.current) { /* ya hay uno */ }
+      else if (!G.Coop.active || G.Coop.isHost) G.Weather.debugStart(this.abil.summon, 60);
+      else G.Coop.toHost(['wxq', this.abil.summon]);
     }
 
     // --- movimiento con colisiones ---

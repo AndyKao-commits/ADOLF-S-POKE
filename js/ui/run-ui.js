@@ -22,6 +22,26 @@ G.RunUI = (() => {
   }
   const guarded = () => performance.now() < guardUntil;
 
+  /*
+   * Elegir con el dedo (26-10-2026, punto de JPTER78). El navegador no manda
+   * «click» si hay otro dedo en la pantalla: con un pulgar en el joystick y el
+   * otro en la carta, la carta no se elegía y parecía que el joystick se
+   * atascaba. Con el dedo se elige al levantarlo sobre la misma carta.
+   */
+  function onTap(el, fn) {
+    let id = null, at = 0, fired = -1e9;
+    el.addEventListener('pointerdown', e => { if (e.pointerType !== 'mouse') { id = e.pointerId; at = performance.now(); } });
+    el.addEventListener('pointercancel', e => { if (e.pointerId === id) id = null; });
+    el.addEventListener('pointerup', e => {
+      if (e.pointerId !== id) return;
+      id = null;
+      if (performance.now() - at > 1500) return;
+      fired = performance.now();
+      fn();
+    });
+    el.onclick = () => { if (performance.now() - fired > 700) fn(); };
+  }
+
   /** @param coop  en grupo: tras elegir, se queda esperando a los demás */
   function showLevelUp(level, list, cb, coop = false) {
     offerCb = cb; coopMode = coop;
@@ -30,9 +50,9 @@ G.RunUI = (() => {
     $('lvl-wait').classList.toggle('hidden', !coop);
     $('cards').classList.remove('done');
     renderCards(list);
-    $('lvl-reroll').onclick = reroll;
+    if (!$('lvl-reroll').dataset.tap) { $('lvl-reroll').dataset.tap = '1'; onTap($('lvl-reroll'), reroll); }
     const sk = $('lvl-skip');
-    if (sk) sk.onclick = skipCard;
+    if (sk && !sk.dataset.tap) { sk.dataset.tap = '1'; onTap(sk, skipCard); }
     G.UI.show('scr-levelup');
     guard($('cards'));
     armClock();
@@ -82,11 +102,12 @@ G.RunUI = (() => {
   }
 
   function reroll() {
-    if (!offers || rerollsLeft() <= 0) return;
+    if (!offers || rerollsLeft() <= 0 || guarded()) return;
     const p = G.Game.player;
     p.rerolls = (p.rerolls || 0) + 1;
     G.Audio.sfx('select');
     renderCards(G.LevelUp.offer(p));
+    guard($('cards'));
     armClock();
   }
 
@@ -131,7 +152,7 @@ G.RunUI = (() => {
          <div class="txt"><div class="nm">${c.title} ${tag}</div><div class="ds">${c.desc}</div></div>
          <div class="key">${i + 1}</div>`;
       el.dataset.sfx = 'none';             // el juego pone su propio sonido al elegir
-      el.onclick = () => pick(i);
+      onTap(el, () => pick(i));
       box.appendChild(el);
     });
   }
@@ -264,7 +285,7 @@ G.RunUI = (() => {
       el.innerHTML = `<div class="ico">${G.Icons.html(it.id, 36)}</div>
         <div class="txt"><div class="nm">${G.Items.text(it, 'name')} <span class="tag-chip">${n}/${it.max}</span></div><div class="ds">${G.Items.text(it, 'desc')}</div><div class="ds">${G.Items.stackText(G.Game.player, it).replace(/\n/g, '<br>')}</div></div>
         <div class="key">${i + 1}</div>`;
-      el.onclick = () => { if (guarded()) return; G.UI.hide('scr-item'); cb(it.id); };
+      onTap(el, () => { if (guarded() || !G.UI.isOpen('scr-item')) return; G.UI.hide('scr-item'); cb(it.id); });
       box.appendChild(el);
     });
     G.UI.show('scr-item');
@@ -282,7 +303,7 @@ G.RunUI = (() => {
       el.innerHTML = `<div class="ico">${G.Icons.html(id, 36)}</div>
         <div class="txt"><div class="nm">${verb} ${it.name}</div><div class="ds">${it.desc}</div></div>
         <div class="key">${i + 1}</div>`;
-      el.onclick = () => { if (guarded()) return; G.UI.hide('scr-item'); cb(id); };
+      onTap(el, () => { if (guarded() || !G.UI.isOpen('scr-item')) return; G.UI.hide('scr-item'); cb(id); });
       box.appendChild(el);
     });
     G.UI.show('scr-item');
@@ -299,7 +320,7 @@ G.RunUI = (() => {
    */
   function showBond(opt, cb) {
     bond = { opt, cb, first: null, list: [] };
-    $('bond-back').onclick = bondBack;
+    if (!$('bond-back').dataset.tap) { $('bond-back').dataset.tap = '1'; onTap($('bond-back'), bondBack); }
     renderBond();
     G.UI.show('scr-bond');
     guard($('bond-cards'));
@@ -327,7 +348,7 @@ G.RunUI = (() => {
          <div class="txt"><div class="nm">${G.T(m.name, 'move')} <span class="tag-chip" style="background:${col}">Nv.${m.lvl}</span></div><div class="ds">${desc}</div></div>
          <div class="key">${i + 1}</div>`;
       el.dataset.sfx = 'none';
-      el.onclick = () => pickBond(i);
+      onTap(el, () => pickBond(i));
       box.appendChild(el);
     });
   }
@@ -377,8 +398,8 @@ G.RunUI = (() => {
       ['Vida', n(pl.hp) + ' / ' + n(pl.maxHp)],
       ['Ataque', k2(pl.atkFor({ cat: 'physical' }))],
       ['At. Esp.', k2(pl.atkFor({ cat: 'special' }))],
-      ['Defensa', mon.df + ' <small>' + guard(fis) + ' físico</small>'],
-      ['Def. Esp.', mon.sd + ' <small>' + guard(esp) + ' especial</small>'],
+      ['Defensa', n(mon.df) + ' <small>' + guard(fis) + ' físico</small>'],
+      ['Def. Esp.', n(mon.sd) + ' <small>' + guard(esp) + ' especial</small>'],
       ['Velocidad', n(pl.spd)],
       ['Crítico', pct(pl.critChance || 0)],
       ['Reducción de daño', pct(pl.reduction)],

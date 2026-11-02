@@ -184,7 +184,13 @@ G.Social = (() => {
       on: !!on, at: fts(), room: room ? room.id : '', play: playing
     }).catch(() => {});
   }
-  function setPlaying(p) { if (playing !== !!p) { playing = !!p; writeStatus(); } }
+  function setPlaying(p) {
+    if (playing === !!p) return;
+    playing = !!p;
+    writeStatus();
+    // Al acabar la partida, la sala se vuelve a comprobar (los que se fueron, fuera).
+    if (!playing && room) { if (room.lost) room.tries = 0; emit('room'); }
+  }
   function onVisible() { if (document.visibilityState === 'visible') writeStatus(true); }
   function onHide() { writeStatus(false); }
 
@@ -410,15 +416,25 @@ G.Social = (() => {
   }
 
   function enterRoom(id, host) {
-    room = { id, host, isHost: host === uid, members: [], open: true, cap: G.Coop.rulesFromSettings().cap, rules: G.Coop.rulesFromSettings() };
-    watchRoomDisconnect();
+    room = { id, host, isHost: host === uid, members: [], open: true, cap: G.Coop.rulesFromSettings().cap, rules: G.Coop.rulesFromSettings(), lost: false };
+    watchRoom(id);
+    writeStatus();
+    emit('room');
+  }
+
+  function watchRoom(id) {
+    detachRoom();
+    let seenHost = false, prevHost = room && room.host;
     const mref = fb.rtdb.ref('rooms/' + id + '/m');
     mref.on('value', s => {
       if (!room || room.id !== id) return;
       const m = s.val() || {};
+      if (!m[uid]) { lostRoom(id); return; }          // tu plaza ya no está (corte)
+      const prev = room.members;
       // El anfitrión siempre primero; el resto por orden de llegada.
       room.members = Object.keys(m).map(k => Object.assign({ uid: k }, m[k]))
         .sort((a, b) => (a.uid === room.host ? -1 : b.uid === room.host ? 1 : (a.at || 0) - (b.at || 0)));
+      if (room.isHost && playing) keepMates(id, prev);
       // El anfitrión ya no está: el que llegó primero se queda con la sala.
       if (room.host && !room.members.some(x => x.uid === room.host)) {
         const next = nextHost(room.members, room.host);
@@ -426,13 +442,12 @@ G.Social = (() => {
       }
       watchRoomDisconnect();
       emit('room');
-    }, () => closedRoom());
-    let seenHost = false, prevHost = host;
+    }, () => lostRoom(id));
     const href = fb.rtdb.ref('rooms/' + id + '/host');
     href.on('value', s => {
       if (!room || room.id !== id) return;
       const h = s.val();
-      if (!h) { closedRoom(); return; }
+      if (!h) { lostRoom(id); return; }
       const first = !seenHost;
       seenHost = true;
       const became = h === uid && !room.isHost;
@@ -444,7 +459,7 @@ G.Social = (() => {
       }
       prevHost = h;
       emit('room');
-    }, () => closedRoom());
+    }, () => lostRoom(id));
     const oref = fb.rtdb.ref('rooms/' + id + '/open');
     oref.on('value', s => { if (room && room.id === id) { room.open = s.val() === true; emit('room'); } }, () => {});
     const cref = fb.rtdb.ref('rooms/' + id + '/cap');
@@ -459,9 +474,73 @@ G.Social = (() => {
       if (s.val()) room.rules = G.Coop.normalizeRules(Object.assign({ cap: room.cap }, s.val()));
       emit('room');
     }, () => {});
-    roomRefs = [mref, href, oref, cref, rref];
-    writeStatus();
-    emit('room');
+    // Tras un corte el servidor ya ha hecho el onDisconnect: hay que volver a dejarlo puesto.
+    const iref = fb.rtdb.ref('.info/connected');
+    iref.on('value', s => { if (s.val() === true && room && room.id === id) watchRoomDisconnect(); });
+    roomRefs = [mref, href, oref, cref, rref, iref];
+  }
+
+  /*
+   * Cortes de la Realtime Database. Un corte momentáneo hacía el onDisconnect
+   * (borraba la plaza o la sala) y salía «La sala se ha cerrado» aunque el
+   * canal directo siguiera bien. Ahora se recupera; en partida nunca se cierra.
+   */
+  const REJOIN_MS = 4000, REJOIN_TRIES = 3;
+
+  function lostRoom(id) {
+    if (!room || room.id !== id || room.lost) return;
+    detachRoom();
+    room.lost = true;
+    room.tries = 0;
+    rejoin(id);
+  }
+
+  const within = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(Error('timeout')), ms))]);
+
+  async function rejoin(id) {
+    if (!room || room.id !== id || !room.lost) return;
+    const base = fb.rtdb.ref('rooms/' + id);
+    try {
+      const host = (await within(base.child('host').get(), 5000)).val();
+      if (!room || room.id !== id) return;
+      if (room.isHost) {
+        if (host !== uid) {
+          if (host) throw Error('otra');
+          const m = {};
+          for (const x of room.members) m[x.uid] = { name: x.name, dex: x.dex, shiny: !!x.shiny, mr: x.mr || '', at: x.at || 0 };
+          m[uid] = Object.assign(memberInfo(), m[uid] ? { at: m[uid].at } : {});
+          await within(base.set({ host: uid, open: playing ? false : room.open, at: Date.now(), cap: room.cap, rules: room.rules, code: id, m }), 5000);
+        }
+      } else {
+        if (!host) throw Error('sin anfitrión');
+        const mine = room.members.find(x => x.uid === uid);
+        await within(base.child('m/' + uid).set(Object.assign(memberInfo(), mine && mine.at ? { at: mine.at } : {})), 5000);
+      }
+    } catch (e) {
+      if (!room || room.id !== id) return;
+      if (!playing && ++room.tries >= REJOIN_TRIES) { closedRoom(); return; }
+      setTimeout(() => rejoin(id), playing ? 3 * REJOIN_MS : REJOIN_MS);
+      return;
+    }
+    if (!room || room.id !== id) return;
+    room.lost = false;
+    watchRoom(id);
+    watchRoomDisconnect();
+  }
+
+  /**
+   * Anfitrión en partida: si la plaza de un invitado desaparece pero su canal
+   * directo sigue abierto, se le vuelve a poner.
+   */
+  function keepMates(id, prev) {
+    for (const x of prev) {
+      if (x.uid === uid || room.members.some(m => m.uid === x.uid)) continue;
+      setTimeout(() => {
+        if (!room || room.id !== id || !playing || room.members.some(m => m.uid === x.uid)) return;
+        if (G.Net.mode(x.uid) !== 'direct') return;
+        fb.rtdb.ref('rooms/' + id + '/m/' + x.uid).set({ name: x.name, dex: x.dex, shiny: !!x.shiny, mr: x.mr || '', at: x.at || 0 }).catch(() => {});
+      }, 3000);
+    }
   }
 
   /** El siguiente anfitrión: el que lleva más tiempo en la sala. */

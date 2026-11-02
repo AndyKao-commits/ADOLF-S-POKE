@@ -235,9 +235,11 @@ G.Items = (() => {
     desc: '+30 % de daño a quien es débil a tu tipo.', zd: '對弱於招式屬性的目標傷害 +30%。',
     ed: 'Damage +30% against targets weak to the move\'s type.' }, { on() {}, off() {} });
   card({ id: 'assaultvest', name: 'Chaleco Asalto', zh: '突擊背心', en: 'Assault Vest', file: 'assault-vest.png', tier: 2, max: 1,
-    desc: 'Cada copia: +10 de armadura y +8 % de vida máxima. Hasta x3.', zd: '每份護甲 +10、最大 HP +8%。最多 x3。', ed: 'Each copy: armor +10 and max HP +8%. Up to x3.' }, {
-    on(p, n) { flat('armor', 10, 'assaultvest').on(p, n); pctHp(p, 'assaultvest', 0.08 * n); },
-    off(p) { flat('armor', 10, 'assaultvest').off(p); pctHp(p, 'assaultvest', 0); }
+    desc: 'Cada copia: +10 de armadura (fuera del tope del 70 % de las cartas) y +8 % de vida máxima. Hasta x3.',
+    zd: '每份護甲 +10（不佔護甲卡 70% 上限）、最大 HP +8%。最多 x3。',
+    ed: 'Each copy: armor +10 (outside the 70% armor-card cap) and max HP +8%. Up to x3.' }, {
+    on(p, n) { p.vestArmor = 10 * n; pctHp(p, 'assaultvest', 0.08 * n); },
+    off(p) { p.vestArmor = 0; pctHp(p, 'assaultvest', 0); }
   });
   card({ id: 'safetygoggles', name: 'Gafas de Seguridad', zh: '防塵護目鏡', en: 'Safety Goggles', file: 'safety-goggles.png', tier: 1, max: 1,
     desc: '+5 de armadura, menos a partir de la segunda copia.', zd: '護甲 +5，第二份起遞減。', ed: 'Armor +5, less from the second copy.' }, flat('armor', 5, 'safetygoggles', 'dim'));

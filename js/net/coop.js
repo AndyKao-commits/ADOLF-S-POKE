@@ -170,7 +170,7 @@ G.Coop = (() => {
     members = cfg.members;
     mates.clear();
     outEv = []; flushT = 0; waiting = new Set(); holds = new Set();
-    spendPending = 0; hostCandy = 0;
+    spendPending = 0; hostCandy = 0; myHold = false;
     hostAway = false; stalled = false; lastHostAt = performance.now(); hostLostAt = 0;
     if (G.CombatAuthority) G.CombatAuthority.reset();
     levelSeq = 0; levelNow = 1; seenSeq = 0; doneSeq = 0; lastHo = '';
@@ -321,9 +321,15 @@ G.Coop = (() => {
 
   function flushAll() { for (const m of mates.values()) if (m.connected && m.linked !== false) G.Net.send(m.uid, hostFrame(m)); }
 
+  /*
+   * Cada mensaje del invitado lleva también si está eligiendo (h) y hasta qué
+   * ronda de cartas ha elegido (w). Si se pierde un aviso suelto ('hs'/'lp'),
+   * el anfitrión no se queda esperando para siempre.
+   */
+  let myHold = false;
   function flushClient(force) {
     if (!force && !outEv.length && flushT > 0) return;
-    G.Net.toHost({ k: 'f', p: myState(), ev: outEv });
+    G.Net.toHost({ k: 'f', p: myState(), ev: outEv, h: myHold ? 1 : 0, w: doneSeq });
     outEv = [];
   }
 
@@ -354,8 +360,7 @@ G.Coop = (() => {
       flushT -= dt;
       if (flushT <= 0) {
         flushT = rateFor(hostUid);
-        G.Net.toHost({ k: 'f', p: myState(), ev: outEv });
-        outEv = [];
+        flushClient(true);
       }
     }
   }
@@ -406,6 +411,10 @@ G.Coop = (() => {
   function onClientFrame(from, msg) {
     const m = mates.get(from);
     if (!m || !m.connected) return;
+    // Lo que dice su juego manda sobre los avisos sueltos (ver flushClient).
+    if (msg.h === 0 && holds.has(from)) holdOff(from);
+    else if (msg.h === 1 && !holds.has(from)) holdOn(from);
+    if (typeof msg.w === 'number' && msg.w >= levelSeq && waiting.has(from)) picked(from);
     if (msg.p) { m.state = msg.p; m.pl.net = readState(msg.p); m.xpMul = m.pl.net.xpMul || 1; reconcile(from, m.pl.net); }
     for (const ev of msg.ev || []) {
       switch (ev[0]) {
@@ -449,6 +458,13 @@ G.Coop = (() => {
         }
         case 're': G.Rift.enterRequest(); break;
         case 'bye': mateGone(from); break;
+        // Un invitado con Sequía, Llovizna...: su clima, si no hay otro.
+        case 'wxq':
+          if (typeof ev[1] === 'string' && G.Weather.KINDS[ev[1]] && !G.Weather.current && performance.now() - (m.wxAt || -1e9) > 60000) {
+            m.wxAt = performance.now();
+            G.Weather.debugStart(ev[1], 60);
+          }
+          break;
         case 'ft':
           if (G.CombatAuthority && !G.CombatAuthority.claimPickup(ev[1])) break;
           if (G.Pickups.removeId(ev[1])) pickupGone(ev[1]);
@@ -804,8 +820,8 @@ G.Coop = (() => {
   }
 
   /** Tú empiezas / terminas de elegir fusión. */
-  function holdStart(why) { if (host) holdOn(me, why); else { outEv.push(['hs', why || '']); flushClient(true); } }
-  function holdEnd() { if (host) holdOff(me); else { outEv.push(['he']); flushClient(true); } }
+  function holdStart(why) { if (host) holdOn(me, why); else { myHold = true; outEv.push(['hs', why || '']); flushClient(true); } }
+  function holdEnd() { if (host) holdOff(me); else { myHold = false; outEv.push(['he']); flushClient(true); } }
 
   /** Has elegido tu carta. */
   function localPicked() {

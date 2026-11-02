@@ -4,7 +4,8 @@
  * Nadie pasa a ser anfitrión a mitad de partida.
  */
 G.CombatAuthority = (() => {
-  const GONE_MS = 10000;
+  // Corte momentáneo del canal: esperar a reconectar antes de echar de la partida.
+  const GONE_MS = 45000;
   const KEEP_MS = 20000;
   const POS_SLACK = 220;
 
